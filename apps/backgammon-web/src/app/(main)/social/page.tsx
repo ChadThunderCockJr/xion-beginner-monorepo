@@ -463,19 +463,36 @@ export default function SocialPage() {
                       </div>
                       {social.friends.some((f) => f.address === r.address) ? (
                         <span style={{
-                          fontSize: 11, color: "var(--color-text-faint)",
+                          fontSize: 11, color: "var(--color-success)",
                           fontFamily: "var(--font-body)", fontWeight: 600,
                         }}>
-                          Already friends
+                          Friends
                         </span>
-                      ) : sentTo === r.address ? (
+                      ) : sentTo === r.address || social.outgoingRequests.includes(r.address) ? (
                         <span style={{
-                          fontSize: 11, color: "var(--color-success)",
+                          fontSize: 11, color: "var(--color-text-muted)",
                           fontFamily: "var(--font-body)", fontWeight: 600,
                           display: "flex", alignItems: "center", gap: 4,
                         }}>
                           {Icons.check()} Sent
                         </span>
+                      ) : social.incomingRequests.some((req) => req.address === r.address) ? (
+                        <button
+                          onClick={() => social.acceptFriendRequest(r.address)}
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: 6,
+                            border: "1px solid var(--color-success)",
+                            background: "rgba(96,168,96,0.12)",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "var(--color-success)",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-body)",
+                          }}
+                        >
+                          Accept
+                        </button>
                       ) : (
                         <button
                           onClick={() => handleSendRequest(r.address)}

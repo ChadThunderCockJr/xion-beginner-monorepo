@@ -305,7 +305,7 @@ export default function LoginPage() {
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
-              color: "#ffffff",
+              color: "var(--color-text-primary)",
               margin: "32px 0 16px",
               lineHeight: 1.3,
             }}
@@ -317,7 +317,7 @@ export default function LoginPage() {
           <p
             style={{
               fontSize: 15,
-              color: "rgba(255,255,255,0.7)",
+              color: "var(--color-text-secondary)",
               lineHeight: 1.6,
               margin: 0,
               fontFamily: "var(--font-body)",
@@ -346,7 +346,7 @@ export default function LoginPage() {
                     borderRadius: 20,
                     border: "1px solid var(--color-gold-dark)",
                     fontSize: 12,
-                    color: "rgba(255,255,255,0.85)",
+                    color: "var(--color-text-primary)",
                     fontWeight: 500,
                     fontFamily: "var(--font-body)",
                   }}
@@ -455,7 +455,7 @@ export default function LoginPage() {
             By continuing, you agree to the{" "}
             <span
               style={{
-                color: "rgba(255,255,255,0.5)",
+                color: "var(--color-text-muted)",
                 textDecoration: "underline",
                 cursor: "pointer",
               }}
@@ -465,7 +465,7 @@ export default function LoginPage() {
             and{" "}
             <span
               style={{
-                color: "rgba(255,255,255,0.5)",
+                color: "var(--color-text-muted)",
                 textDecoration: "underline",
                 cursor: "pointer",
               }}

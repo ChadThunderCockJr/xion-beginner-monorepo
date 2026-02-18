@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Avatar } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
+import { useAuth } from "@/hooks/useAuth";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -262,6 +263,7 @@ function PlayerRowStyled({
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const social = useSocialContext();
   const { displayName, username } = social;
   const playerName = displayName || username || "Player";
@@ -457,9 +459,33 @@ export default function DashboardPage() {
                         )}
                       </div>
                       {social.friends.some((f) => f.address === r.address) ? (
-                        <span style={{ fontSize: 10, color: "var(--color-text-faint)", fontWeight: 600 }}>
-                          Friend
+                        <span style={{ fontSize: 10, color: "var(--color-success)", fontWeight: 600 }}>
+                          Friends
                         </span>
+                      ) : social.outgoingRequests.includes(r.address) ? (
+                        <span style={{ fontSize: 10, color: "var(--color-text-muted)", fontWeight: 600 }}>
+                          Sent
+                        </span>
+                      ) : social.incomingRequests.some((req) => req.address === r.address) ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            social.acceptFriendRequest(r.address);
+                          }}
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 5,
+                            border: "1px solid var(--color-success)",
+                            background: "rgba(96,168,96,0.12)",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: "var(--color-success)",
+                            cursor: "pointer",
+                            fontFamily: "var(--font-body)",
+                          }}
+                        >
+                          Accept
+                        </button>
                       ) : (
                         <button
                           onClick={(e) => {
@@ -554,6 +580,27 @@ export default function DashboardPage() {
               USDC
             </span>
           </div>
+
+          {/* Logout */}
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 6,
+              border: "1px solid var(--color-bg-subtle)",
+              background: "var(--color-bg-surface)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            title="Log out"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
+              <path d="M7 17H4a1 1 0 01-1-1V4a1 1 0 011-1h3M14 14l4-4-4-4M18 10H7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       </header>
 
