@@ -126,33 +126,33 @@ html.lux {
   --color-bg-elevated: #2E1C0E;
   --color-bg-subtle: #3C2818;
 
-  /* ─── Text hierarchy — warm ivory ─── */
-  --color-text-primary: #F0E6D4;
-  --color-text-secondary: #C8B898;
-  --color-text-muted: #8A7860;
+  /* ─── Text hierarchy — gold on chocolate ─── */
+  --color-text-primary: #C5973E;
+  --color-text-secondary: #A07828;
+  --color-text-muted: #7A5C20;
   --color-text-faint: #5C4A38;
 
-  /* ─── Accent — true gold ─── */
-  --color-gold-primary: #C5973E;
-  --color-gold-light: #D4A843;
-  --color-gold-dark: #A07828;
-  --color-gold-muted: rgba(197, 151, 62, 0.15);
-  --color-accent-fg: #110A04;
+  /* ─── Accent — same burgundy red as dark theme ─── */
+  --color-gold-primary: #581428;
+  --color-gold-light: #6B2D3E;
+  --color-gold-dark: #3A0C1A;
+  --color-gold-muted: #220C18;
+  --color-accent-fg: #C5973E;
 
   /* ─── Semantic ─── */
-  --color-success: #7AAC5A;
-  --color-success-muted: rgba(122, 172, 90, 0.15);
-  --color-danger: #C84040;
-  --color-danger-muted: rgba(200, 64, 64, 0.12);
-  --color-warning: #D4A843;
-  --color-info: #6898B0;
+  --color-success: #60A860;
+  --color-success-muted: rgba(96, 168, 96, 0.12);
+  --color-danger: #CC4444;
+  --color-danger-muted: rgba(204, 68, 68, 0.12);
+  --color-warning: #FBBF24;
+  --color-info: #5888A0;
 
-  /* ─── Burgundy → Gold tones for lux ─── */
-  --color-burgundy-primary: #C5973E;
-  --color-burgundy-light: #D4A843;
-  --color-burgundy-deep: #3C2818;
-  --color-burgundy-faint: rgba(197, 151, 62, 0.08);
-  --color-burgundy-accent: #B8882E;
+  /* ─── Burgundy — same as dark theme ─── */
+  --color-burgundy-primary: #882040;
+  --color-burgundy-light: #A83858;
+  --color-burgundy-deep: #581428;
+  --color-burgundy-faint: #220C18;
+  --color-burgundy-accent: #6B2D3E;
 
   /* ─── Borders ─── */
   --color-border-subtle: #3C2818;
@@ -162,11 +162,11 @@ html.lux {
   /* ─── Font override — calligraphic script ─── */
   --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
 
-  /* ─── Shadows — warm gold glow ─── */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-gold: 0 2px 16px rgba(197, 151, 62, 0.2);
-  --shadow-glow: 0 0 60px rgba(197, 151, 62, 0.08);
+  /* ─── Shadows — same as dark theme ─── */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-gold: 0 2px 12px rgba(88, 20, 40, 0.3);
+  --shadow-glow: 0 0 60px rgba(88, 20, 40, 0.12);
 }
 
 /* ─── Lux mode scrollbar ─── */
