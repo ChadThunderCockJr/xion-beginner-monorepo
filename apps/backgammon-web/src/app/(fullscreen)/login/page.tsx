@@ -61,16 +61,24 @@ function GammonButton({
    Icons
    ══════════════════════════════════════════════════════════════════ */
 
-function DiceLogo({ size = 48 }: { size?: number }) {
+function GLogo({ size = 48 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" style={{ display: "block", margin: "0 auto" }}>
-      <rect x="4" y="4" width="40" height="40" rx="8" stroke="var(--color-gold-primary)" strokeWidth="2.5" fill="none" />
-      <circle cx="16" cy="16" r="3" fill="var(--color-gold-primary)" />
-      <circle cx="32" cy="16" r="3" fill="var(--color-gold-primary)" />
-      <circle cx="24" cy="24" r="3" fill="var(--color-gold-primary)" />
-      <circle cx="16" cy="32" r="3" fill="var(--color-gold-primary)" />
-      <circle cx="32" cy="32" r="3" fill="var(--color-gold-primary)" />
-    </svg>
+    <div
+      style={{
+        width: size,
+        height: size,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        margin: "0 auto",
+        fontFamily: "var(--font-display)",
+        fontSize: size * 0.7,
+        fontWeight: 700,
+        color: "var(--color-gold-primary)",
+      }}
+    >
+      G
+    </div>
   );
 }
 
@@ -384,7 +392,7 @@ export default function LoginPage() {
         >
           {/* Logo + Brand */}
           <div style={{ textAlign: "center", marginBottom: 8 }}>
-            <DiceLogo size={56} />
+            <GLogo size={56} />
             <h1
               className="text-2xl lg:text-[32px]"
               style={{
