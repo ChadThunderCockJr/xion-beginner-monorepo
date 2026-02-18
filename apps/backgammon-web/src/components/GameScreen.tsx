@@ -275,7 +275,7 @@ function SlideOutMenu({
                 borderRadius: 5,
                 border: "none",
                 background: "transparent",
-                color: "danger" in item && item.danger ? "var(--color-danger)" : "disabled" in item && item.disabled ? "var(--color-text-faint)" : "var(--color-text-secondary)",
+                color: "danger" in item && item.danger ? "var(--color-danger)" : "disabled" in item && item.disabled ? "var(--color-text-muted)" : "var(--color-text-secondary)",
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "disabled" in item && item.disabled ? "not-allowed" : "pointer",
@@ -420,7 +420,7 @@ function CenterControls({
     return (
       <div className="flex items-center justify-center" style={{ gap: 16 }}>
         <DoublingCube value={cubeValue} />
-        <span className="text-xs text-[var(--color-text-faint)]">Waiting for response...</span>
+        <span className="text-xs text-[var(--color-text-muted)]">Waiting for response...</span>
       </div>
     );
   }
@@ -503,7 +503,7 @@ function CenterControls({
           })}
         </div>
       ) : !isMyTurn ? (
-        <span className="text-xs text-[var(--color-text-faint)]">Waiting...</span>
+        <span className="text-xs text-[var(--color-text-muted)]">Waiting...</span>
       ) : null}
 
       {isMyTurn && dice && (

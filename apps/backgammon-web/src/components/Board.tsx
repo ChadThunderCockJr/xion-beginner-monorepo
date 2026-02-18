@@ -196,7 +196,7 @@ export function DoublingCube({ value = 64 }: { value?: number }) {
         borderRadius: 5,
         background: "var(--color-gold-muted)",
         border: "1.5px solid var(--color-gold-dark)",
-        color: "var(--color-gold-primary)",
+        color: "var(--color-accent-fg)",
         boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
       }}
     >
