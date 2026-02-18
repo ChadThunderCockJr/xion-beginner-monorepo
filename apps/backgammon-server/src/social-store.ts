@@ -101,12 +101,12 @@ export async function searchPlayers(query: string): Promise<Array<{ address: str
       }
     }
 
-    // Prefix search: scan username:* keys matching the query prefix
+    // Prefix search via SCAN on username:* keys — run full scan to avoid SCAN misses
     if (results.length < 10) {
       let cursor = "0";
       const pattern = `username:${lowerQuery}*`;
       do {
-        const [nextCursor, keys] = await r.scan(cursor, "MATCH", pattern, "COUNT", 50);
+        const [nextCursor, keys] = await r.scan(cursor, "MATCH", pattern, "COUNT", 200);
         cursor = nextCursor;
         for (const key of keys) {
           if (results.length >= 10) break;
@@ -116,6 +116,29 @@ export async function searchPlayers(query: string): Promise<Array<{ address: str
             const profile = await getProfile(addr);
             if (profile) {
               results.push({ address: addr, username: profile.username, displayName: profile.displayName });
+            }
+          }
+        }
+      } while (cursor !== "0" && results.length < 10);
+    }
+
+    // Also scan profile:* keys to match by display name
+    if (results.length < 10) {
+      let cursor = "0";
+      do {
+        const [nextCursor, keys] = await r.scan(cursor, "MATCH", "profile:*", "COUNT", 200);
+        cursor = nextCursor;
+        for (const key of keys) {
+          if (results.length >= 10) break;
+          const addr = key.replace("profile:", "");
+          if (seen.has(addr)) continue;
+          const profile = await getProfile(addr);
+          if (profile) {
+            const nameMatch = profile.displayName.toLowerCase().includes(lowerQuery);
+            const userMatch = profile.username.toLowerCase().includes(lowerQuery);
+            if (nameMatch || userMatch) {
+              results.push({ address: addr, username: profile.username, displayName: profile.displayName });
+              seen.add(addr);
             }
           }
         }
