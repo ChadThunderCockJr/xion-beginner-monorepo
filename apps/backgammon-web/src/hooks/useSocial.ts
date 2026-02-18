@@ -62,6 +62,7 @@ type SocialAction =
   | { type: "USERNAME_SET"; username: string }
   | { type: "USERNAME_ERROR"; message: string }
   | { type: "SEARCH_RESULTS"; results: SearchResult[] }
+  | { type: "ADD_OUTGOING_REQUEST"; address: string }
   | { type: "CONNECTED" }
   | { type: "DISCONNECTED" };
 
@@ -155,6 +156,13 @@ function socialReducer(state: SocialState, action: SocialAction): SocialState {
       return { ...state, usernameError: action.message };
     case "SEARCH_RESULTS":
       return { ...state, searchResults: action.results };
+    case "ADD_OUTGOING_REQUEST":
+      return {
+        ...state,
+        outgoingRequests: state.outgoingRequests.includes(action.address)
+          ? state.outgoingRequests
+          : [...state.outgoingRequests, action.address],
+      };
     case "CONNECTED":
       return { ...state, connected: true };
     case "DISCONNECTED":
@@ -269,6 +277,9 @@ export function useSocial(wsUrl: string, address: string | null) {
           results: (msg.results || []) as SearchResult[],
         }),
       ),
+      on("error", (msg) => {
+        console.warn("[Social] Server error:", msg.message);
+      }),
     ];
     return () => unsubs.forEach((u) => u());
   }, [on]);
@@ -285,6 +296,7 @@ export function useSocial(wsUrl: string, address: string | null) {
   const sendFriendRequest = useCallback(
     (toAddress: string) => {
       sendMessage({ type: "send_friend_request", to_address: toAddress });
+      dispatch({ type: "ADD_OUTGOING_REQUEST", address: toAddress });
     },
     [sendMessage],
   );

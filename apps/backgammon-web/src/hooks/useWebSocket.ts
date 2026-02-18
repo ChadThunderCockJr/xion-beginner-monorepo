@@ -49,6 +49,8 @@ export function useWebSocket(url: string) {
   const sendMessage = useCallback((msg: Record<string, unknown>) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(msg));
+    } else {
+      console.warn("[WebSocket] Message dropped (not connected):", msg.type);
     }
   }, []);
 
