@@ -126,10 +126,10 @@ html.lux {
   --color-bg-elevated: #581428;
   --color-bg-subtle: #6B2D3E;
 
-  /* ─── Text hierarchy — gold ─── */
-  --color-text-primary: #C5973E;
-  --color-text-secondary: #A07828;
-  --color-text-muted: #7A5C20;
+  /* ─── Text hierarchy — bright gold ─── */
+  --color-text-primary: #E8B84A;
+  --color-text-secondary: #D4A843;
+  --color-text-muted: #B8922E;
   --color-text-faint: #4A4840;
 
   /* ─── Accent — same burgundy red as dark theme ─── */
@@ -137,7 +137,7 @@ html.lux {
   --color-gold-light: #6B2D3E;
   --color-gold-dark: #3A0C1A;
   --color-gold-muted: #220C18;
-  --color-accent-fg: #C5973E;
+  --color-accent-fg: #E8B84A;
 
   /* ─── Semantic ─── */
   --color-success: #60A860;
