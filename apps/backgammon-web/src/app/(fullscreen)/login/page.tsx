@@ -63,7 +63,7 @@ function GammonButton({
 
 function DiceLogo({ size = 48 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" style={{ display: "block", margin: "0 auto" }}>
       <rect x="4" y="4" width="40" height="40" rx="8" stroke="var(--color-gold-primary)" strokeWidth="2.5" fill="none" />
       <circle cx="16" cy="16" r="3" fill="var(--color-gold-primary)" />
       <circle cx="32" cy="16" r="3" fill="var(--color-gold-primary)" />
@@ -85,7 +85,7 @@ function BoardIllustration() {
       height="180"
       viewBox="0 0 260 180"
       fill="none"
-      style={{ opacity: 0.7 }}
+      style={{ opacity: 0.9, display: "block", margin: "0 auto" }}
     >
       {/* Board outline */}
       <rect
@@ -94,8 +94,8 @@ function BoardIllustration() {
         width="240"
         height="160"
         rx="8"
-        stroke="var(--color-gold-dark)"
-        strokeWidth="1.5"
+        stroke="var(--color-gold-primary)"
+        strokeWidth="2"
         fill="none"
       />
       {/* Center bar */}
@@ -180,8 +180,8 @@ function BoardIllustration() {
           r="8"
           fill="var(--color-gold-dark)"
           stroke="var(--color-gold-primary)"
-          strokeWidth="0.5"
-          opacity="0.6"
+          strokeWidth="1"
+          opacity="0.9"
         />
       ))}
       {/* Dark checkers */}
@@ -201,8 +201,8 @@ function BoardIllustration() {
           r="8"
           fill="var(--color-burgundy-deep)"
           stroke="var(--color-burgundy-primary)"
-          strokeWidth="0.5"
-          opacity="0.6"
+          strokeWidth="1"
+          opacity="0.9"
         />
       ))}
       {/* Dice */}
