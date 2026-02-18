@@ -119,12 +119,12 @@ html.light {
    ═══════════════════════════════════════════ */
 
 html.lux {
-  /* ─── Background tiers — same green-felt as dark theme ─── */
-  --color-bg-deepest: #040604;
-  --color-bg-base: #0A0E08;
-  --color-bg-surface: #141A12;
-  --color-bg-elevated: #1E241C;
-  --color-bg-subtle: #2A3026;
+  /* ─── Background tiers — neutral dark ─── */
+  --color-bg-deepest: #050505;
+  --color-bg-base: #0A0A0A;
+  --color-bg-surface: #141414;
+  --color-bg-elevated: #1E1E1E;
+  --color-bg-subtle: #2A2A2A;
 
   /* ─── Text hierarchy — gold ─── */
   --color-text-primary: #C5973E;
@@ -154,10 +154,10 @@ html.lux {
   --color-burgundy-faint: #220C18;
   --color-burgundy-accent: #6B2D3E;
 
-  /* ─── Borders — same as dark theme ─── */
-  --color-border-subtle: #2A3026;
-  --color-border-default: #2A3026;
-  --color-border-strong: #3A4036;
+  /* ─── Borders ─── */
+  --color-border-subtle: #2A2A2A;
+  --color-border-default: #2A2A2A;
+  --color-border-strong: #3A3A3A;
 
   /* ─── Font override — calligraphic script ─── */
   --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
