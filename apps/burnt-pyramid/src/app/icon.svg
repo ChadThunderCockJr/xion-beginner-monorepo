@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="pyramidGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22d3a0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a375;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <polygon points="16,2 30,28 2,28" fill="url(#pyramidGradient)" />
+  <polygon points="16,2 16,28 2,28" fill="#1a9e6d" opacity="0.7" />
+</svg>

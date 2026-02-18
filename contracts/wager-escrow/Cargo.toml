@@ -1,0 +1,29 @@
+[package]
+name = "wager-escrow"
+version = "0.1.0"
+edition = "2021"
+authors = ["Backgammon Platform"]
+description = "USDC wager escrow contract for competitive backgammon on XION"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+library = []
+
+[dependencies]
+cosmwasm-std = "=2.1.4"
+cosmwasm-schema = "=2.1.4"
+cw-storage-plus = "=2.0.0"
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

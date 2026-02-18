@@ -1,0 +1,51 @@
+--- a/dist/index.js	1985-10-26 04:15:00
++++ b/dist/index.js	2026-02-09 00:15:59
+@@ -203,6 +203,7 @@
+   const [abstraxionAccount, setAbstraxionAccount] = (0, import_react.useState)(void 0);
+   const [granterAddress, setGranterAddress] = (0, import_react.useState)("");
+   const [dashboardUrl, setDashboardUrl] = (0, import_react.useState)("");
++  const hasLoggedOutRef = (0, import_react.useRef)(false);
+   let gasPriceDefault;
+   const { gasPrice: gasPriceConstant } = import_constants.xionGasValues;
+   if (rpcUrl.includes("mainnet")) {
+@@ -281,17 +282,19 @@
+       setIsInitializing(false);
+       return;
+     }
+-    try {
+-      yield abstraxionAuth.authenticate();
+-    } finally {
+-      setIsInitializing(false);
+-    }
++    // No existing session — just finish initializing without calling authenticate().
++    // authenticate() would open the dashboard WebView trying to restore a non-existent
++    // session, getting stuck on "Fetching Accounts". Let the user tap login instead.
++    setIsInitializing(false);
+   }), [abstraxionAuth]);
+   (0, import_react.useEffect)(() => {
+     const initializeAuth = () => __async(this, null, function* () {
+       if (isReturningFromAuth) {
+         return;
+       }
++      if (hasLoggedOutRef.current) {
++        return;
++      }
+       if (!isConnecting && !abstraxionAccount && !granterAddress) {
+         yield persistAuthenticateState();
+       }
+@@ -300,6 +303,7 @@
+   }, [isReturningFromAuth]);
+   function login() {
+     return __async(this, null, function* () {
++      hasLoggedOutRef.current = false;
+       setIsInitializing(false);
+       if (!isReturningFromAuth) {
+         setIsLoggingIn(true);
+@@ -314,6 +318,7 @@
+     });
+   }
+   const logout = (0, import_react.useCallback)(() => {
++    hasLoggedOutRef.current = true;
+     setIsConnected(false);
+     setAbstraxionAccount(void 0);
+     setGranterAddress("");

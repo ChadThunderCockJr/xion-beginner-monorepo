@@ -1,0 +1,658 @@
+:root {
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  --color-gray-dark: #1a1a1a;
+  --color-gray-medium: #2a2a2a;
+  --color-gray-light: #4a4a4a;
+  --color-success: #00D26A;
+  --color-error: #FF5A5F;
+  --color-accent: #00DC82;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Fira Code', 'SF Mono', Consolas, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(0, 220, 130, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--color-black);
+  color: var(--color-white);
+}
+
+/* ============================================
+   TV DISPLAY - ROBINHOOD STYLE
+   ============================================ */
+
+.tv-container {
+  width: 100vw;
+  height: 100vh;
+  background: var(--color-black);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Video Player - Full Screen Background */
+.video-player {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.beer-ad-image {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(0, 0, 0, 0.7) 85%,
+      rgba(0, 0, 0, 0.9) 100%);
+  pointer-events: none;
+}
+
+/* Verified Badge - Top Left Overlay */
+.verified-badge {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 210, 106, 0.95);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 210, 106, 0.4);
+  animation: slideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.verified-badge svg {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   QR PANEL - GLASSMORPHISM SIDE PANEL
+   ============================================ */
+
+.qr-panel {
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 340px;
+  animation: fadeSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.qr-panel-content {
+  background: rgba(20, 20, 20, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.qr-panel.verified .qr-panel-content {
+  background: rgba(0, 40, 25, 0.9);
+  border-color: rgba(0, 210, 106, 0.3);
+}
+
+/* Panel Logo */
+.panel-logo {
+  margin-bottom: 24px;
+}
+
+.panel-logo img {
+  width: 72px;
+  height: 72px;
+  max-width: 72px;
+  max-height: 72px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  box-shadow: var(--shadow-md);
+  background: white;
+}
+
+/* Panel Text */
+.panel-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-white);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.panel-title.error {
+  color: var(--color-error);
+}
+
+.panel-title.success {
+  color: var(--color-success);
+}
+
+.panel-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* QR Code Wrapper */
+.qr-wrapper {
+  display: inline-block;
+  background: white;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.scan-instruction {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+}
+
+.panel-branding {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 20px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* Countdown Box */
+.countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+}
+
+.countdown-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.countdown-time {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-white);
+  letter-spacing: 0.05em;
+}
+
+/* Beer Ad Countdown */
+.beer-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 210, 106, 0.15);
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+  margin-top: 16px;
+}
+
+.beer-countdown .countdown-time {
+  color: var(--color-success);
+}
+
+/* Success Icon */
+.success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: var(--color-success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.success-icon svg {
+  width: 40px;
+  height: 40px;
+  color: white;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Spinner */
+.spinner {
+  width: 48px;
+  height: 48px;
+  margin: 24px auto;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Retry Button */
+.retry-btn {
+  background: var(--color-accent);
+  color: var(--color-black);
+  border: none;
+  padding: 14px 32px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+}
+
+.retry-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(0, 220, 130, 0.4);
+}
+
+/* ============================================
+   MOBILE VERIFICATION PAGE - ROBINHOOD STYLE
+   ============================================ */
+
+.verify-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #0a0a0a 0%, #121212 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.verify-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0 24px;
+}
+
+.verify-logo {
+  width: 64px;
+  height: 64px;
+  max-width: 64px;
+  max-height: 64px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 12px;
+  object-fit: contain;
+  background: white;
+}
+
+.verify-header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -0.01em;
+}
+
+.verify-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.verify-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.verify-hero h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.verify-hero p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+}
+
+.verify-hero strong {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Privacy Cards */
+.privacy-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.privacy-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+
+.privacy-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+}
+
+.privacy-card .card-header svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.privacy-card.shared .card-header svg {
+  color: var(--color-success);
+}
+
+.privacy-card.private .card-header svg {
+  color: #FFB800;
+}
+
+.privacy-card ul {
+  list-style: none;
+  margin-left: 30px;
+}
+
+.privacy-card li {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.privacy-card li::before {
+  content: "•";
+  position: absolute;
+  left: -14px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Footer / Actions */
+.verify-footer {
+  margin-top: auto;
+  padding: 20px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--color-accent);
+  color: #0a0a0a;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 24px rgba(0, 220, 130, 0.35);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary svg {
+  width: 20px;
+  height: 20px;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.footer-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 8px;
+}
+
+/* Status Cards */
+.status-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.status-card h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.status-card p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+}
+
+.status-card.success h2 {
+  color: var(--color-success);
+}
+
+.status-card.error h2 {
+  color: var(--color-error);
+}
+
+/* Debug Info */
+.debug-info {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #666;
+  font-family: var(--font-mono);
+}
+
+.debug-info p {
+  margin: 4px 0;
+}
+
+/* Success Icon */
+.success-icon-large {
+  width: 88px;
+  height: 88px;
+  background: var(--color-success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.success-icon-large svg {
+  width: 44px;
+  height: 44px;
+  color: white;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.success-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 210, 106, 0.15);
+  color: var(--color-success);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 24px;
+}
+
+/* Error Icon */
+.error-icon-large {
+  width: 88px;
+  height: 88px;
+  background: var(--color-error);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.error-icon-circle {
+  width: 88px;
+  height: 88px;
+  background: rgba(255, 90, 95, 0.15);
+  color: var(--color-error);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+/* Spinner */
+.spinner-large {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

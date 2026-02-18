@@ -1,0 +1,57 @@
+{
+  "name": "xion-beginner-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev:pyramid": "pnpm --filter @xion-beginner/burnt-pyramid dev",
+    "dev:passport-web": "pnpm --filter @xion-beginner/passport-web dev",
+    "dev:passport-backend": "pnpm --filter @xion-beginner/passport-backend dev",
+    "dev:backgammon-server": "pnpm --filter @xion-beginner/backgammon-server dev",
+    "dev:backgammon-web": "pnpm --filter @xion-beginner/backgammon-web dev",
+    "build": "pnpm -r build",
+    "build:pyramid": "pnpm --filter @xion-beginner/burnt-pyramid build",
+    "build:passport-web": "pnpm --filter @xion-beginner/passport-web build",
+    "build:passport-backend": "pnpm --filter @xion-beginner/passport-backend build",
+    "build:backgammon-server": "pnpm --filter @xion-beginner/backgammon-server build",
+    "build:backgammon-web": "pnpm --filter @xion-beginner/backgammon-web build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r exec rm -rf node_modules .next dist out .expo",
+    "postinstall": "bash scripts/apply-patches.sh || true",
+    "clean:install": "pnpm run clean && rm -rf node_modules && pnpm install"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.28.2",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "protobufjs",
+      "unrs-resolver"
+    ],
+    "patchedDependencies": {
+      "@burnt-labs/abstraxion-core@1.0.0-alpha.67": "patches/@burnt-labs__abstraxion-core@1.0.0-alpha.67.patch",
+      "@burnt-labs/signers@1.0.0-alpha.6": "patches/@burnt-labs__signers@1.0.0-alpha.6.patch"
+    },
+    "overrides": {
+      "metro": "0.82.5",
+      "metro-config": "0.82.5",
+      "metro-core": "0.82.5",
+      "metro-runtime": "0.82.5",
+      "metro-resolver": "0.82.5",
+      "metro-transform-worker": "0.82.5",
+      "metro-transform-plugins": "0.82.5",
+      "metro-babel-transformer": "0.82.5",
+      "metro-cache": "0.82.5",
+      "metro-cache-key": "0.82.5",
+      "metro-source-map": "0.82.5",
+      "metro-symbolicate": "0.82.5",
+      "metro-file-map": "0.82.5",
+      "metro-minify-terser": "0.82.5"
+    }
+  }
+}

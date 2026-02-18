@@ -1,0 +1,162 @@
+diff --git a/dist/index.js b/dist/index.js
+index f1bc0df..b7800d9 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -208,11 +208,21 @@ var GranteeSignerClient = class extends cosmwasmStargate.SigningCosmWasmClient {
+     this._signer = signer;
+   }
+   async getAccount(searchAddress) {
+-    const account = await this.forceGetQueryClient().auth.account(searchAddress);
+-    if (!account) {
++    try {
++      const account = await this.forceGetQueryClient().auth.account(searchAddress);
++      if (!account) {
++        if (searchAddress === this._granteeAddress) {
++          return { address: searchAddress, accountNumber: 0, sequence: 0, pubkey: null };
++        }
++        return null;
++      }
++      return signers.customAccountFromAny(account);
++    } catch (error) {
++      if (searchAddress === this._granteeAddress) {
++        return { address: searchAddress, accountNumber: 0, sequence: 0, pubkey: null };
++      }
+       return null;
+     }
+-    return signers.customAccountFromAny(account);
+   }
+   async getAllBalances(address) {
+     return this.forceGetQueryClient().bank.allBalances(address);
+@@ -1078,6 +1088,27 @@ var decodeAuthorization = (typeUrl, value) => {
+   }
+ };
+ 
++var decodeRestFormatAuthorization = (authorization) => {
++  const typeUrl = authorization["@type"] || authorization.typeUrl;
++  if (authorization.value && (typeof authorization.value === "string" || authorization.value instanceof Uint8Array || (authorization.value.length !== undefined && typeof authorization.value !== "string"))) {
++    return decodeAuthorization(typeUrl, authorization.value);
++  }
++  switch (typeUrl) {
++    case "/cosmos.authz.v1beta1.GenericAuthorization":
++      return { type: "/cosmos.authz.v1beta1.GenericAuthorization", data: { msg: authorization.msg } };
++    case "/cosmos.bank.v1beta1.SendAuthorization":
++      return { type: "/cosmos.bank.v1beta1.SendAuthorization", data: { spendLimit: (authorization.spend_limit || []).map(coin => ({ denom: coin.denom, amount: coin.amount })), allowList: authorization.allow_list || [] } };
++    case "/cosmos.staking.v1beta1.StakeAuthorization":
++      return { type: "/cosmos.staking.v1beta1.StakeAuthorization", data: { authorizationType: authorization.authorization_type, maxTokens: authorization.max_tokens, allowList: authorization.allow_list || [], denyList: authorization.deny_list || [] } };
++    case "/cosmwasm.wasm.v1.ContractExecutionAuthorization": {
++      const grants = (authorization.grants || []).map((grant) => { const limit = grant.limit || {}; const filter = grant.filter || {}; return { address: grant.contract, limitType: limit["@type"], maxCalls: limit.calls_remaining || limit.remaining, maxFunds: limit.amounts, filterType: filter["@type"], messages: filter.messages, keys: filter.keys }; });
++      return { type: "/cosmwasm.wasm.v1.ContractExecutionAuthorization", data: { grants } };
++    }
++    default:
++      return { type: "Unsupported", data: null };
++  }
++};
++
+ // src/utils/grant/compare.ts
+ function isHumanContractExecAuth(data) {
+   return data !== null && typeof data === "object" && "grants" in data && Array.isArray(data.grants);
+@@ -1609,10 +1640,7 @@ var AbstraxionAuth = class {
+       );
+     });
+     const decodedChainConfigs = grantsResponse.grants.map((grantResponse) => {
+-      return decodeAuthorization(
+-        grantResponse.authorization.typeUrl,
+-        grantResponse.authorization.value
+-      );
++      return decodeRestFormatAuthorization(grantResponse.authorization);
+     });
+     return compareChainGrantsToTreasuryGrants(
+       decodedChainConfigs,
+@@ -1634,10 +1662,7 @@ var AbstraxionAuth = class {
+       );
+     });
+     const decodedChainConfigs = grantsResponse.grants.map((grantResponse) => {
+-      return decodeAuthorization(
+-        grantResponse.authorization.typeUrl,
+-        grantResponse.authorization.value
+-      );
++      return decodeRestFormatAuthorization(grantResponse.authorization);
+     });
+     return compareChainGrantsToTreasuryGrants(
+       decodedChainConfigs,
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 86f66b5..7b80138 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -207,11 +207,21 @@ var GranteeSignerClient = class extends SigningCosmWasmClient {
+     this._signer = signer;
+   }
+   async getAccount(searchAddress) {
+-    const account = await this.forceGetQueryClient().auth.account(searchAddress);
+-    if (!account) {
++    try {
++      const account = await this.forceGetQueryClient().auth.account(searchAddress);
++      if (!account) {
++        if (searchAddress === this._granteeAddress) {
++          return { address: searchAddress, accountNumber: 0, sequence: 0, pubkey: null };
++        }
++        return null;
++      }
++      return customAccountFromAny(account);
++    } catch (error) {
++      if (searchAddress === this._granteeAddress) {
++        return { address: searchAddress, accountNumber: 0, sequence: 0, pubkey: null };
++      }
+       return null;
+     }
+-    return customAccountFromAny(account);
+   }
+   async getAllBalances(address) {
+     return this.forceGetQueryClient().bank.allBalances(address);
+@@ -1077,6 +1087,27 @@ var decodeAuthorization = (typeUrl, value) => {
+   }
+ };
+ 
++var decodeRestFormatAuthorization = (authorization) => {
++  const typeUrl = authorization["@type"] || authorization.typeUrl;
++  if (authorization.value && (typeof authorization.value === "string" || authorization.value instanceof Uint8Array || (authorization.value.length !== undefined && typeof authorization.value !== "string"))) {
++    return decodeAuthorization(typeUrl, authorization.value);
++  }
++  switch (typeUrl) {
++    case "/cosmos.authz.v1beta1.GenericAuthorization":
++      return { type: "/cosmos.authz.v1beta1.GenericAuthorization", data: { msg: authorization.msg } };
++    case "/cosmos.bank.v1beta1.SendAuthorization":
++      return { type: "/cosmos.bank.v1beta1.SendAuthorization", data: { spendLimit: (authorization.spend_limit || []).map(coin => ({ denom: coin.denom, amount: coin.amount })), allowList: authorization.allow_list || [] } };
++    case "/cosmos.staking.v1beta1.StakeAuthorization":
++      return { type: "/cosmos.staking.v1beta1.StakeAuthorization", data: { authorizationType: authorization.authorization_type, maxTokens: authorization.max_tokens, allowList: authorization.allow_list || [], denyList: authorization.deny_list || [] } };
++    case "/cosmwasm.wasm.v1.ContractExecutionAuthorization": {
++      const grants = (authorization.grants || []).map((grant) => { const limit = grant.limit || {}; const filter = grant.filter || {}; return { address: grant.contract, limitType: limit["@type"], maxCalls: limit.calls_remaining || limit.remaining, maxFunds: limit.amounts, filterType: filter["@type"], messages: filter.messages, keys: filter.keys }; });
++      return { type: "/cosmwasm.wasm.v1.ContractExecutionAuthorization", data: { grants } };
++    }
++    default:
++      return { type: "Unsupported", data: null };
++  }
++};
++
+ // src/utils/grant/compare.ts
+ function isHumanContractExecAuth(data) {
+   return data !== null && typeof data === "object" && "grants" in data && Array.isArray(data.grants);
+@@ -1608,10 +1639,7 @@ var AbstraxionAuth = class {
+       );
+     });
+     const decodedChainConfigs = grantsResponse.grants.map((grantResponse) => {
+-      return decodeAuthorization(
+-        grantResponse.authorization.typeUrl,
+-        grantResponse.authorization.value
+-      );
++      return decodeRestFormatAuthorization(grantResponse.authorization);
+     });
+     return compareChainGrantsToTreasuryGrants(
+       decodedChainConfigs,
+@@ -1633,10 +1661,7 @@ var AbstraxionAuth = class {
+       );
+     });
+     const decodedChainConfigs = grantsResponse.grants.map((grantResponse) => {
+-      return decodeAuthorization(
+-        grantResponse.authorization.typeUrl,
+-        grantResponse.authorization.value
+-      );
++      return decodeRestFormatAuthorization(grantResponse.authorization);
+     });
+     return compareChainGrantsToTreasuryGrants(
+       decodedChainConfigs,

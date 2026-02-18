@@ -1,0 +1,15 @@
+{
+  "name": "@xion-beginner/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/cn.ts",
+  "types": "./src/cn.ts",
+  "exports": {
+    ".": "./src/cn.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  }
+}

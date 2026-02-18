@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+.expo
+android
+ios
+target
+artifacts
+contracts
+apps/burnt-pyramid
+apps/passport-web
+apps/passport-backend
+apps/passport-ios
+apps/backgammon-web
