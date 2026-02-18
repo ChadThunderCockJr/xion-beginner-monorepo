@@ -10,6 +10,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 const BOARD_THEMES = [
   { id: "dark", label: "Dark" },
   { id: "light", label: "Light" },
+  { id: "lux", label: "Lux" },
 ];
 
 const NOTATION_STYLES = [
@@ -311,7 +312,7 @@ export default function SettingsPage() {
               <SegmentToggle
                 segments={BOARD_THEMES}
                 activeId={theme}
-                onSelect={(id) => setTheme(id as "light" | "dark")}
+                onSelect={(id) => setTheme(id as "light" | "dark" | "lux")}
               />
               <div style={{
                 fontSize: 11, color: "var(--color-text-faint)", marginTop: 8,

@@ -1,7 +1,7 @@
 "use client";
 
 import { AbstraxionProvider } from "@burnt-labs/abstraxion";
-import { Cormorant_Garamond, Outfit, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, Outfit, JetBrains_Mono, Pinyon_Script } from "next/font/google";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./globals.css";
 
@@ -35,6 +35,13 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-jetbrains",
+  display: "swap",
+});
+
+const pinyonScript = Pinyon_Script({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-pinyon",
   display: "swap",
 });
 
@@ -77,12 +84,12 @@ export default function RootLayout({
         {/* Inline script to set theme class before first paint — prevents flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gammon-theme");document.documentElement.className=t==="dark"?"dark":"light"}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("gammon-theme");document.documentElement.className=t==="lux"?"lux":t==="dark"?"dark":"light"}catch(e){}})()`,
           }}
         />
       </head>
       <body
-        className={`${cormorant.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${cormorant.variable} ${outfit.variable} ${jetbrainsMono.variable} ${pinyonScript.variable} antialiased`}
       >
         <ThemeProvider>
           <AbstraxionProvider config={abstraxionConfig}>

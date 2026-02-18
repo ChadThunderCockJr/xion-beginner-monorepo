@@ -114,6 +114,69 @@ html.light {
   --shadow-glow: 0 0 40px rgba(122, 24, 48, 0.06);
 }
 
+/* ═══════════════════════════════════════════
+   LUX THEME — chocolate & gold luxury
+   ═══════════════════════════════════════════ */
+
+html.lux {
+  /* ─── Background tiers — deep chocolate ─── */
+  --color-bg-deepest: #110A04;
+  --color-bg-base: #1A0E06;
+  --color-bg-surface: #241408;
+  --color-bg-elevated: #2E1C0E;
+  --color-bg-subtle: #3C2818;
+
+  /* ─── Text hierarchy — warm ivory ─── */
+  --color-text-primary: #F0E6D4;
+  --color-text-secondary: #C8B898;
+  --color-text-muted: #8A7860;
+  --color-text-faint: #5C4A38;
+
+  /* ─── Accent — true gold ─── */
+  --color-gold-primary: #C5973E;
+  --color-gold-light: #D4A843;
+  --color-gold-dark: #A07828;
+  --color-gold-muted: rgba(197, 151, 62, 0.15);
+  --color-accent-fg: #110A04;
+
+  /* ─── Semantic ─── */
+  --color-success: #7AAC5A;
+  --color-success-muted: rgba(122, 172, 90, 0.15);
+  --color-danger: #C84040;
+  --color-danger-muted: rgba(200, 64, 64, 0.12);
+  --color-warning: #D4A843;
+  --color-info: #6898B0;
+
+  /* ─── Burgundy → Gold tones for lux ─── */
+  --color-burgundy-primary: #C5973E;
+  --color-burgundy-light: #D4A843;
+  --color-burgundy-deep: #3C2818;
+  --color-burgundy-faint: rgba(197, 151, 62, 0.08);
+  --color-burgundy-accent: #B8882E;
+
+  /* ─── Borders ─── */
+  --color-border-subtle: #3C2818;
+  --color-border-default: #4A3420;
+  --color-border-strong: #5C4630;
+
+  /* ─── Font override — calligraphic script ─── */
+  --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
+
+  /* ─── Shadows — warm gold glow ─── */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 2px 16px rgba(197, 151, 62, 0.2);
+  --shadow-glow: 0 0 60px rgba(197, 151, 62, 0.08);
+}
+
+/* ─── Lux mode scrollbar ─── */
+html.lux ::-webkit-scrollbar-thumb {
+  background: rgba(197, 151, 62, 0.15);
+}
+html.lux ::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 151, 62, 0.25);
+}
+
 /* ─── Light mode scrollbar ─── */
 html.light ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
@@ -139,6 +202,10 @@ body {
   color: var(--color-text-primary);
   min-height: 100dvh;
   overflow-x: hidden;
+}
+
+html.lux body {
+  --font-display: var(--font-pinyon), "Pinyon Script", cursive;
 }
 
 /* ─── Animations ─── */
