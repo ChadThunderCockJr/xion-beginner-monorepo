@@ -79,6 +79,14 @@ function DiceLogo({ size = 48 }: { size?: number }) {
    ══════════════════════════════════════════════════════════════════ */
 
 function BoardIllustration() {
+  // Hardcoded dark-mode colors — this panel is always dark
+  const gold = "#581428";
+  const goldDark = "#3A0C1A";
+  const burgundy = "#581428";
+  const goldMuted = "#220C18";
+  const bgSubtle = "#2A3026";
+  const bgElevated = "#1E241C";
+
   return (
     <svg
       width="260"
@@ -94,7 +102,7 @@ function BoardIllustration() {
         width="240"
         height="160"
         rx="8"
-        stroke="var(--color-gold-dark)"
+        stroke={goldDark}
         strokeWidth="1.5"
         fill="none"
       />
@@ -104,7 +112,7 @@ function BoardIllustration() {
         y1="10"
         x2="130"
         y2="170"
-        stroke="var(--color-gold-dark)"
+        stroke={goldDark}
         strokeWidth="1"
       />
       {/* Top triangles (left) */}
@@ -112,12 +120,8 @@ function BoardIllustration() {
         <polygon
           key={`tl${i}`}
           points={`${18 + i * 19},15 ${28 + i * 19},60 ${38 + i * 19},15`}
-          fill={
-            i % 2 === 0
-              ? "var(--color-burgundy-deep)"
-              : "var(--color-gold-muted)"
-          }
-          stroke="var(--color-bg-subtle)"
+          fill={i % 2 === 0 ? burgundy : goldMuted}
+          stroke={bgSubtle}
           strokeWidth="0.5"
         />
       ))}
@@ -126,12 +130,8 @@ function BoardIllustration() {
         <polygon
           key={`tr${i}`}
           points={`${138 + i * 19},15 ${148 + i * 19},60 ${158 + i * 19},15`}
-          fill={
-            i % 2 === 0
-              ? "var(--color-gold-muted)"
-              : "var(--color-burgundy-deep)"
-          }
-          stroke="var(--color-bg-subtle)"
+          fill={i % 2 === 0 ? goldMuted : burgundy}
+          stroke={bgSubtle}
           strokeWidth="0.5"
         />
       ))}
@@ -140,12 +140,8 @@ function BoardIllustration() {
         <polygon
           key={`bl${i}`}
           points={`${18 + i * 19},165 ${28 + i * 19},120 ${38 + i * 19},165`}
-          fill={
-            i % 2 === 0
-              ? "var(--color-gold-muted)"
-              : "var(--color-burgundy-deep)"
-          }
-          stroke="var(--color-bg-subtle)"
+          fill={i % 2 === 0 ? goldMuted : burgundy}
+          stroke={bgSubtle}
           strokeWidth="0.5"
         />
       ))}
@@ -154,12 +150,8 @@ function BoardIllustration() {
         <polygon
           key={`br${i}`}
           points={`${138 + i * 19},165 ${148 + i * 19},120 ${158 + i * 19},165`}
-          fill={
-            i % 2 === 0
-              ? "var(--color-burgundy-deep)"
-              : "var(--color-gold-muted)"
-          }
-          stroke="var(--color-bg-subtle)"
+          fill={i % 2 === 0 ? burgundy : goldMuted}
+          stroke={bgSubtle}
           strokeWidth="0.5"
         />
       ))}
@@ -178,8 +170,8 @@ function BoardIllustration() {
           cx={cx}
           cy={cy}
           r="8"
-          fill="var(--color-gold-dark)"
-          stroke="var(--color-gold-primary)"
+          fill={goldDark}
+          stroke={gold}
           strokeWidth="0.5"
           opacity="0.6"
         />
@@ -199,8 +191,8 @@ function BoardIllustration() {
           cx={cx}
           cy={cy}
           r="8"
-          fill="var(--color-burgundy-deep)"
-          stroke="var(--color-burgundy-primary)"
+          fill={burgundy}
+          stroke="#882040"
           strokeWidth="0.5"
           opacity="0.6"
         />
@@ -212,26 +204,26 @@ function BoardIllustration() {
         width="24"
         height="24"
         rx="4"
-        fill="var(--color-bg-elevated)"
-        stroke="var(--color-gold-dark)"
+        fill={bgElevated}
+        stroke={goldDark}
         strokeWidth="1"
       />
-      <circle cx="107" cy="85" r="2" fill="var(--color-gold-primary)" />
-      <circle cx="117" cy="95" r="2" fill="var(--color-gold-primary)" />
+      <circle cx="107" cy="85" r="2" fill={gold} />
+      <circle cx="117" cy="95" r="2" fill={gold} />
       <rect
         x="130"
         y="78"
         width="24"
         height="24"
         rx="4"
-        fill="var(--color-bg-elevated)"
-        stroke="var(--color-gold-dark)"
+        fill={bgElevated}
+        stroke={goldDark}
         strokeWidth="1"
       />
-      <circle cx="137" cy="85" r="2" fill="var(--color-gold-primary)" />
-      <circle cx="147" cy="85" r="2" fill="var(--color-gold-primary)" />
-      <circle cx="137" cy="95" r="2" fill="var(--color-gold-primary)" />
-      <circle cx="147" cy="95" r="2" fill="var(--color-gold-primary)" />
+      <circle cx="137" cy="85" r="2" fill={gold} />
+      <circle cx="147" cy="85" r="2" fill={gold} />
+      <circle cx="137" cy="95" r="2" fill={gold} />
+      <circle cx="147" cy="95" r="2" fill={gold} />
     </svg>
   );
 }
@@ -263,7 +255,7 @@ export default function LoginPage() {
       <div
         className="hidden lg:flex lg:flex-[0_0_45%]"
         style={{
-          background: "var(--color-bg-deepest)",
+          background: "#040604",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
@@ -284,7 +276,7 @@ export default function LoginPage() {
                 width: 60 + (i * 17) % 40,
                 height: 60 + (i * 17) % 40,
                 borderRadius: i % 3 === 0 ? "50%" : 8,
-                border: "2px solid var(--color-gold-primary)",
+                border: "2px solid #581428",
               }}
             />
           ))}
@@ -305,7 +297,7 @@ export default function LoginPage() {
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
-              color: "var(--color-text-primary)",
+              color: "#ECE8E0",
               margin: "32px 0 16px",
               lineHeight: 1.3,
             }}
@@ -317,7 +309,7 @@ export default function LoginPage() {
           <p
             style={{
               fontSize: 15,
-              color: "var(--color-text-secondary)",
+              color: "rgba(236,232,224,0.7)",
               lineHeight: 1.6,
               margin: 0,
               fontFamily: "var(--font-body)",
@@ -344,9 +336,9 @@ export default function LoginPage() {
                   style={{
                     padding: "6px 14px",
                     borderRadius: 20,
-                    border: "1px solid var(--color-gold-dark)",
+                    border: "1px solid rgba(236,232,224,0.2)",
                     fontSize: 12,
-                    color: "var(--color-text-primary)",
+                    color: "rgba(236,232,224,0.85)",
                     fontWeight: 500,
                     fontFamily: "var(--font-body)",
                   }}
