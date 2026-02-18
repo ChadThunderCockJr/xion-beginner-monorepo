@@ -389,6 +389,257 @@ export async function deleteChallenge(id: string): Promise<void> {
   } catch { /* ignore */ }
 }
 
+// ── Ratings ───────────────────────────────────────────────────
+
+export interface RatingInfo {
+  rating: number;
+  ratingChange: number;
+}
+
+export async function getRating(address: string): Promise<RatingInfo> {
+  try {
+    const r = getRedis();
+    if (!r) return { rating: 1500, ratingChange: 0 };
+    const data = await r.hgetall(`rating:${address}`);
+    return {
+      rating: data.rating ? parseInt(data.rating) : 1500,
+      ratingChange: data.ratingChange ? parseInt(data.ratingChange) : 0,
+    };
+  } catch { return { rating: 1500, ratingChange: 0 }; }
+}
+
+export async function updateRatings(
+  winnerAddr: string,
+  loserAddr: string,
+  resultType: string,
+): Promise<void> {
+  try {
+    const r = getRedis();
+    if (!r) return;
+
+    const winnerData = await r.hgetall(`rating:${winnerAddr}`);
+    const loserData = await r.hgetall(`rating:${loserAddr}`);
+    const winnerRating = winnerData.rating ? parseInt(winnerData.rating) : 1500;
+    const loserRating = loserData.rating ? parseInt(loserData.rating) : 1500;
+
+    const K = 32;
+    const multiplier = resultType === "backgammon" ? 2 : resultType === "gammon" ? 1.5 : 1;
+
+    const expectedWinner = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
+    const expectedLoser = 1 - expectedWinner;
+
+    const winnerChange = Math.round(K * multiplier * (1 - expectedWinner));
+    const loserChange = Math.round(K * multiplier * (0 - expectedLoser));
+
+    const newWinnerRating = Math.max(100, winnerRating + winnerChange);
+    const newLoserRating = Math.max(100, loserRating + loserChange);
+
+    await r.hset(`rating:${winnerAddr}`, "rating", String(newWinnerRating), "ratingChange", String(winnerChange));
+    await r.hset(`rating:${loserAddr}`, "rating", String(newLoserRating), "ratingChange", String(loserChange));
+
+    // Update leaderboard sorted set
+    await r.zadd("leaderboard", newWinnerRating, winnerAddr);
+    await r.zadd("leaderboard", newLoserRating, loserAddr);
+  } catch { /* ignore */ }
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+
+export interface PlayerStats {
+  wins: number;
+  losses: number;
+  totalGames: number;
+  currentStreak: number;
+  currentStreakType: "W" | "L" | "";
+}
+
+export async function getStats(address: string): Promise<PlayerStats> {
+  try {
+    const r = getRedis();
+    if (!r) return { wins: 0, losses: 0, totalGames: 0, currentStreak: 0, currentStreakType: "" };
+    const data = await r.hgetall(`stats:${address}`);
+    if (data.totalGames) {
+      return {
+        wins: parseInt(data.wins || "0"),
+        losses: parseInt(data.losses || "0"),
+        totalGames: parseInt(data.totalGames || "0"),
+        currentStreak: parseInt(data.currentStreak || "0"),
+        currentStreakType: (data.currentStreakType || "") as "W" | "L" | "",
+      };
+    }
+    // Backfill from match history
+    const matches = await getMatchResults(address, 100);
+    let wins = 0, losses = 0;
+    for (const m of matches) {
+      if (m.result === "W") wins++;
+      else losses++;
+    }
+    // Compute current streak from most recent
+    let streak = 0;
+    let streakType: "W" | "L" | "" = "";
+    for (const m of matches) {
+      if (streakType === "") {
+        streakType = m.result;
+        streak = 1;
+      } else if (m.result === streakType) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    const stats: PlayerStats = {
+      wins, losses, totalGames: wins + losses,
+      currentStreak: streak, currentStreakType: streakType,
+    };
+    // Persist backfilled stats
+    if (stats.totalGames > 0) {
+      await r.hset(`stats:${address}`,
+        "wins", String(stats.wins),
+        "losses", String(stats.losses),
+        "totalGames", String(stats.totalGames),
+        "currentStreak", String(stats.currentStreak),
+        "currentStreakType", stats.currentStreakType,
+      );
+    }
+    return stats;
+  } catch { return { wins: 0, losses: 0, totalGames: 0, currentStreak: 0, currentStreakType: "" }; }
+}
+
+export async function updateStats(address: string, result: "W" | "L"): Promise<void> {
+  try {
+    const r = getRedis();
+    if (!r) return;
+    const key = `stats:${address}`;
+    const exists = await r.exists(key);
+    if (!exists) {
+      // Initialize
+      await r.hset(key,
+        "wins", result === "W" ? "1" : "0",
+        "losses", result === "L" ? "1" : "0",
+        "totalGames", "1",
+        "currentStreak", "1",
+        "currentStreakType", result,
+      );
+      return;
+    }
+    if (result === "W") {
+      await r.hincrby(key, "wins", 1);
+    } else {
+      await r.hincrby(key, "losses", 1);
+    }
+    await r.hincrby(key, "totalGames", 1);
+
+    // Update streak
+    const streakType = await r.hget(key, "currentStreakType");
+    if (streakType === result) {
+      await r.hincrby(key, "currentStreak", 1);
+    } else {
+      await r.hset(key, "currentStreak", "1", "currentStreakType", result);
+    }
+  } catch { /* ignore */ }
+}
+
+// ── Leaderboard ───────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  rank: number;
+  address: string;
+  displayName: string;
+  rating: number;
+  wins: number;
+  losses: number;
+  totalGames: number;
+  online: boolean;
+}
+
+export async function getLeaderboard(limit = 50, offset = 0): Promise<{ entries: LeaderboardEntry[]; total: number }> {
+  try {
+    const r = getRedis();
+    if (!r) return { entries: [], total: 0 };
+    const total = await r.zcard("leaderboard");
+    const members = await r.zrevrange("leaderboard", offset, offset + limit - 1, "WITHSCORES");
+    const entries: LeaderboardEntry[] = [];
+    for (let i = 0; i < members.length; i += 2) {
+      const address = members[i];
+      const rating = parseInt(members[i + 1]);
+      const [profile, stats, online] = await Promise.all([
+        getProfile(address),
+        getStats(address),
+        isOnline(address),
+      ]);
+      entries.push({
+        rank: offset + (i / 2) + 1,
+        address,
+        displayName: profile?.displayName || profile?.username || address.slice(0, 12),
+        rating,
+        wins: stats.wins,
+        losses: stats.losses,
+        totalGames: stats.totalGames,
+        online,
+      });
+    }
+    return { entries, total };
+  } catch { return { entries: [], total: 0 }; }
+}
+
+export async function getPlayerRank(address: string): Promise<number | null> {
+  try {
+    const r = getRedis();
+    if (!r) return null;
+    const rank = await r.zrevrank("leaderboard", address);
+    return rank !== null ? rank : null;
+  } catch { return null; }
+}
+
+export async function getLeaderboardSize(): Promise<number> {
+  try {
+    const r = getRedis();
+    if (!r) return 0;
+    return await r.zcard("leaderboard");
+  } catch { return 0; }
+}
+
+export async function getFriendsLeaderboard(address: string): Promise<LeaderboardEntry[]> {
+  try {
+    const r = getRedis();
+    if (!r) return [];
+    const friendAddrs = await getFriends(address);
+    const allAddrs = [...friendAddrs, address]; // include self
+    const entries: LeaderboardEntry[] = [];
+    for (const addr of allAddrs) {
+      const [ratingInfo, profile, stats, online] = await Promise.all([
+        getRating(addr),
+        getProfile(addr),
+        getStats(addr),
+        isOnline(addr),
+      ]);
+      entries.push({
+        rank: 0, // will be assigned after sort
+        address: addr,
+        displayName: profile?.displayName || profile?.username || addr.slice(0, 12),
+        rating: ratingInfo.rating,
+        wins: stats.wins,
+        losses: stats.losses,
+        totalGames: stats.totalGames,
+        online,
+      });
+    }
+    entries.sort((a, b) => b.rating - a.rating);
+    entries.forEach((e, i) => { e.rank = i + 1; });
+    return entries;
+  } catch { return []; }
+}
+
+// ── Online Count ──────────────────────────────────────────────
+
+export async function getOnlineCount(): Promise<number> {
+  try {
+    const r = getRedis();
+    if (!r) return 0;
+    return await r.scard("online_players");
+  } catch { return 0; }
+}
+
 // ── Game History ───────────────────────────────────────────────
 
 const GAME_HISTORY_TTL = 30 * 24 * 60 * 60; // 30 days

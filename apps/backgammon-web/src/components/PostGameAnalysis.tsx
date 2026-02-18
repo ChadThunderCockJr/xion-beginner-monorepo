@@ -447,21 +447,6 @@ export interface PostGameAnalysisProps {
   onBack: () => void;
 }
 
-/* ── Fallback Move Data ── */
-const MOCK_MOVES = [
-  { moveNum: 1, dice: [3, 1], move: "8/5 6/5", player: "white" as Player, equity: 0.012, error: null, isBlunder: false },
-  { moveNum: 2, dice: [6, 4], move: "24/14", player: "black" as Player, equity: -0.008, error: null, isBlunder: false },
-  { moveNum: 3, dice: [5, 3], move: "13/8 13/10", player: "white" as Player, equity: 0.045, error: null, isBlunder: false },
-  { moveNum: 4, dice: [6, 5], move: "24/13", player: "black" as Player, equity: -0.021, error: null, isBlunder: false },
-  { moveNum: 5, dice: [4, 4], move: "13/9(2) 9/5(2)", player: "white" as Player, equity: 0.156, error: null, isBlunder: false },
-  { moveNum: 6, dice: [6, 3], move: "13/4", player: "black" as Player, equity: -0.034, error: "Inaccuracy", isBlunder: false },
-  { moveNum: 7, dice: [5, 2], move: "13/8 13/11", player: "white" as Player, equity: 0.003, error: null, isBlunder: false },
-  { moveNum: 8, dice: [6, 1], move: "13/6", player: "black" as Player, equity: -0.182, error: "Blunder", isBlunder: true },
-  { moveNum: 9, dice: [3, 3], move: "8/5(2) 6/3(2)", player: "white" as Player, equity: 0.089, error: null, isBlunder: false },
-  { moveNum: 10, dice: [5, 4], move: "9/5 9/4", player: "black" as Player, equity: -0.015, error: null, isBlunder: false },
-  { moveNum: 11, dice: [6, 2], move: "7/1 6/4", player: "white" as Player, equity: -0.098, error: "Mistake", isBlunder: false },
-  { moveNum: 12, dice: [4, 1], move: "5/1 4/3", player: "black" as Player, equity: 0.022, error: null, isBlunder: false },
-];
 
 function formatMoveNotation(moves: { from: number; to: number }[]): string {
   if (moves.length === 0) return "(no moves)";
@@ -507,7 +492,7 @@ export function PostGameAnalysis({
         equity: 0, error: null, isBlunder: false,
       }));
     }
-    return MOCK_MOVES;
+    return [];
   }, [analysis, hasRealData, turnHistory]);
 
   const [activeTab, setActiveTab] = useState("analysis");

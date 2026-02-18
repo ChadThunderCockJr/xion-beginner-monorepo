@@ -47,6 +47,41 @@ app.get("/api/matches/:address", async (req, res) => {
   res.json({ matches });
 });
 
+// Stats + rating merged
+app.get("/api/stats/:address", async (req, res) => {
+  const [stats, rating] = await Promise.all([
+    socialStore.getStats(req.params.address),
+    socialStore.getRating(req.params.address),
+  ]);
+  res.json({ ...stats, ...rating });
+});
+
+// Leaderboard
+app.get("/api/leaderboard", async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const offset = parseInt(req.query.offset as string) || 0;
+  const result = await socialStore.getLeaderboard(limit, offset);
+  res.json(result);
+});
+
+// Player rank
+app.get("/api/rank/:address", async (req, res) => {
+  const rank = await socialStore.getPlayerRank(req.params.address);
+  res.json({ rank });
+});
+
+// Friends leaderboard
+app.get("/api/leaderboard/friends/:address", async (req, res) => {
+  const entries = await socialStore.getFriendsLeaderboard(req.params.address);
+  res.json({ entries });
+});
+
+// Online count
+app.get("/api/online-count", async (_req, res) => {
+  const count = await socialStore.getOnlineCount();
+  res.json({ count });
+});
+
 app.get("/api/game/:gameId/history", async (req, res) => {
   const moveHistory = await socialStore.getGameHistory(req.params.gameId);
   if (!moveHistory) {
@@ -119,7 +154,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
   switch (msg.type) {
     case "auth": {
       // For MVP, trust the address (production would verify signature)
-      connections.set(ws, { address: msg.address, rating: 1500 });
+      const ratingInfo = await socialStore.getRating(msg.address);
+      connections.set(ws, { address: msg.address, rating: ratingInfo.rating });
       send(ws, { type: "auth_ok", address: msg.address });
 
       // Social: ensure profile, send it, mark online, notify friends
@@ -139,7 +175,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
             const player: PlayerConnection = {
               ws,
               address: msg.address,
-              rating: 1500,
+              rating: ratingInfo.rating,
               connectedAt: Date.now(),
             };
             gameManager.handleReconnect(existingGameId, player);

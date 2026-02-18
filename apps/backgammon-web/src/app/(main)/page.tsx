@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Card, Avatar } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchStats, fetchMatches, fetchOnlineCount, timeAgo } from "@/lib/api";
+import type { PlayerStats, MatchResult } from "@/lib/api";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -263,10 +265,24 @@ function PlayerRowStyled({
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { address, logout } = useAuth();
   const social = useSocialContext();
   const { displayName, username } = social;
   const playerName = displayName || username || "Player";
+
+  // Live data state
+  const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [onlineCount, setOnlineCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!address) return;
+    fetchStats(address).then(setStats).catch(() => {});
+    fetchMatches(address, 4).then(setMatches).catch(() => {});
+    fetchOnlineCount().then(setOnlineCount).catch(() => {});
+  }, [address]);
+
+  const onlineFriends = social.friends.filter(f => f.online);
 
   // Inline search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -356,7 +372,7 @@ export default function DashboardPage() {
               fontFamily: "var(--font-body)",
             }}
           >
-            18,247 players online right now
+            {onlineCount > 0 ? `${onlineCount.toLocaleString()} players online right now` : "Welcome to Backgammon"}
           </p>
         </div>
 
@@ -568,7 +584,7 @@ export default function DashboardPage() {
                 fontFamily: "var(--font-mono)",
               }}
             >
-              $124.50
+              --
             </span>
             <span
               style={{
@@ -855,28 +871,20 @@ export default function DashboardPage() {
               </button>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-              <Stat label="Rating" value="1,847" sub="↑ 23" />
-              <div
-                style={{
-                  width: 1,
-                  background: "var(--color-bg-subtle)",
-                }}
+              <Stat
+                label="Rating"
+                value={stats ? stats.rating.toLocaleString() : "--"}
+                sub={stats && stats.ratingChange !== 0 ? `${stats.ratingChange > 0 ? "↑" : "↓"} ${Math.abs(stats.ratingChange)}` : undefined}
               />
-              <Stat label="W / L / D" value="847/612/34" />
-              <div
-                style={{
-                  width: 1,
-                  background: "var(--color-bg-subtle)",
-                }}
+              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <Stat label="W / L" value={stats ? `${stats.wins}/${stats.losses}` : "--"} />
+              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <Stat label="Avg PR" value="--" />
+              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <Stat
+                label="Streak"
+                value={stats && stats.currentStreak > 0 ? `${stats.currentStreak}${stats.currentStreakType}` : "--"}
               />
-              <Stat label="Avg PR" value="5.2" sub="Advanced" />
-              <div
-                style={{
-                  width: 1,
-                  background: "var(--color-bg-subtle)",
-                }}
-              />
-              <Stat label="Streak" value="4W" />
             </div>
           </Card>
 
@@ -919,34 +927,20 @@ export default function DashboardPage() {
                 Full history {Icons.chevron("var(--color-text-secondary)")}
               </button>
             </div>
-            <MatchRowStyled
-              opponent="MarcGM"
-              result="W"
-              score="7-4"
-              pr="4.1"
-              date="2 hours ago"
-            />
-            <MatchRowStyled
-              opponent="DiceKing99"
-              result="L"
-              score="3-7"
-              pr="6.8"
-              date="Yesterday"
-            />
-            <MatchRowStyled
-              opponent="NardePlayer"
-              result="W"
-              score="7-2"
-              pr="3.2"
-              date="Yesterday"
-            />
-            <MatchRowStyled
-              opponent="BackgammonPro"
-              result="W"
-              score="5-3"
-              pr="4.9"
-              date="2 days ago"
-            />
+            {matches.length > 0 ? matches.map((m, i) => (
+              <MatchRowStyled
+                key={i}
+                opponent={m.opponentName || m.opponent.slice(0, 10)}
+                result={m.result}
+                score={m.resultType}
+                pr="--"
+                date={timeAgo(m.timestamp)}
+              />
+            )) : (
+              <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: "var(--color-text-muted)" }}>
+                No matches yet. Play a game to see your history!
+              </div>
+            )}
           </Card>
         </div>
 
@@ -1040,25 +1034,21 @@ export default function DashboardPage() {
                   fontFamily: "var(--font-mono)",
                 }}
               >
-                7
+                {onlineFriends.length}
               </span>
             </div>
-            <PlayerRowStyled name="MarcGM" rating="2,134" status="online" />
-            <PlayerRowStyled
-              name="TavlaQueen"
-              rating="1,923"
-              status="online"
-            />
-            <PlayerRowStyled
-              name="DiceRoller"
-              rating="1,756"
-              status="online"
-            />
-            <PlayerRowStyled
-              name="BGMaster"
-              rating="1,680"
-              status="offline"
-            />
+            {onlineFriends.length > 0 ? onlineFriends.slice(0, 6).map(f => (
+              <PlayerRowStyled
+                key={f.address}
+                name={f.displayName || f.address.slice(0, 10)}
+                rating=""
+                status="online"
+              />
+            )) : (
+              <div style={{ padding: "16px 0", textAlign: "center", fontSize: 12, color: "var(--color-text-muted)" }}>
+                {social.friends.length === 0 ? "Add friends to see them here" : "No friends online"}
+              </div>
+            )}
           </Card>
 
 

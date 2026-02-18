@@ -14,6 +14,10 @@ import {
   PillGroup,
   SectionLabel,
 } from "@/components/ui";
+import { useAuth } from "@/hooks/useAuth";
+import { useSocialContext } from "@/contexts/SocialContext";
+import { fetchLeaderboard, fetchFriendsLeaderboard, fetchRank, fetchStats } from "@/lib/api";
+import type { LeaderboardEntry, PlayerStats } from "@/lib/api";
 
 /* ── Constants ── */
 
@@ -35,38 +39,11 @@ const SORT_OPTIONS = [
   { id: "earnings", label: "Earnings" },
 ];
 
-/* ── Mock Data ── */
-
-const GLOBAL_PLAYERS = [
-  { rank: 1, name: "GammonKing", rating: 2312, pr: 2.1, winRate: 68, games: 4210, online: true },
-  { rank: 2, name: "MarcGM", rating: 2134, pr: 2.8, winRate: 65, games: 3847, online: true },
-  { rank: 3, name: "CubeQueen", rating: 2089, pr: 3.1, winRate: 63, games: 2956, online: false },
-  { rank: 4, name: "BGMaster42", rating: 2045, pr: 3.3, winRate: 62, games: 3102, online: true },
-  { rank: 5, name: "DoublingDan", rating: 1998, pr: 3.6, winRate: 60, games: 2714, online: false },
-  { rank: 6, name: "TavlaQueen", rating: 1923, pr: 4.0, winRate: 59, games: 2188, online: true },
-  { rank: 7, name: "NardePlayer", rating: 1901, pr: 4.2, winRate: 58, games: 1845, online: false },
-  { rank: 8, name: "DiceRoller", rating: 1878, pr: 4.5, winRate: 57, games: 2340, online: true },
-  { rank: 9, name: "PointBuilder", rating: 1862, pr: 4.7, winRate: 56, games: 1923, online: false },
-  { rank: 10, name: "BackgamPro", rating: 1855, pr: 4.8, winRate: 56, games: 1678, online: false },
-];
-
-const YOU_GLOBAL = {
-  rank: 47, name: "Anthony", rating: 1847, pr: 5.2, winRate: 58, games: 1493, online: true, isYou: true,
-};
-
-const FRIEND_PLAYERS = [
-  { rank: 1, name: "MarcGM", rating: 2134, pr: 2.8, winRate: 65, games: 3847, online: true },
-  { rank: 2, name: "TavlaQueen", rating: 1923, pr: 4.0, winRate: 59, games: 2188, online: true },
-  { rank: 3, name: "DiceRoller", rating: 1878, pr: 4.5, winRate: 57, games: 2340, online: true },
-  { rank: 4, name: "Anthony", rating: 1847, pr: 5.2, winRate: 58, games: 1493, online: true, isYou: true },
-  { rank: 5, name: "BGMaster", rating: 1680, pr: 5.8, winRate: 52, games: 987, online: false },
-  { rank: 6, name: "NardePlayer", rating: 1512, pr: 6.4, winRate: 48, games: 654, online: false },
-];
-
 /* ── Podium Spot ── */
-function PodiumSpot({ rank, name, rating, pr, games, height }: {
-  rank: number; name: string; rating: number; pr: number | string; games: number; height: number;
+function PodiumSpot({ rank, entry, height }: {
+  rank: number; entry: LeaderboardEntry; height: number;
 }) {
+  const name = entry.displayName || entry.address.slice(0, 12);
   return (
     <div className="flex flex-col items-center flex-1">
       <div className={cn(
@@ -82,10 +59,10 @@ function PodiumSpot({ rank, name, rating, pr, games, height }: {
         "text-base font-bold font-mono mt-0.5",
         rank === 1 ? "text-gold-primary" : "text-text-primary",
       )}>
-        {rating.toLocaleString()}
+        {entry.rating.toLocaleString()}
       </div>
       <div className="text-[10px] text-text-muted font-mono mt-px">
-        PR {pr} &middot; {games} games
+        PR {"--"} &middot; {entry.totalGames} games
       </div>
       <div
         className={cn(
@@ -110,10 +87,10 @@ function PodiumSpot({ rank, name, rating, pr, games, height }: {
 }
 
 /* ── Leaderboard Row ── */
-function LeaderboardRow({ rank, name, rating, pr, winRate, games, isYou, online }: {
-  rank: number; name: string; rating: number; pr: number; winRate: number; games: number; isYou?: boolean; online?: boolean;
-}) {
-  const href = isYou ? "/profile" : `/profile/${name.toLowerCase().replace(/\s+/g, "-")}`;
+function LeaderboardRow({ entry, isYou }: { entry: LeaderboardEntry; isYou: boolean }) {
+  const href = isYou ? "/profile" : `/profile/${entry.address}`;
+  const name = entry.displayName || entry.address.slice(0, 12);
+  const winRate = entry.totalGames > 0 ? Math.round((entry.wins / entry.totalGames) * 100) : 0;
   return (
     <Link
       href={href}
@@ -127,13 +104,13 @@ function LeaderboardRow({ rank, name, rating, pr, winRate, games, isYou, online 
         "w-7 text-center text-sm font-bold font-mono",
         isYou ? "text-text-primary" : "text-text-secondary",
       )}>
-        {rank}
+        {entry.rank}
       </span>
 
       {/* Avatar + online indicator */}
       <div className="relative">
         <Avatar name={name} size="sm" />
-        {online && (
+        {entry.online && (
           <span className={cn(
             "absolute bottom-0 right-0 w-2 h-2 rounded-full bg-success border-2",
             isYou ? "border-bg-base" : "border-bg-surface",
@@ -159,12 +136,12 @@ function LeaderboardRow({ rank, name, rating, pr, winRate, games, isYou, online 
 
       {/* Rating */}
       <span className="text-[15px] font-bold font-mono text-text-primary min-w-[50px] text-right tabular-nums">
-        {rating.toLocaleString()}
+        {entry.rating.toLocaleString()}
       </span>
 
       {/* PR */}
       <span className="text-xs font-semibold font-mono text-text-secondary min-w-[32px] text-right tabular-nums">
-        {pr}
+        {"--"}
       </span>
 
       {/* Win Rate */}
@@ -174,7 +151,7 @@ function LeaderboardRow({ rank, name, rating, pr, winRate, games, isYou, online 
 
       {/* Games */}
       <span className="text-[11px] font-mono text-text-muted min-w-[40px] text-right tabular-nums">
-        {games.toLocaleString()}
+        {entry.totalGames.toLocaleString()}
       </span>
     </Link>
   );
@@ -183,17 +160,10 @@ function LeaderboardRow({ rank, name, rating, pr, winRate, games, isYou, online 
 /* ════════════════════════════════════════════════════════════════════
    MAIN — LEADERBOARD PAGE
    ════════════════════════════════════════════════════════════════════ */
-/* ── All known players for search ── */
-const ALL_PLAYERS = [
-  ...GLOBAL_PLAYERS,
-  YOU_GLOBAL,
-  ...FRIEND_PLAYERS.filter(
-    (f) => !GLOBAL_PLAYERS.some((g) => g.name === f.name) && f.name !== YOU_GLOBAL.name,
-  ),
-];
 
 export default function LeaderboardPage() {
   const router = useRouter();
+  const { address } = useAuth();
   const [scope, setScope] = useState("global");
   const [period, setPeriod] = useState("allTime");
   const [sortBy, setSortBy] = useState("rating");
@@ -201,6 +171,24 @@ export default function LeaderboardPage() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const [globalEntries, setGlobalEntries] = useState<LeaderboardEntry[]>([]);
+  const [friendEntries, setFriendEntries] = useState<LeaderboardEntry[]>([]);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [myStats, setMyStats] = useState<PlayerStats | null>(null);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+
+  useEffect(() => {
+    fetchLeaderboard(50).then(data => {
+      setGlobalEntries(data.entries);
+      setTotalPlayers(data.total);
+    }).catch(() => {});
+    if (address) {
+      fetchFriendsLeaderboard(address).then(data => setFriendEntries(data.entries)).catch(() => {});
+      fetchRank(address).then(r => setMyRank(r)).catch(() => {});
+      fetchStats(address).then(setMyStats).catch(() => {});
+    }
+  }, [address]);
 
   // Cmd/Ctrl+K shortcut to focus search
   useEffect(() => {
@@ -214,11 +202,25 @@ export default function LeaderboardPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  const allEntries = useMemo(() => {
+    const seen = new Set<string>();
+    const combined: LeaderboardEntry[] = [];
+    for (const e of [...globalEntries, ...friendEntries]) {
+      if (!seen.has(e.address)) {
+        seen.add(e.address);
+        combined.push(e);
+      }
+    }
+    return combined;
+  }, [globalEntries, friendEntries]);
+
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
-    return ALL_PLAYERS.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 6);
-  }, [search]);
+    return allEntries.filter((e) =>
+      (e.displayName || e.address).toLowerCase().includes(q)
+    ).slice(0, 6);
+  }, [search, allEntries]);
 
   // Reset selection when results change
   useEffect(() => setSelectedIdx(-1), [searchResults]);
@@ -233,8 +235,8 @@ export default function LeaderboardPage() {
     } else if (e.key === "Enter" && selectedIdx >= 0 && searchResults[selectedIdx]) {
       e.preventDefault();
       const p = searchResults[selectedIdx];
-      const isYou = "isYou" in p && p.isYou;
-      router.push(isYou ? "/profile" : `/profile/${p.name.toLowerCase().replace(/\s+/g, "-")}`);
+      const isYou = !!address && p.address === address;
+      router.push(isYou ? "/profile" : `/profile/${p.address}`);
       setSearch("");
       searchRef.current?.blur();
     } else if (e.key === "Escape") {
@@ -243,11 +245,28 @@ export default function LeaderboardPage() {
     }
   };
 
-  const players = scope === "global" ? GLOBAL_PLAYERS : FRIEND_PLAYERS;
+  const players = scope === "global" ? globalEntries : friendEntries;
   const top3 = players.slice(0, 3);
   const rest = players.slice(3);
-  const youEntry = scope === "global" ? YOU_GLOBAL : FRIEND_PLAYERS.find((p) => p.isYou);
-  const yourRank = scope === "global" ? 47 : 4;
+
+  const myWinRate = myStats && myStats.totalGames > 0
+    ? Math.round((myStats.wins / myStats.totalGames) * 100)
+    : 0;
+
+  const myEntry = address && myStats
+    ? {
+        rank: myRank ?? 0,
+        address,
+        displayName: "",
+        rating: myStats.rating,
+        wins: myStats.wins,
+        losses: myStats.losses,
+        totalGames: myStats.totalGames,
+        online: true,
+      } as LeaderboardEntry
+    : null;
+
+  const showYouRow = scope === "global" && myEntry && myRank != null && myRank > 3 && !rest.some(e => e.address === address);
 
   return (
     <div>
@@ -286,11 +305,13 @@ export default function LeaderboardPage() {
             {searchFocused && searchResults.length > 0 && (
               <div className="absolute z-20 left-0 right-0 mt-1 rounded-[var(--radius-card)] bg-bg-elevated border border-border-subtle shadow-elevated overflow-hidden">
                 {searchResults.map((p, i) => {
-                  const isYou = "isYou" in p && !!(p as typeof YOU_GLOBAL).isYou;
-                  const href = isYou ? "/profile" : `/profile/${p.name.toLowerCase().replace(/\s+/g, "-")}`;
+                  const isYou = !!address && p.address === address;
+                  const href = isYou ? "/profile" : `/profile/${p.address}`;
+                  const name = p.displayName || p.address.slice(0, 12);
+                  const winRate = p.totalGames > 0 ? Math.round((p.wins / p.totalGames) * 100) : 0;
                   return (
                     <Link
-                      key={p.name}
+                      key={p.address}
                       href={href}
                       onClick={() => { setSearch(""); }}
                       className={cn(
@@ -298,11 +319,11 @@ export default function LeaderboardPage() {
                         i === selectedIdx ? "bg-bg-subtle" : "hover:bg-bg-subtle",
                       )}
                     >
-                      <Avatar name={p.name} size="sm" />
+                      <Avatar name={name} size="sm" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[13px] font-semibold text-text-primary truncate font-body">
-                            {p.name}
+                            {name}
                           </span>
                           {isYou && (
                             <span className="text-[9px] px-1.5 py-px rounded-sm bg-gold-primary text-[var(--color-accent-fg)] font-bold font-body">
@@ -314,7 +335,7 @@ export default function LeaderboardPage() {
                           )}
                         </div>
                         <div className="text-[11px] text-text-muted font-mono">
-                          {p.rating.toLocaleString()} rating &middot; {p.winRate}% win
+                          {p.rating.toLocaleString()} rating &middot; {winRate}% win
                         </div>
                       </div>
                       <span className="text-xs font-bold font-mono text-text-secondary">
@@ -371,10 +392,7 @@ export default function LeaderboardPage() {
               {top3[1] && (
                 <PodiumSpot
                   rank={2}
-                  name={top3[1].name}
-                  rating={top3[1].rating}
-                  pr={top3[1].pr}
-                  games={top3[1].games}
+                  entry={top3[1]}
                   height={64}
                 />
               )}
@@ -382,10 +400,7 @@ export default function LeaderboardPage() {
               {top3[0] && (
                 <PodiumSpot
                   rank={1}
-                  name={top3[0].name}
-                  rating={top3[0].rating}
-                  pr={top3[0].pr}
-                  games={top3[0].games}
+                  entry={top3[0]}
                   height={88}
                 />
               )}
@@ -393,10 +408,7 @@ export default function LeaderboardPage() {
               {top3[2] && (
                 <PodiumSpot
                   rank={3}
-                  name={top3[2].name}
-                  rating={top3[2].rating}
-                  pr={top3[2].pr}
-                  games={top3[2].games}
+                  entry={top3[2]}
                   height={48}
                 />
               )}
@@ -440,11 +452,11 @@ export default function LeaderboardPage() {
             {/* Rows (4th place onward) */}
             <div className="max-h-[440px] overflow-auto">
               {rest.map((player) => (
-                <LeaderboardRow key={player.rank} {...player} />
+                <LeaderboardRow key={player.address} entry={player} isYou={!!address && player.address === address} />
               ))}
 
               {/* Separator gap to "You" row (global only) */}
-              {scope === "global" && (
+              {showYouRow && myEntry && (
                 <>
                   <div className="flex items-center gap-2.5 px-3.5 py-1.5">
                     <span className="w-7 text-center text-sm text-text-muted tracking-widest font-mono">
@@ -454,43 +466,49 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Your rank */}
-                  <LeaderboardRow {...YOU_GLOBAL} />
+                  <LeaderboardRow entry={myEntry} isYou={true} />
                 </>
               )}
             </div>
 
             {/* Total players */}
             <div className="mt-2 pt-2.5 border-t border-border-subtle text-[11px] text-text-muted text-center font-mono px-3.5">
-              {scope === "global" ? "2,847 active players" : `${FRIEND_PLAYERS.length} friends ranked`}
+              {scope === "global" ? `${totalPlayers.toLocaleString()} active players` : `${friendEntries.length} friends ranked`}
             </div>
           </Card>
 
           {/* ═══ YOUR RANK SUMMARY ═══ */}
-          {youEntry && (
+          {myRank != null && myStats && (
             <Card className="!bg-bg-base !border-[1.5px] !border-gold-muted">
               <div className="flex items-center gap-4">
                 <span className="text-[32px] font-bold text-gold-primary font-mono min-w-[56px] text-center">
-                  #{yourRank}
+                  #{myRank}
                 </span>
                 <div className="w-px h-12 bg-bg-subtle" />
                 <div className="flex-1">
                   <div className="text-sm font-bold text-text-primary mb-1 font-body">Your Rank</div>
                   <div className="flex gap-4 text-xs text-text-secondary font-body">
                     <span>
-                      <strong className="text-text-primary font-mono">{youEntry.rating.toLocaleString()}</strong> rating
+                      <strong className="text-text-primary font-mono">{myStats.rating.toLocaleString()}</strong> rating
                     </span>
                     <span>
-                      <strong className="text-text-primary font-mono">{youEntry.pr}</strong> avg PR
+                      <strong className="text-text-primary font-mono">{"--"}</strong> avg PR
                     </span>
                     <span>
-                      <strong className="text-text-primary font-mono">{youEntry.winRate}%</strong> win rate
+                      <strong className="text-text-primary font-mono">{myWinRate}%</strong> win rate
                     </span>
                   </div>
                 </div>
                 <div className="text-[11px] text-text-secondary text-right font-body">
-                  <div className="font-semibold">Top {scope === "global" ? "2%" : "67%"}</div>
+                  <div className="font-semibold">
+                    {scope === "global" && totalPlayers > 0
+                      ? `Top ${Math.max(1, Math.round((myRank / totalPlayers) * 100))}%`
+                      : scope === "friends" && friendEntries.length > 0
+                        ? `Top ${Math.max(1, Math.round((myRank / friendEntries.length) * 100))}%`
+                        : "--"}
+                  </div>
                   <div className="text-[10px] text-text-muted mt-0.5">
-                    {scope === "global" ? "of 2,847 players" : `of ${FRIEND_PLAYERS.length} friends`}
+                    {scope === "global" ? `of ${totalPlayers.toLocaleString()} players` : `of ${friendEntries.length} friends`}
                   </div>
                 </div>
               </div>

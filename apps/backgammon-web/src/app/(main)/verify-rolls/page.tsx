@@ -6,19 +6,8 @@ import { Card, SectionLabel, Avatar, Badge } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMove } from "@xion-beginner/backgammon-core";
 import type { MoveRecord, Player } from "@xion-beginner/backgammon-core";
-import { WS_URL } from "@/lib/ws-config";
-
-// Derive HTTP API base from the WS URL
-const API_BASE = WS_URL.replace(/^ws(s?):/, "http$1:").replace(/\/ws$/, "");
-
-interface MatchResult {
-  gameId: string;
-  opponent: string;
-  opponentName: string;
-  result: "W" | "L";
-  resultType: string;
-  timestamp: number;
-}
+import { API_BASE } from "@/lib/api";
+import type { MatchResult } from "@/lib/api";
 
 // ─── Icons ─────────────────────────────────────────────────────────
 

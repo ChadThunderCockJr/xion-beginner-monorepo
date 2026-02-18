@@ -370,6 +370,13 @@ export class SocialManager {
       timestamp: now,
     });
 
+    // Update ratings and stats
+    const winnerAddr = winner === "white" ? whiteAddr : blackAddr;
+    const loserAddr = winner === "white" ? blackAddr : whiteAddr;
+    await store.updateRatings(winnerAddr, loserAddr, resultType);
+    await store.updateStats(winnerAddr, "W");
+    await store.updateStats(loserAddr, "L");
+
     // Activity entries
     if (winner === "white") {
       await store.addActivity(whiteAddr, {

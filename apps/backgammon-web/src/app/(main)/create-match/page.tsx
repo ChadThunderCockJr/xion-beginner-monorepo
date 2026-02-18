@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { useGame } from "@/hooks/useGame";
 import { useAuth } from "@/hooks/useAuth";
+import { useSocialContext } from "@/contexts/SocialContext";
 import { WS_URL } from "@/lib/ws-config";
 
 /* ── Constants ── */
@@ -41,14 +42,6 @@ const MAX_CUBE_VALUES = [2, 4, 8, 16, 32, 64];
 const INVITE_SEGMENTS = [
   { id: "friend", label: "Select a Friend" },
   { id: "anyone", label: "Anyone with Code" },
-];
-
-const FRIENDS = [
-  { name: "MarcGM", rating: "2,134", online: true },
-  { name: "TavlaQueen", rating: "1,923", online: true },
-  { name: "DiceRoller", rating: "1,756", online: true },
-  { name: "BGMaster", rating: "1,680", online: false },
-  { name: "NardePlayer", rating: "1,512", online: false },
 ];
 
 /* ── Icons ── */
@@ -294,6 +287,7 @@ export default function CreateMatchPage() {
   const createdRef = useRef(false);
 
   const { address, isConnected } = useAuth();
+  const social = useSocialContext();
 
   const {
     connected,
@@ -304,8 +298,6 @@ export default function CreateMatchPage() {
     createGame,
     reset,
   } = useGame(WS_URL, address);
-
-  const walletBalance = 124.5;
 
   const matchLengthNum = parseInt(matchLength);
   const timeControlNum = parseInt(timeControl);
@@ -456,7 +448,7 @@ export default function CreateMatchPage() {
               fontFamily: "var(--font-mono)",
             }}
           >
-            ${walletBalance.toFixed(2)}
+            $--
           </span>
           <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>USDC</span>
         </div>
@@ -517,18 +509,31 @@ export default function CreateMatchPage() {
                         overflow: "auto",
                       }}
                     >
-                      {FRIENDS.map((f) => (
+                      {social.friends.map((f) => (
                         <FriendRow
-                          key={f.name}
-                          {...f}
-                          selected={selectedFriend === f.name}
-                          onSelect={() =>
-                            setSelectedFriend(
-                              selectedFriend === f.name ? null : f.name
-                            )
-                          }
+                          key={f.address}
+                          name={f.displayName || f.address.slice(0, 12)}
+                          rating="--"
+                          online={f.online}
+                          selected={selectedFriend === (f.displayName || f.address.slice(0, 12))}
+                          onSelect={() => {
+                            const name = f.displayName || f.address.slice(0, 12);
+                            setSelectedFriend(selectedFriend === name ? null : name);
+                          }}
                         />
                       ))}
+                      {social.friends.length === 0 && (
+                        <div
+                          style={{
+                            padding: "16px 12px",
+                            fontSize: 12,
+                            color: "var(--color-text-muted)",
+                            textAlign: "center",
+                          }}
+                        >
+                          No friends yet. Add friends from the social tab.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -954,7 +959,7 @@ export default function CreateMatchPage() {
                           color: "var(--color-text-primary)",
                         }}
                       >
-                        ${walletBalance.toFixed(2)}
+                        $--
                       </span>
                       <span
                         style={{
@@ -982,7 +987,7 @@ export default function CreateMatchPage() {
                     )}
                   </div>
 
-                  {maxExposure > walletBalance && (
+                  {false && (
                     <div
                       style={{
                         marginTop: 6,
@@ -1034,12 +1039,12 @@ export default function CreateMatchPage() {
                     boxShadow: "var(--shadow-gold)",
                     opacity:
                       (inviteMode === "friend" && !selectedFriend) ||
-                      maxExposure > walletBalance
+                      false
                         ? 0.4
                         : 1,
                     pointerEvents:
                       (inviteMode === "friend" && !selectedFriend) ||
-                      maxExposure > walletBalance
+                      false
                         ? "none"
                         : "auto",
                   }}

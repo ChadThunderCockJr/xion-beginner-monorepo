@@ -73,48 +73,6 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
-// ─── Transaction Row ───────────────────────────────────────────────
-function TransactionRow({ type, amount, status, date }: { type: string; amount: string; status: string; date: string }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "8px 0", borderBottom: "1px solid var(--color-bg-subtle)",
-    }}>
-      <div style={{
-        width: 28, height: 28, borderRadius: 6,
-        background: "var(--color-bg-base)", border: "1px solid var(--color-bg-subtle)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 12, color: "var(--color-text-secondary)",
-      }}>
-        {type === "Deposit" ? "\u2193" : type === "Withdrawal" ? "\u2191" : amount.startsWith("+") ? "+" : "\u2212"}
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)" }}>{type}</div>
-        <div style={{ fontSize: 10, color: "var(--color-text-muted)" }}>{date}</div>
-      </div>
-      <div style={{ textAlign: "right" }}>
-        <div style={{
-          fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)",
-          fontFamily: "var(--font-mono)",
-        }}>{amount}</div>
-        <div style={{
-          fontSize: 9, color: "var(--color-text-muted)", textTransform: "uppercase",
-          letterSpacing: "0.04em",
-        }}>{status}</div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Mock data (will be replaced when wallet integration is done) ──
-const TRANSACTIONS = [
-  { type: "Deposit", amount: "+$50.00", status: "Confirmed", date: "3 days ago" },
-  { type: "Wager Lost", amount: "\u2212$12.50", status: "Settled", date: "2 days ago" },
-  { type: "Wager Won", amount: "+$8.75", status: "Settled", date: "1 day ago" },
-  { type: "Deposit", amount: "+$100.00", status: "Confirmed", date: "1 week ago" },
-  { type: "Withdrawal", amount: "\u2212$25.00", status: "Confirmed", date: "2 weeks ago" },
-];
-
 // ═══════════════════════════════════════════════════════════════════
 // MAIN — SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════════════
@@ -133,8 +91,6 @@ export default function SettingsPage() {
     friendRequests: true,
     tournamentAlerts: false,
   });
-
-  const walletBalance = 124.50;
 
   // Sync display name from social context
   useEffect(() => {

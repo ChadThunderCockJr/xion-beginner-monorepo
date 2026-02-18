@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { cn } from "@xion-beginner/ui";
 import { Header } from "@/components/layout";
@@ -13,30 +13,13 @@ import {
   SectionLabel,
   Badge,
 } from "@/components/ui";
+import { fetchStats, fetchMatches, fetchProfile, timeAgo } from "@/lib/api";
+import type { PlayerStats, MatchResult as MatchResultType, PlayerProfile } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 const TABS = [
   { id: "history", label: "Match History" },
   { id: "h2h", label: "Head to Head" },
-];
-
-const MOCK_PLAYERS: Record<string, { name: string; rating: number; ratingChange: number; wins: number; losses: number; draws: number; totalGames: number; avgPR: number; streak: string; bio: string; joined: string }> = {
-  "marcgm": { name: "MarcGM", rating: 2134, ratingChange: 12, wins: 2401, losses: 1446, draws: 87, totalGames: 3847, avgPR: 2.8, streak: "6W", bio: "Tournament player · Top 10 Global", joined: "January 2022" },
-  "tavlaqueen": { name: "TavlaQueen", rating: 1923, ratingChange: -8, wins: 1291, losses: 897, draws: 45, totalGames: 2188, avgPR: 4.0, streak: "2L", bio: "Tavla enthusiast from Istanbul", joined: "June 2023" },
-  "diceroller": { name: "DiceRoller", rating: 1878, ratingChange: 5, wins: 1334, losses: 1006, draws: 52, totalGames: 2340, avgPR: 4.5, streak: "3W", bio: "Lucky dice, better play", joined: "March 2023" },
-};
-
-const MOCK_MATCHES = [
-  { opponent: "Anthony", result: "loss" as const, score: "3-5", matchLength: 5, date: "2h ago" },
-  { opponent: "Emily Tran", result: "win" as const, score: "5-2", matchLength: 5, date: "6h ago" },
-  { opponent: "Jordan Lee", result: "win" as const, score: "7-3", matchLength: 7, date: "1d ago" },
-  { opponent: "Alex Murphy", result: "loss" as const, score: "4-5", matchLength: 5, date: "2d ago" },
-  { opponent: "Chris Park", result: "win" as const, score: "3-1", matchLength: 3, date: "3d ago" },
-];
-
-const H2H_MATCHES = [
-  { opponent: "Anthony", result: "loss" as const, score: "3-5", matchLength: 5, date: "2h ago" },
-  { opponent: "Anthony", result: "win" as const, score: "5-4", matchLength: 5, date: "3d ago" },
-  { opponent: "Anthony", result: "win" as const, score: "7-5", matchLength: 7, date: "1w ago" },
 ];
 
 /* ── Quick Stat ── */
@@ -53,18 +36,39 @@ function QuickStat({ label, value, sub }: { label: string; value: string; sub?: 
 export default function UserProfilePage() {
   const params = useParams<{ userId: string }>();
   const [activeTab, setActiveTab] = useState("history");
+  const { address: myAddress } = useAuth();
 
-  const player = MOCK_PLAYERS[params.userId.toLowerCase()] ?? {
-    name: params.userId, rating: 1200, ratingChange: 0, wins: 20, losses: 15, draws: 2,
-    totalGames: 37, avgPR: 8.4, streak: "1W", bio: "Backgammon player", joined: "January 2026",
-  };
+  const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [matches, setMatches] = useState<MatchResultType[]>([]);
+  const [profile, setProfile] = useState<PlayerProfile | null>(null);
 
-  const winPct = Math.round((player.wins / (player.wins + player.losses)) * 100);
+  useEffect(() => {
+    const userId = params.userId;
+    fetchProfile(userId).then(setProfile).catch(() => {});
+    fetchStats(userId).then(setStats).catch(() => {});
+    fetchMatches(userId, 20).then(setMatches).catch(() => {});
+  }, [params.userId]);
+
+  const playerName = profile?.displayName || params.userId.slice(0, 12);
+  const rating = stats?.rating ?? 1500;
+  const ratingChange = stats?.ratingChange ?? 0;
+  const wins = stats?.wins ?? 0;
+  const losses = stats?.losses ?? 0;
+  const totalGames = stats?.totalGames ?? 0;
+  const streakStr = stats && stats.currentStreak > 0 ? `${stats.currentStreak}${stats.currentStreakType}` : "--";
+  const memberSince = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "--";
+  const winPct = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+
+  const h2hMatches = matches.filter(m => m.opponent === myAddress);
+  const h2hWins = h2hMatches.filter(m => m.result === "L").length;
+  const h2hLosses = h2hMatches.filter(m => m.result === "W").length;
+  const h2hTotal = h2hMatches.length;
+  const h2hWinRate = h2hTotal > 0 ? Math.round((h2hWins / h2hTotal) * 100) : 0;
 
   return (
     <div>
       <Header
-        title={player.name}
+        title={playerName}
         backHref="/leaderboard"
         actions={<Button size="sm">Challenge</Button>}
       />
@@ -75,33 +79,33 @@ export default function UserProfilePage() {
           <div className="flex gap-5 items-start">
             <div className="relative">
               <div className="w-20 h-20 rounded-full bg-bg-elevated border-2 border-bg-subtle flex items-center justify-center text-[30px] font-bold text-text-secondary">
-                {player.name[0]}
+                {playerName[0]}
               </div>
               <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-success border-[3px] border-bg-surface" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2.5 mb-1">
-                <span className="font-display text-2xl sm:text-[36px] font-bold text-text-primary tracking-tight">{player.name}</span>
+                <span className="font-display text-2xl sm:text-[36px] font-bold text-text-primary tracking-tight">{playerName}</span>
                 <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-[6px] bg-bg-base border border-border-subtle">
-                  <span className="text-base font-bold text-text-primary font-mono">{player.rating.toLocaleString()}</span>
-                  <span className={cn("text-[11px] font-bold", player.ratingChange >= 0 ? "text-success" : "text-danger")}>
-                    {player.ratingChange >= 0 ? "↑" : "↓"}{Math.abs(player.ratingChange)}
+                  <span className="text-base font-bold text-text-primary font-mono">{rating.toLocaleString()}</span>
+                  <span className={cn("text-[11px] font-bold", ratingChange >= 0 ? "text-success" : "text-danger")}>
+                    {ratingChange >= 0 ? "↑" : "↓"}{Math.abs(ratingChange)}
                   </span>
                 </div>
               </div>
-              <div className="text-[13px] text-text-secondary mb-1.5">{player.bio}</div>
-              <div className="text-[11px] text-text-muted">Member since {player.joined}</div>
+              <div className="text-[13px] text-text-secondary mb-1.5">{profile?.username ? `@${profile.username}` : "Backgammon player"}</div>
+              <div className="text-[11px] text-text-muted">Member since {memberSince}</div>
             </div>
           </div>
 
           <div className="flex gap-0 mt-5 pt-4 border-t border-border-subtle">
-            <QuickStat label="Games" value={player.totalGames.toLocaleString()} />
+            <QuickStat label="Games" value={totalGames.toLocaleString()} />
             <div className="w-px bg-bg-subtle" />
-            <QuickStat label="W / L" value={`${player.wins} / ${player.losses}`} sub={`${player.draws} draws`} />
+            <QuickStat label="W / L" value={`${wins} / ${losses}`} />
             <div className="w-px bg-bg-subtle" />
-            <QuickStat label="Avg PR" value={player.avgPR.toFixed(1)} />
+            <QuickStat label="Avg PR" value="--" />
             <div className="w-px bg-bg-subtle" />
-            <QuickStat label="Streak" value={player.streak} />
+            <QuickStat label="Streak" value={streakStr} />
           </div>
         </Card>
 
@@ -113,35 +117,50 @@ export default function UserProfilePage() {
         {/* Match History Tab */}
         {activeTab === "history" && (
           <Card>
-            {MOCK_MATCHES.map((match, i) => (
-              <MatchRow key={i} {...match} />
-            ))}
+            {matches.length > 0 ? matches.map((m, i) => (
+              <MatchRow
+                key={i}
+                opponent={m.opponentName || m.opponent.slice(0, 10)}
+                result={m.result === "W" ? "win" : "loss"}
+                score={m.resultType}
+                matchLength={0}
+                date={timeAgo(m.timestamp)}
+              />
+            )) : (
+              <div className="text-center text-text-muted text-sm py-5">No matches found</div>
+            )}
           </Card>
         )}
 
         {/* Head to Head Tab */}
         {activeTab === "h2h" && (
           <Card>
-            <p className="text-sm text-text-secondary mb-4">
-              You&apos;ve played <span className="font-semibold text-text-primary">3 matches</span> against {player.name}
-            </p>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <StatCell label="Your Wins" value="1" />
-              <StatCell label="Their Wins" value="2" />
-              <StatCell label="Win Rate" value="33%" />
-            </div>
-            <div className="border-t border-border-subtle pt-2">
-              {H2H_MATCHES.map((match, i) => (
-                <MatchRow
-                  key={i}
-                  opponent={player.name}
-                  result={match.result === "win" ? "loss" : "win"}
-                  score={match.score}
-                  matchLength={match.matchLength}
-                  date={match.date}
-                />
-              ))}
-            </div>
+            {h2hTotal > 0 ? (
+              <>
+                <p className="text-sm text-text-secondary mb-4">
+                  You&apos;ve played <span className="font-semibold text-text-primary">{h2hTotal} {h2hTotal === 1 ? "match" : "matches"}</span> against {playerName}
+                </p>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <StatCell label="Your Wins" value={String(h2hWins)} />
+                  <StatCell label="Their Wins" value={String(h2hLosses)} />
+                  <StatCell label="Win Rate" value={`${h2hWinRate}%`} />
+                </div>
+                <div className="border-t border-border-subtle pt-2">
+                  {h2hMatches.map((m, i) => (
+                    <MatchRow
+                      key={i}
+                      opponent={playerName}
+                      result={m.result === "W" ? "loss" : "win"}
+                      score={m.resultType}
+                      matchLength={0}
+                      date={timeAgo(m.timestamp)}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-text-muted text-sm py-5">No head-to-head matches yet</div>
+            )}
           </Card>
         )}
       </div>
