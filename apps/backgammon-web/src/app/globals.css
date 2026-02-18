@@ -119,18 +119,18 @@ html.light {
    ═══════════════════════════════════════════ */
 
 html.lux {
-  /* ─── Background tiers — deep chocolate ─── */
-  --color-bg-deepest: #110A04;
-  --color-bg-base: #1A0E06;
-  --color-bg-surface: #241408;
-  --color-bg-elevated: #2E1C0E;
-  --color-bg-subtle: #3C2818;
+  /* ─── Background tiers — same green-felt as dark theme ─── */
+  --color-bg-deepest: #040604;
+  --color-bg-base: #0A0E08;
+  --color-bg-surface: #141A12;
+  --color-bg-elevated: #1E241C;
+  --color-bg-subtle: #2A3026;
 
-  /* ─── Text hierarchy — gold on chocolate ─── */
+  /* ─── Text hierarchy — gold ─── */
   --color-text-primary: #C5973E;
   --color-text-secondary: #A07828;
   --color-text-muted: #7A5C20;
-  --color-text-faint: #5C4A38;
+  --color-text-faint: #4A4840;
 
   /* ─── Accent — same burgundy red as dark theme ─── */
   --color-gold-primary: #581428;
@@ -154,10 +154,10 @@ html.lux {
   --color-burgundy-faint: #220C18;
   --color-burgundy-accent: #6B2D3E;
 
-  /* ─── Borders ─── */
-  --color-border-subtle: #3C2818;
-  --color-border-default: #4A3420;
-  --color-border-strong: #5C4630;
+  /* ─── Borders — same as dark theme ─── */
+  --color-border-subtle: #2A3026;
+  --color-border-default: #2A3026;
+  --color-border-strong: #3A4036;
 
   /* ─── Font override — calligraphic script ─── */
   --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
@@ -171,10 +171,10 @@ html.lux {
 
 /* ─── Lux mode scrollbar ─── */
 html.lux ::-webkit-scrollbar-thumb {
-  background: rgba(197, 151, 62, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 html.lux ::-webkit-scrollbar-thumb:hover {
-  background: rgba(197, 151, 62, 0.25);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ─── Light mode scrollbar ─── */
