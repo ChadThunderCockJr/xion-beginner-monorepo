@@ -389,11 +389,31 @@ export function Board({
   }
 
   function handleBearOff() {
-    if (!isMyTurn || selectedPoint === null) return;
-    const target = legalDests.has(0) ? 0 : legalDests.has(25) ? 25 : null;
-    if (target !== null) {
-      onMove(selectedPoint, target);
+    if (!isMyTurn) return;
+
+    // If a checker is selected and bear-off is a legal dest for it, use that
+    if (selectedPoint !== null) {
+      const target = legalDests.has(0) ? 0 : legalDests.has(25) ? 25 : null;
+      if (target !== null) {
+        onMove(selectedPoint, target);
+        setSelectedPoint(null);
+        repeatDestRef.current = target;
+        return;
+      }
+    }
+
+    // No selection — find any legal bear-off move and auto-execute
+    const bearOffMoves = legalMoves.filter((m) => m.to === 0 || m.to === 25);
+    if (bearOffMoves.length > 0) {
+      let best = bearOffMoves[0];
+      if (activeDieIndex != null && dice) {
+        const preferredValue = dice[activeDieIndex];
+        const preferred = bearOffMoves.find((m) => m.die === preferredValue);
+        if (preferred) best = preferred;
+      }
+      onMove(best.from, best.to);
       setSelectedPoint(null);
+      repeatDestRef.current = best.to;
     }
   }
 
@@ -775,7 +795,8 @@ export function Board({
 
   // ─── Bear-off ────────────────────────────────────────────────
 
-  const canBear = selectedPoint !== null && (legalDests.has(0) || legalDests.has(25));
+  const hasAnyBearOff = isMyTurn && legalMoves.some((m) => m.to === 0 || m.to === 25);
+  const canBear = hasAnyBearOff || (selectedPoint !== null && (legalDests.has(0) || legalDests.has(25)));
   const bearTopColor: "white" | "black" = flipped ? "white" : "black";
   const bearBotColor: "white" | "black" = flipped ? "black" : "white";
   const bearTopCount = bearTopColor === "white" ? board.whiteOff : board.blackOff;
