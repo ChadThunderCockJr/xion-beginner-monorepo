@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Avatar } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
@@ -256,6 +256,186 @@ function PlayerRowStyled({
   );
 }
 
+// ── Search Modal ────────────────────────────────────────────────
+
+function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const social = useSocialContext();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [selectedIdx, setSelectedIdx] = useState(-1);
+
+  // Focus input when modal opens
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setSelectedIdx(-1);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  // Debounced search
+  useEffect(() => {
+    if (query.length >= 2) {
+      const t = setTimeout(() => social.searchPlayers(query), 300);
+      return () => clearTimeout(t);
+    }
+  }, [query, social]);
+
+  const results = social.searchResults;
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.min(i + 1, results.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIdx((i) => Math.max(i - 1, -1));
+      } else if (e.key === "Enter" && selectedIdx >= 0 && results[selectedIdx]) {
+        e.preventDefault();
+        router.push(`/social`);
+        onClose();
+      } else if (e.key === "Escape") {
+        onClose();
+      }
+    },
+    [results, selectedIdx, router, onClose],
+  );
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md mx-4 overflow-hidden"
+        style={{
+          background: "var(--color-bg-surface)",
+          border: "1px solid var(--color-bg-subtle)",
+          borderRadius: 12,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Search input */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 16px",
+            borderBottom: "1px solid var(--color-bg-subtle)",
+          }}
+        >
+          {Icons.search("var(--color-text-faint)")}
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search by username or address..."
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setSelectedIdx(-1); }}
+            onKeyDown={handleKeyDown}
+            style={{
+              flex: 1,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontSize: 14,
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-body)",
+            }}
+          />
+          <kbd
+            style={{
+              fontSize: 10,
+              color: "var(--color-text-faint)",
+              border: "1px solid var(--color-bg-subtle)",
+              borderRadius: 4,
+              padding: "2px 6px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            ESC
+          </kbd>
+        </div>
+
+        {/* Results */}
+        <div style={{ maxHeight: 320, overflowY: "auto" }}>
+          {query.length < 2 ? (
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: "var(--color-text-faint)" }}>
+              Type at least 2 characters to search...
+            </div>
+          ) : results.length > 0 ? (
+            results.map((r, i) => (
+              <div
+                key={r.address}
+                onClick={() => {
+                  router.push(`/social`);
+                  onClose();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                  background: i === selectedIdx ? "var(--color-bg-elevated)" : "transparent",
+                  transition: "background 0.1s ease",
+                }}
+                onMouseEnter={() => setSelectedIdx(i)}
+              >
+                <Avatar name={r.displayName || r.username || r.address.slice(0, 6)} size="sm" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                    {r.displayName || r.username || r.address.slice(0, 8)}
+                  </div>
+                  {r.username && (
+                    <div style={{ fontSize: 11, color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}>
+                      @{r.username}
+                    </div>
+                  )}
+                </div>
+                {social.friends.some((f) => f.address === r.address) ? (
+                  <span style={{ fontSize: 11, color: "var(--color-text-faint)", fontWeight: 600 }}>
+                    Friend
+                  </span>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      social.sendFriendRequest(r.address);
+                    }}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: 6,
+                      border: "1px solid var(--color-gold-primary)",
+                      background: "var(--color-gold-muted)",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--color-gold-primary)",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-body)",
+                    }}
+                  >
+                    Add Friend
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: "var(--color-text-faint)" }}>
+              No players found for &ldquo;{query}&rdquo;
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN DASHBOARD PAGE
 // ═══════════════════════════════════════════════════════════════
@@ -264,9 +444,23 @@ export default function DashboardPage() {
   const router = useRouter();
   const { displayName, username } = useSocialContext();
   const playerName = displayName || username || "Player";
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // ⌘K / Ctrl+K to open search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <div className="p-4 md:px-6 lg:px-8 lg:py-6" style={{ width: "100%" }}>
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       {/* Top Bar */}
       <header className="flex flex-wrap items-center justify-between gap-4" style={{ marginBottom: 28 }}>
 
@@ -298,6 +492,7 @@ export default function DashboardPage() {
           {/* Search */}
           <div
             className="hidden md:flex"
+            onClick={() => setSearchOpen(true)}
             style={{
               alignItems: "center",
               gap: 8,
