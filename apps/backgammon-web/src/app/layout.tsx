@@ -72,12 +72,12 @@ export default function RootLayout({
       <head>
         <title>Gammon</title>
         <meta name="description" content="Play competitive backgammon online" />
-        <meta name="theme-color" content="#040604" />
+        <meta name="theme-color" content="#F5F1EB" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* Inline script to set theme class before first paint — prevents flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gammon-theme");document.documentElement.className=t==="light"?"light":"dark"}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("gammon-theme");document.documentElement.className=t==="dark"?"dark":"light"}catch(e){}})()`,
           }}
         />
       </head>
