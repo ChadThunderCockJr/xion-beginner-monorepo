@@ -79,12 +79,12 @@ function DiceLogo({ size = 48 }: { size?: number }) {
    ══════════════════════════════════════════════════════════════════ */
 
 function BoardIllustration() {
-  // Hardcoded dark-mode colors — this panel is always dark
-  const gold = "#581428";
-  const goldDark = "#3A0C1A";
-  const burgundy = "#581428";
-  const goldMuted = "#220C18";
-  const bgSubtle = "#2A3026";
+  // Bright enough to be visible on #040604 background
+  const gold = "#A83858";
+  const goldDark = "#6B2D3E";
+  const burgundy = "#882040";
+  const goldMuted = "#3A1828";
+  const bgSubtle = "#4A4840";
   const bgElevated = "#1E241C";
 
   return (
@@ -93,7 +93,7 @@ function BoardIllustration() {
       height="180"
       viewBox="0 0 260 180"
       fill="none"
-      style={{ opacity: 0.7 }}
+      style={{ opacity: 0.9 }}
     >
       {/* Board outline */}
       <rect
@@ -265,7 +265,7 @@ export default function LoginPage() {
         }}
       >
         {/* Geometric pattern background */}
-        <div style={{ position: "absolute", inset: 0, opacity: 0.06, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.1, pointerEvents: "none" }}>
           {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
