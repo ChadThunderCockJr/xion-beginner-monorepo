@@ -130,29 +130,29 @@ html.lux {
   --color-text-primary: #E8B84A;
   --color-text-secondary: #D4A843;
   --color-text-muted: #B8922E;
-  --color-text-faint: #4A4840;
+  --color-text-faint: #8A7248;
 
-  /* ─── Accent — same burgundy red as dark theme ─── */
-  --color-gold-primary: #581428;
-  --color-gold-light: #6B2D3E;
-  --color-gold-dark: #3A0C1A;
-  --color-gold-muted: #220C18;
-  --color-accent-fg: #E8B84A;
+  /* ─── Accent — gold buttons on burgundy backgrounds ─── */
+  --color-gold-primary: #C5973E;
+  --color-gold-light: #D4A843;
+  --color-gold-dark: #A07828;
+  --color-gold-muted: rgba(197, 151, 62, 0.15);
+  --color-accent-fg: #2A0A16;
 
   /* ─── Semantic ─── */
   --color-success: #60A860;
-  --color-success-muted: rgba(96, 168, 96, 0.12);
+  --color-success-muted: rgba(96, 168, 96, 0.15);
   --color-danger: #CC4444;
-  --color-danger-muted: rgba(204, 68, 68, 0.12);
+  --color-danger-muted: rgba(204, 68, 68, 0.15);
   --color-warning: #FBBF24;
   --color-info: #5888A0;
 
-  /* ─── Burgundy — same as dark theme ─── */
-  --color-burgundy-primary: #882040;
-  --color-burgundy-light: #A83858;
-  --color-burgundy-deep: #581428;
-  --color-burgundy-faint: #220C18;
-  --color-burgundy-accent: #6B2D3E;
+  /* ─── Burgundy — lighter for visibility on burgundy bg ─── */
+  --color-burgundy-primary: #C5973E;
+  --color-burgundy-light: #D4A843;
+  --color-burgundy-deep: #6B2D3E;
+  --color-burgundy-faint: rgba(197, 151, 62, 0.1);
+  --color-burgundy-accent: #B8922E;
 
   /* ─── Borders ─── */
   --color-border-subtle: #6B2D3E;
@@ -162,11 +162,11 @@ html.lux {
   /* ─── Font override — calligraphic script ─── */
   --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
 
-  /* ─── Shadows — same as dark theme ─── */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-gold: 0 2px 12px rgba(88, 20, 40, 0.3);
-  --shadow-glow: 0 0 60px rgba(88, 20, 40, 0.12);
+  /* ─── Shadows — gold glow ─── */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 2px 12px rgba(197, 151, 62, 0.25);
+  --shadow-glow: 0 0 60px rgba(197, 151, 62, 0.1);
 }
 
 /* ─── Lux mode scrollbar ─── */
