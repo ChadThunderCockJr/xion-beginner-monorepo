@@ -41,6 +41,21 @@ app.get("/api/profile/:address", async (req, res) => {
   }
 });
 
+// Match history REST endpoints
+app.get("/api/matches/:address", async (req, res) => {
+  const matches = await socialStore.getMatchResults(req.params.address);
+  res.json({ matches });
+});
+
+app.get("/api/game/:gameId/history", async (req, res) => {
+  const moveHistory = await socialStore.getGameHistory(req.params.gameId);
+  if (!moveHistory) {
+    res.status(404).json({ error: "Game history not found" });
+  } else {
+    res.json({ gameId: req.params.gameId, moveHistory });
+  }
+});
+
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 
@@ -397,6 +412,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           game_state: result.gameState,
         });
         socialManager.recordMatchResult(game, result.gameState.winner!, result.gameState.resultType!);
+        socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
       }
       break;
     }
@@ -451,6 +467,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
         game_state: game.gameState,
       });
       socialManager.recordMatchResult(game, result.winner, "normal");
+      socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
       break;
     }
 

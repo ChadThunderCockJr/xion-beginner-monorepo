@@ -227,7 +227,7 @@ function SlideOutMenu({
     { type: "separator" as const },
     { label: "Move List", action: () => {} },
     { label: "Match Info", action: () => {} },
-    { label: "Verify Dice", action: () => {} },
+    { label: "Verify Dice", action: () => { window.open("/verify-rolls", "_blank"); } },
     { type: "separator" as const },
     { label: "Board Theme", action: () => {} },
     { label: "Sound", action: () => {} },
@@ -484,7 +484,7 @@ function CenterControls({
           {diceList.map((d, i) => {
             const isDoubles = dice && dice[0] === dice[1];
             const canClick = isMyTurn && !isDoubles && !d.used && onDieClick;
-            const isActive = activeDieIndex === i;
+            const isActive = activeDieIndex === i && !d.used;
             return (
               <div
                 key={i}
@@ -599,10 +599,10 @@ export function GameScreen({
   // Dice swap state
   const [activeDieIndex, setActiveDieIndex] = useState<0 | 1 | null>(null);
 
-  // Reset active die on new dice roll
+  // Reset active die on new dice roll or when moves remaining changes
   useEffect(() => {
     setActiveDieIndex(null);
-  }, [gameState.dice?.[0], gameState.dice?.[1]]);
+  }, [gameState.dice?.[0], gameState.dice?.[1], gameState.movesRemaining.length]);
 
   // Turn timer
   const [timeLeft, setTimeLeft] = useState(TURN_TIME_LIMIT);

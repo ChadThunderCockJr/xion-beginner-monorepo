@@ -1,4 +1,5 @@
 import { getRedis } from "./redis.js";
+import type { MoveRecord } from "@xion-beginner/backgammon-core";
 
 // ── Profile ────────────────────────────────────────────────────
 
@@ -363,4 +364,26 @@ export async function deleteChallenge(id: string): Promise<void> {
     if (!r) return;
     await r.del(`challenge:${id}`);
   } catch { /* ignore */ }
+}
+
+// ── Game History ───────────────────────────────────────────────
+
+const GAME_HISTORY_TTL = 30 * 24 * 60 * 60; // 30 days
+
+export async function saveGameHistory(gameId: string, moveHistory: MoveRecord[]): Promise<void> {
+  try {
+    const r = getRedis();
+    if (!r) return;
+    await r.setex(`game_history:${gameId}`, GAME_HISTORY_TTL, JSON.stringify(moveHistory));
+  } catch { /* ignore */ }
+}
+
+export async function getGameHistory(gameId: string): Promise<MoveRecord[] | null> {
+  try {
+    const r = getRedis();
+    if (!r) return null;
+    const data = await r.get(`game_history:${gameId}`);
+    if (!data) return null;
+    return JSON.parse(data) as MoveRecord[];
+  } catch { return null; }
 }

@@ -781,6 +781,7 @@ export default function DashboardPage() {
               anytime.
             </p>
             <button
+              onClick={() => router.push("/verify-rolls")}
               style={{
                 background: "transparent",
                 border: "1px solid var(--color-bg-subtle)",
