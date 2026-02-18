@@ -124,13 +124,13 @@ export default function JoinPage() {
 
       {/* ─── Main Content ───────────────────────────────────── */}
       <main
+        className="px-4 py-6 sm:px-6 sm:py-10"
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "40px 24px",
           overflow: "auto",
         }}
       >
@@ -146,8 +146,8 @@ export default function JoinPage() {
             {/* Heading */}
             <div style={{ textAlign: "center" }}>
               <h2
+                className="text-2xl sm:text-4xl"
                 style={{
-                  fontSize: 36,
                   fontWeight: 700,
                   margin: "0 0 8px",
                   letterSpacing: "-0.02em",

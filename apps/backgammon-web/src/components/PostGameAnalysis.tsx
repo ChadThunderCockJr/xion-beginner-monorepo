@@ -197,8 +197,8 @@ function BoardWireframe({ board, pip1, pip2, dice, arrows, arrowColor }: {
   }
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
-      <svg width={bW} height={bH} viewBox={`0 0 ${bW} ${bH}`} style={{ display: "block" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: bW }}>
+      <svg viewBox={`0 0 ${bW} ${bH}`} style={{ display: "block", width: "100%", height: "auto" }}>
         <rect x="0" y="0" width={bW} height={bH} rx={R.card} fill={C.bg.deep} stroke={C.bg.subtle} strokeWidth="1.5" />
         <rect x={half} y="0" width={bar} height={bH} fill={C.bg.elevated} />
 
@@ -618,8 +618,10 @@ export function PostGameAnalysis({
       {/* ─── Top Bar ─── */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 24px", borderBottom: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
-      }}>
+        borderBottom: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
+      }}
+      className="px-3 py-2 sm:px-6 sm:py-3"
+      >
         <button onClick={onBack} style={{
           background: "none", border: "none", color: C.text.secondary,
           cursor: "pointer", fontSize: 14, fontWeight: W.medium,
@@ -641,9 +643,8 @@ export function PostGameAnalysis({
       </header>
 
       {/* ─── Result Banner ─── */}
-      <div style={{
+      <div className="gap-4 sm:gap-8 px-3 py-3 sm:px-6 sm:py-5" style={{
         display: "flex", alignItems: "center", justifyContent: "center",
-        gap: 32, padding: "20px 24px",
         background: C.bg.surface, borderBottom: `1px solid ${C.bg.subtle}`,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -686,10 +687,10 @@ export function PostGameAnalysis({
           { key: "analysis", label: "Analysis" },
           { key: "moves", label: "Move List" },
         ].map(({ key, label }) => (
-          <button key={key} onClick={() => setActiveTab(key)} style={{
-            padding: "12px 20px", background: "none", border: "none",
+          <button key={key} onClick={() => setActiveTab(key)} className="px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-[13px]" style={{
+            background: "none", border: "none",
             borderBottom: activeTab === key ? `2px solid ${C.gold.primary}` : "2px solid transparent",
-            fontSize: 13, fontWeight: activeTab === key ? W.bold : W.medium,
+            fontWeight: activeTab === key ? W.bold : W.medium,
             color: activeTab === key ? C.text.primary : C.text.muted,
             cursor: "pointer", fontFamily: F.body,
           }}>{label}</button>
@@ -697,7 +698,7 @@ export function PostGameAnalysis({
       </div>
 
       {/* ─── Content ─── */}
-      <main style={{ flex: 1, padding: 24, overflow: "auto" }}>
+      <main className="p-3 sm:p-4 md:p-6" style={{ flex: 1, overflow: "auto" }}>
 
         {/* ═══ SUMMARY TAB ═══ */}
         {activeTab === "summary" && (
@@ -706,7 +707,7 @@ export function PostGameAnalysis({
             {mySummary && oppSummary && (
               <Card>
                 <SectionHeader title="Performance Rating" />
-                <div style={{ display: "flex", gap: 16 }}>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`, textAlign: "center" }}>
                     <div style={{ fontSize: 11, color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>You</div>
                     <div style={{ fontSize: 32, fontWeight: W.bold, color: C.text.primary }}>{mySummary.performanceRating}</div>
@@ -733,7 +734,7 @@ export function PostGameAnalysis({
 
             <Card>
               <SectionHeader title="Match Statistics" />
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="flex flex-wrap gap-2" style={{ display: "flex" }}>
                 <StatBox label="Total Moves" value={String(totalTurns)} />
                 <StatBox label="Doubles" value={String(doublesCount)} />
                 <StatBox label="Result" value={resultLabel} />
@@ -774,9 +775,9 @@ export function PostGameAnalysis({
             </Card>
 
             {/* Three-column layout */}
-            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4" style={{ alignItems: "flex-start" }}>
               {/* LEFT: Checkerplay Panel */}
-              <div style={{ width: 280, flexShrink: 0 }}>
+              <div className="w-full lg:w-[280px] lg:shrink-0">
                 <Card>
                   {/* Log / Checker toggle */}
                   <div style={{
@@ -865,7 +866,7 @@ export function PostGameAnalysis({
               </div>
 
               {/* CENTER: Board */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="order-first lg:order-none" style={{ flex: 1, minWidth: 0 }}>
                 <Card>
                   <SectionHeader
                     title={`Move ${selectedMove}${currentDisplayMove?.error ? ` · ${currentDisplayMove.error}` : ""}`}
@@ -900,10 +901,10 @@ export function PostGameAnalysis({
               </div>
 
               {/* RIGHT: Move Navigator */}
-              <div style={{ width: 240, flexShrink: 0 }}>
+              <div className="w-full lg:w-[240px] lg:shrink-0">
                 <Card>
                   <SectionHeader title="Moves" />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2, maxHeight: 400, overflow: "auto" }}>
+                  <div className="max-h-[200px] lg:max-h-[400px]" style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "auto" }}>
                     {displayMoves.map(m => (
                       <div key={m.moveNum} onClick={() => selectMove(m.moveNum)} style={{
                         display: "flex", alignItems: "center", gap: 6,

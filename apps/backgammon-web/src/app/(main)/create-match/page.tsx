@@ -402,11 +402,11 @@ export default function CreateMatchPage() {
     >
       {/* ─── Header ─── */}
       <header
+        className="px-4 py-3 md:px-6"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "12px 24px",
           borderBottom: "1px solid var(--color-bg-subtle)",
           background: "var(--color-bg-surface)",
         }}
@@ -429,8 +429,8 @@ export default function CreateMatchPage() {
           &larr; {screen === "config" ? "Back to lobby" : "Back"}
         </button>
         <span
+          className="text-lg sm:text-[22px]"
           style={{
-            fontSize: 22,
             fontWeight: 700,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-display)",
@@ -464,12 +464,12 @@ export default function CreateMatchPage() {
 
       {/* ─── Main Content ─── */}
       <main
+        className="p-4 md:px-6 md:py-7"
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          padding: "28px 24px",
           overflow: "auto",
         }}
       >

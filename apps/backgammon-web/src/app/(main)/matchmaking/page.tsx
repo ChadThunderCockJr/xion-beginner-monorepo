@@ -291,7 +291,7 @@ export default function MatchmakingPage() {
             >
               {/* Your avatar + searching indicator */}
               <div style={{ position: "relative" }}>
-                <MatchAvatar name={shortAddr(address)} size={80} />
+                <MatchAvatar name={shortAddr(address)} size={64} />
                 {/* Spinning ring placeholder */}
                 <div
                   style={{
@@ -306,8 +306,8 @@ export default function MatchmakingPage() {
 
               <div style={{ textAlign: "center" }}>
                 <h2
+                  className="text-xl sm:text-[26px]"
                   style={{
-                    fontSize: 26,
                     fontWeight: 700,
                     margin: "0 0 8px",
                     letterSpacing: "-0.02em",
@@ -344,8 +344,8 @@ export default function MatchmakingPage() {
             <div
               style={{
                 display: "flex",
-                gap: 20,
-                padding: "16px 24px",
+                gap: 12,
+                padding: "12px 16px",
                 background: "var(--color-bg-surface)",
                 border: "1px solid var(--color-bg-subtle)",
                 borderRadius: 10,
@@ -356,7 +356,7 @@ export default function MatchmakingPage() {
                 { label: "Wager", value: "Free" },
                 { label: "Mode", value: "Casual" },
               ].map((item, i) => (
-                <div key={i} style={{ textAlign: "center", minWidth: 80 }}>
+                <div key={i} style={{ textAlign: "center", minWidth: 60 }}>
                   <div
                     style={{
                       fontSize: 11,
@@ -422,10 +422,10 @@ export default function MatchmakingPage() {
         {uiState === "found" && (
           <>
             <div
+              className="gap-6 sm:gap-10"
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 40,
               }}
             >
               {/* You */}
@@ -496,8 +496,8 @@ export default function MatchmakingPage() {
 
             <div style={{ textAlign: "center" }}>
               <h2
+                className="text-xl sm:text-[26px]"
                 style={{
-                  fontSize: 26,
                   fontWeight: 700,
                   margin: "0 0 8px",
                   letterSpacing: "-0.02em",
@@ -551,14 +551,14 @@ export default function MatchmakingPage() {
               {/* Countdown number */}
               <div
                 style={{
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   borderRadius: "50%",
                   border: "3px solid var(--color-gold-primary)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 48,
+                  fontSize: 36,
                   fontWeight: 800,
                   color: "var(--color-gold-primary)",
                   fontFamily: "var(--font-mono)",

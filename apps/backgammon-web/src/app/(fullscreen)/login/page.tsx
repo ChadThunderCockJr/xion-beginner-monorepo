@@ -252,19 +252,18 @@ export default function LoginPage() {
 
   return (
     <div
+      className="flex flex-col lg:flex-row"
       style={{
-        minHeight: "100vh",
-        display: "flex",
+        minHeight: "100dvh",
         fontFamily: "var(--font-body)",
         color: "var(--color-text-secondary)",
       }}
     >
       {/* ── Left: Branding Panel ── */}
       <div
+        className="hidden lg:flex lg:flex-[0_0_45%]"
         style={{
-          flex: "0 0 45%",
           background: "var(--color-bg-deepest)",
-          display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
@@ -302,9 +301,9 @@ export default function LoginPage() {
           <BoardIllustration />
 
           <h2
+            className="text-2xl lg:text-[32px]"
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: 32,
               fontWeight: 700,
               color: "#ffffff",
               margin: "32px 0 16px",
@@ -362,13 +361,13 @@ export default function LoginPage() {
 
       {/* ── Right: Connect Panel ── */}
       <div
+        className="p-6 sm:p-10 lg:px-[60px] lg:py-10"
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          padding: "40px 60px",
           position: "relative",
           background: "var(--color-bg-base)",
         }}
@@ -387,9 +386,9 @@ export default function LoginPage() {
           <div style={{ textAlign: "center", marginBottom: 8 }}>
             <DiceLogo size={56} />
             <h1
+              className="text-2xl lg:text-[32px]"
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 32,
                 fontWeight: 700,
                 color: "var(--color-text-primary)",
                 letterSpacing: "-0.03em",

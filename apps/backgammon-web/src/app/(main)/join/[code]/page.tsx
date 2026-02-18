@@ -225,12 +225,12 @@ export default function JoinCodePage() {
           {/* ═══ LOADING ══════════════════════════════════════ */}
           {isLoading && (
             <div
+              className="pt-6 sm:pt-[60px]"
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 24,
-                paddingTop: 60,
               }}
             >
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -240,8 +240,8 @@ export default function JoinCodePage() {
               </div>
               <div style={{ textAlign: "center" }}>
                 <h2
+                  className="text-xl sm:text-[26px]"
                   style={{
-                    fontSize: 26,
                     fontWeight: 700,
                     margin: "0 0 8px",
                     letterSpacing: "-0.02em",
@@ -291,10 +291,10 @@ export default function JoinCodePage() {
             >
               {/* VS display */}
               <div
+                className="gap-4 sm:gap-6"
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 24,
                 }}
               >
                 <div style={{ textAlign: "center" }}>
@@ -351,8 +351,8 @@ export default function JoinCodePage() {
 
               <div style={{ textAlign: "center" }}>
                 <h2
+                  className="text-2xl sm:text-[32px]"
                   style={{
-                    fontSize: 32,
                     fontWeight: 700,
                     margin: "0 0 6px",
                     letterSpacing: "-0.02em",
@@ -375,8 +375,8 @@ export default function JoinCodePage() {
 
               {/* Countdown */}
               <div
+                className="text-5xl sm:text-7xl md:text-[96px]"
                 style={{
-                  fontSize: 96,
                   fontWeight: 700,
                   color: "var(--color-gold-primary)",
                   fontFamily: "var(--font-mono)",

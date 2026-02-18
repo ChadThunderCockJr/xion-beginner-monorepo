@@ -81,7 +81,7 @@ export default function UserProfilePage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2.5 mb-1">
-                <span className="font-display text-[36px] font-bold text-text-primary tracking-tight">{player.name}</span>
+                <span className="font-display text-2xl sm:text-[36px] font-bold text-text-primary tracking-tight">{player.name}</span>
                 <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-[6px] bg-bg-base border border-border-subtle">
                   <span className="text-base font-bold text-text-primary font-mono">{player.rating.toLocaleString()}</span>
                   <span className={cn("text-[11px] font-bold", player.ratingChange >= 0 ? "text-success" : "text-danger")}>

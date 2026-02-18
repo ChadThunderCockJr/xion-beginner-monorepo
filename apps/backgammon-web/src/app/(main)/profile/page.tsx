@@ -8,6 +8,7 @@ import {
   SegmentToggle,
 } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/hooks/useAuth";
 
 // ─── Constants ─────────────────────────────────────────────────────
@@ -330,6 +331,7 @@ function PRTrendChart() {
 export default function ProfilePage() {
   const { address } = useAuth();
   const social = useSocialContext();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [displayName, setDisplayName] = useState(PROFILE.name);
   const [email, setEmail] = useState("anthony@example.com");
@@ -747,6 +749,22 @@ export default function ProfilePage() {
                     fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)",
                     cursor: "pointer", fontFamily: "var(--font-body)",
                   }}>Change Avatar</button>
+                </div>
+              </Card>
+
+              {/* Appearance */}
+              <Card style={{ marginBottom: 16 }}>
+                <SectionLabel>Appearance</SectionLabel>
+                <div style={{
+                  fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                }}>Theme</div>
+                <SegmentToggle
+                  segments={[{ id: "dark", label: "Dark" }, { id: "light", label: "Light" }]}
+                  activeId={theme}
+                  onSelect={(id) => setTheme(id as "light" | "dark")}
+                />
+                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6 }}>
+                  Applies to the entire application
                 </div>
               </Card>
 
