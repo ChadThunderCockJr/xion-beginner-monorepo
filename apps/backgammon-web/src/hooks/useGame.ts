@@ -342,62 +342,7 @@ export function useGame(wsUrl: string, address: string | null) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Forced move auto-play: when only one legal move exists for this step
-  useEffect(() => {
-    if (
-      state.gameState &&
-      state.gameState.dice !== null &&
-      state.myColor === state.gameState.currentPlayer &&
-      state.legalMoves.length > 0
-    ) {
-      const uniqueFromTo = new Set(state.legalMoves.map((m) => `${m.from}-${m.to}`));
-      if (uniqueFromTo.size === 1) {
-        // All legal moves share the same from-to — truly forced
-        dispatch({ type: "FORCED_MOVE_NOTICE", on: true });
-        const move = state.legalMoves[0];
-        const timer = setTimeout(() => {
-          if (stateRef.current.gameId) {
-            sendMessage({ type: "move", game_id: stateRef.current.gameId, from: move.from, to: move.to });
-          }
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-
-      // Per-die check: if each die value has at most one unique from-to,
-      // the whole step is determined (player has no meaningful choice)
-      const dice = state.gameState.dice;
-      if (dice[0] !== dice[1]) {
-        const byDie = new Map<number, Set<string>>();
-        for (const m of state.legalMoves) {
-          const d = (m as { die?: number }).die;
-          if (d != null) {
-            if (!byDie.has(d)) byDie.set(d, new Set());
-            byDie.get(d)!.add(`${m.from}-${m.to}`);
-          }
-        }
-        // Each die has exactly one option (or zero — no moves for that die)
-        const allForced = [...byDie.values()].every((s) => s.size <= 1);
-        if (allForced && byDie.size > 0) {
-          dispatch({ type: "FORCED_MOVE_NOTICE", on: true });
-          const move = state.legalMoves[0];
-          const timer = setTimeout(() => {
-            if (stateRef.current.gameId) {
-              sendMessage({ type: "move", game_id: stateRef.current.gameId, from: move.from, to: move.to });
-            }
-          }, 500);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-  }, [state.legalMoves, state.gameState?.dice, state.myColor, state.gameState?.currentPlayer, sendMessage, state.gameId]);
-
-  // Clear forced move notice after 2 seconds
-  useEffect(() => {
-    if (state.forcedMoveNotice) {
-      const timer = setTimeout(() => dispatch({ type: "FORCED_MOVE_NOTICE", on: false }), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [state.forcedMoveNotice]);
+  // No forced move auto-play — player always confirms manually
 
   const createGame = useCallback(
     (wagerAmount: number) => {

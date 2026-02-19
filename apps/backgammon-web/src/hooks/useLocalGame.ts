@@ -674,68 +674,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
     return () => clearTimeout(t);
   }, [state.doubleOffered, state.doubleOfferedBy]);
 
-  // ── Auto-play forced moves (only 1 legal move) ──────────────
-
-  useEffect(() => {
-    const s = stateRef.current;
-    if (s.gameState.currentPlayer !== s.myColor) return;
-    if (!s.gameState.dice) return;
-    if (s.gameState.gameOver) return;
-    if (s.legalMoves.length !== 1) return;
-
-    const move = s.legalMoves[0];
-    const t = setTimeout(() => {
-      const current = stateRef.current;
-      // Re-check — state may have changed
-      if (current.gameState.currentPlayer !== current.myColor) return;
-      if (current.legalMoves.length !== 1) return;
-
-      const result = coreMakeMove(current.gameState, move.from, move.to);
-      if (!result) return;
-
-      // Sound
-      const prevVal = current.gameState.board.points[move.to];
-      const isHit =
-        (current.myColor === "white" && prevVal === -1) ||
-        (current.myColor === "black" && prevVal === 1);
-      if (isHit) playCheckerHit();
-      else playCheckerPlace();
-
-      // Find die used
-      const before = current.gameState.movesRemaining;
-      const after = result.movesRemaining;
-      const afterCopy = [...after];
-      let usedDie = Math.abs(move.from - move.to);
-      for (const d of before) {
-        const idx = afterCopy.indexOf(d);
-        if (idx !== -1) afterCopy.splice(idx, 1);
-        else { usedDie = d; break; }
-      }
-
-      if (result.gameOver) {
-        playGameOver(result.winner === current.myColor);
-        dispatch({
-          type: "GAME_OVER",
-          winner: result.winner!,
-          resultType: result.resultType!,
-          gameState: result,
-          finalMove: { from: move.from, to: move.to, die: usedDie },
-        });
-        return;
-      }
-
-      dispatch({
-        type: "MOVE_MADE",
-        newState: result,
-        move: { from: move.from, to: move.to, die: usedDie },
-        forced: true,
-      });
-    }, 400);
-
-    return () => clearTimeout(t);
-  }, [state.legalMoves, state.gameState.currentPlayer, state.gameState.dice]);
-
-  // ── Always require manual confirmation — no auto-end ──
+  // ── Always require manual confirmation — no auto-play, no auto-end ──
   // When no legal moves remain (after roll or mid-turn), the Confirm button
   // shows automatically via canEndTurn in GameScreen. Player must tap it.
 
