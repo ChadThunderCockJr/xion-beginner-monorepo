@@ -50,7 +50,7 @@ const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS || "";
 
 const abstraxionConfig = {
   chainId: "xion-testnet-2",
-  treasury: TREASURY_ADDRESS || "xion1awfqd5qw4mxzf4kg86qmgdvs6h9jmef9kvwgu0ykfx5aaz9p9rus20m3ky",
+  treasury: TREASURY_ADDRESS || "xion1dlm2vellmpau54yd7vywvesvvhu6wnx4vtfzkk8jkzd6yrfvc0hq6l8lu7",
   // Explicit empty bank prevents SDK fallback bank config with broken "0.1" amount
   bank: [] as { denom: string; amount: string }[],
   ...(ESCROW_CONTRACT
