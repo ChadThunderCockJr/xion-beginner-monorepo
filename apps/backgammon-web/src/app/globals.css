@@ -42,8 +42,9 @@
   --color-border-strong: #3A4036;
 
   /* ─── Fonts ─── */
-  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  --font-body: var(--font-outfit), "Outfit", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-cinzel), "Cinzel", Georgia, serif;
+  --font-body: var(--font-josefin), "Josefin Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 
   /* ─── Radius ─── */

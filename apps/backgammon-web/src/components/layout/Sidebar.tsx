@@ -194,12 +194,15 @@ export function Sidebar() {
       }}
     >
       {/* Brand */}
-      <div
+      <Link
+        href="/"
         style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
           padding: "4px 16px 24px",
+          textDecoration: "none",
+          cursor: "pointer",
         }}
       >
         <img
@@ -222,7 +225,7 @@ export function Sidebar() {
         >
           Gammon
         </span>
-      </div>
+      </Link>
 
       {/* Quick Play CTA */}
       <Link

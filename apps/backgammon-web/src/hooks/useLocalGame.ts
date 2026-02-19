@@ -729,7 +729,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
     return () => clearTimeout(t);
   }, [state.legalMoves, state.gameState.currentPlayer, state.gameState.dice]);
 
-  // ── Auto-end turn when no legal moves after rolling ─────────
+  // ── Auto-end turn when no legal moves (after rolling or mid-turn) ──
 
   useEffect(() => {
     const s = stateRef.current;
@@ -737,10 +737,10 @@ export function useLocalGame(difficulty: AIDifficulty) {
       s.gameState.currentPlayer === s.myColor &&
       s.gameState.dice !== null &&
       s.legalMoves.length === 0 &&
-      s.movesMade.length === 0 &&
       !s.gameState.gameOver
     ) {
-      // No legal moves at all — auto end after a short delay
+      // No legal moves — auto end after a short delay
+      // Works both when no moves at all (movesMade=0) and when partially blocked
       const t = setTimeout(() => {
         playTurnEnd();
         dispatch({ type: "END_TURN" });

@@ -1,7 +1,7 @@
 "use client";
 
 import { AbstraxionProvider } from "@burnt-labs/abstraxion";
-import { Cormorant_Garamond, Outfit, JetBrains_Mono, Pinyon_Script } from "next/font/google";
+import { Cinzel, Cormorant_Garamond, Josefin_Sans, JetBrains_Mono, Pinyon_Script } from "next/font/google";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./globals.css";
 
@@ -17,17 +17,24 @@ if (typeof window !== "undefined" && window.localStorage.getItem("_abstraxion_cl
   window.localStorage.setItem("_abstraxion_cleaned", "5");
 }
 
-const cormorant = Cormorant_Garamond({
+const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  variable: "--font-cinzel",
+  display: "swap",
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-cormorant",
   display: "swap",
 });
 
-const outfit = Outfit({
+const josefinSans = Josefin_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-outfit",
+  weight: ["200", "300", "400", "500", "600", "700"],
+  variable: "--font-josefin",
   display: "swap",
 });
 
@@ -93,7 +100,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${cormorant.variable} ${outfit.variable} ${jetbrainsMono.variable} ${pinyonScript.variable} antialiased`}
+        className={`${cinzel.variable} ${cormorant.variable} ${josefinSans.variable} ${jetbrainsMono.variable} ${pinyonScript.variable} antialiased`}
       >
         <ThemeProvider>
           <AbstraxionProvider config={abstraxionConfig}>
