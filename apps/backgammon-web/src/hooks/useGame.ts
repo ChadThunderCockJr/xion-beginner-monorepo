@@ -41,7 +41,7 @@ type GameAction =
       gameState: GameState;
       myAddress: string;
     }
-  | { type: "DICE_ROLLED"; gameState: GameState; legalMoves: Move[]; player: Player }
+  | { type: "DICE_ROLLED"; gameState: GameState; legalMoves: Move[]; player: Player; needsConfirmation?: boolean }
   | { type: "MOVE_MADE"; gameState: GameState; legalMoves: Move[]; player: Player; move: Move; needsConfirmation?: boolean }
   | { type: "MOVE_UNDONE"; gameState: GameState; legalMoves: Move[] }
   | { type: "TURN_ENDED"; gameState: GameState }
@@ -129,6 +129,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         undoCount: 0,
         turnStartedAt: Date.now(),
         lastOpponentMove: null,
+        pendingConfirmation: action.needsConfirmation ? true : false,
       };
     case "MOVE_MADE": {
       const iMadeIt = state.myColor !== null && action.player === state.myColor;
@@ -262,6 +263,7 @@ export function useGame(wsUrl: string, address: string | null) {
           gameState: msg.game_state as GameState,
           legalMoves: (msg.legal_moves || []) as Move[],
           player: msg.player as Player,
+          needsConfirmation: msg.needs_confirmation as boolean | undefined,
         });
       }),
       on("move_made", (msg) => {

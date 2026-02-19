@@ -367,8 +367,8 @@ function CenterControls({
   onAcceptDouble?: () => void;
   onRejectDouble?: () => void;
   forcedMoveNotice?: boolean;
-  activeDieIndex?: 0 | 1 | null;
-  onDieClick?: (index: number) => void;
+  activeDieIndex?: 0 | 1;
+  onDieClick?: () => void;
 }) {
   if (gameOver) return null;
 
@@ -480,21 +480,21 @@ function CenterControls({
           </button>
         </div>
       ) : diceList.length > 0 ? (
-        <div className="flex" style={{ gap: 8 }}>
+        <div
+          className="flex"
+          style={{ gap: 8, cursor: isMyTurn && dice && dice[0] !== dice[1] ? "pointer" : "default" }}
+          onClick={isMyTurn && dice && dice[0] !== dice[1] && onDieClick ? onDieClick : undefined}
+        >
           {diceList.map((d, i) => {
             const isDoubles = dice && dice[0] === dice[1];
-            const canClick = isMyTurn && !isDoubles && !d.used && onDieClick;
-            const isActive = activeDieIndex === i && !d.used;
+            const isFront = !isDoubles && activeDieIndex === i && !d.used;
             return (
               <div
                 key={i}
-                onClick={canClick ? () => onDieClick!(i) : undefined}
                 style={{
-                  cursor: canClick ? "pointer" : "default",
                   borderRadius: 10,
-                  border: isActive ? "2px solid var(--color-gold-primary)" : "2px solid transparent",
-                  boxShadow: isActive ? "0 0 8px rgba(88,20,40,0.4)" : "none",
-                  transition: "border-color 150ms, box-shadow 150ms",
+                  border: isFront ? "2px solid var(--color-gold-primary)" : "2px solid transparent",
+                  transition: "border-color 150ms",
                 }}
               >
                 <Die value={d.value} used={d.used} player={currentPlayer} />
@@ -593,16 +593,15 @@ export function GameScreen({
     (isMyTurn &&
     gameState.dice !== null &&
     legalMoves.length === 0 &&
-    gameState.movesRemaining.length === 0 &&
     !gameState.gameOver);
 
-  // Dice swap state
-  const [activeDieIndex, setActiveDieIndex] = useState<0 | 1 | null>(null);
+  // Dice order state: front die (index 0) is always the one used for moves.
+  // Clicking dice swaps the order. Resets to 0 on new roll.
+  const [activeDieIndex, setActiveDieIndex] = useState<0 | 1>(0);
 
-  // Reset active die on new dice roll or when moves remaining changes
   useEffect(() => {
-    setActiveDieIndex(null);
-  }, [gameState.dice?.[0], gameState.dice?.[1], gameState.movesRemaining.length]);
+    setActiveDieIndex(0);
+  }, [gameState.dice?.[0], gameState.dice?.[1]]);
 
   // Turn timer
   const [timeLeft, setTimeLeft] = useState(TURN_TIME_LIMIT);
@@ -664,7 +663,7 @@ export function GameScreen({
       onRejectDouble={onRejectDouble}
       forcedMoveNotice={forcedMoveNotice}
       activeDieIndex={activeDieIndex}
-      onDieClick={(i) => setActiveDieIndex(activeDieIndex === i ? null : (i as 0 | 1))}
+      onDieClick={() => setActiveDieIndex(activeDieIndex === 0 ? 1 : 0)}
     />
   );
 
@@ -764,44 +763,41 @@ export function GameScreen({
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
           >
             <div
-              className={`panel p-8 sm:p-10 text-center max-w-xs mx-4 shadow-2xl ${
+              className={`panel text-center max-w-xs mx-4 shadow-2xl ${
                 winner === myColor
                   ? "border-[rgba(212,168,67,0.4)]"
                   : "border-[rgba(248,113,113,0.3)]"
               }`}
-              style={{ boxShadow: winner === myColor
-                ? "0 8px 40px rgba(212,168,67,0.15), 0 2px 12px rgba(0,0,0,0.2)"
-                : "0 8px 40px rgba(248,113,113,0.1), 0 2px 12px rgba(0,0,0,0.2)"
+              style={{
+                padding: "40px 32px 32px",
+                boxShadow: winner === myColor
+                  ? "0 8px 40px rgba(212,168,67,0.15), 0 2px 12px rgba(0,0,0,0.2)"
+                  : "0 8px 40px rgba(248,113,113,0.1), 0 2px 12px rgba(0,0,0,0.2)",
               }}
             >
-              <div className="mb-4" style={{
-                fontSize: 40,
-                lineHeight: 1,
-              }}>
-                {winner === myColor ? "🏆" : "💔"}
-              </div>
               <h2
-                className={`font-display text-[36px] font-bold mb-2 ${
+                className={`font-display font-bold mb-3 ${
                   winner === myColor
                     ? "text-[var(--color-gold-primary)]"
                     : "text-[var(--color-danger)]"
                 }`}
+                style={{ fontSize: 34, lineHeight: 1.1 }}
               >
                 {winner === myColor ? "Victory!" : "Defeat"}
               </h2>
-              <p className="text-sm text-[var(--color-text-muted)] mb-8" style={{ letterSpacing: "0.02em" }}>
+              <p className="text-[var(--color-text-muted)] mb-10" style={{ fontSize: 14, letterSpacing: "0.02em" }}>
                 {resultLabel}
                 {resultType === "gammon" && " — Double points"}
                 {resultType === "backgammon" && " — Triple points"}
               </p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => setShowPostGame(true)} className="btn-primary w-full" style={{ fontSize: 16, padding: "16px 20px" }}>
+                <button onClick={() => setShowPostGame(true)} className="btn-primary w-full" style={{ fontSize: 15, padding: "14px 20px" }}>
                   View Analysis
                 </button>
-                <button onClick={onNewGame} className="btn-secondary w-full">
+                <button onClick={onNewGame} className="btn-secondary w-full" style={{ fontSize: 14, padding: "12px 20px" }}>
                   Play Again
                 </button>
-                <button onClick={onBackToLobby ?? onNewGame} className="btn-secondary w-full" style={{ fontSize: 13, padding: "12px 20px", opacity: 0.8 }}>
+                <button onClick={onBackToLobby ?? onNewGame} className="btn-secondary w-full" style={{ fontSize: 13, padding: "10px 20px", opacity: 0.7 }}>
                   Back to Lobby
                 </button>
               </div>

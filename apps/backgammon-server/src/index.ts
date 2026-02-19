@@ -332,24 +332,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const game = gameManager.getGame(msg.game_id)!;
       const playerColor = gameManager.getPlayerColor(game, conn.address)!;
 
-      // If no legal moves (auto-ended), broadcast turn ended
-      if (result.legalMoves.length === 0 && !result.gameState.gameOver) {
-        gameManager.broadcastToGame(game, {
-          type: "dice_rolled",
-          game_id: msg.game_id,
-          dice: result.dice,
-          player: playerColor,
-          game_state: result.gameState,
-          legal_moves: [],
-        });
-        gameManager.broadcastToGame(game, {
-          type: "turn_ended",
-          game_id: msg.game_id,
-          next_player: result.gameState.currentPlayer,
-          game_state: result.gameState,
-        });
-      } else {
-        // Send dice roll with legal moves to current player, without legal moves to opponent
+      // Always send dice roll — never auto-end. Player must confirm.
+      {
         const currentPlayer = playerColor === "white" ? game.playerWhite : game.playerBlack;
         const opponentPlayer = playerColor === "white" ? game.playerBlack : game.playerWhite;
 
@@ -360,6 +344,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           player: playerColor,
           game_state: result.gameState,
           legal_moves: result.legalMoves,
+          needs_confirmation: result.legalMoves.length === 0,
         });
         gameManager.sendToPlayer(opponentPlayer, {
           type: "dice_rolled",
@@ -369,7 +354,6 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           game_state: result.gameState,
           legal_moves: [],
         });
-        // Spectators see no legal moves
         for (const spec of game.spectators) {
           gameManager.sendToPlayer(spec, {
             type: "dice_rolled",

@@ -735,25 +735,9 @@ export function useLocalGame(difficulty: AIDifficulty) {
     return () => clearTimeout(t);
   }, [state.legalMoves, state.gameState.currentPlayer, state.gameState.dice]);
 
-  // ── Auto-end turn when no legal moves (after rolling or mid-turn) ──
-
-  useEffect(() => {
-    const s = stateRef.current;
-    if (
-      s.gameState.currentPlayer === s.myColor &&
-      s.gameState.dice !== null &&
-      s.legalMoves.length === 0 &&
-      !s.gameState.gameOver
-    ) {
-      // No legal moves — auto end after a short delay
-      // Works both when no moves at all (movesMade=0) and when partially blocked
-      const t = setTimeout(() => {
-        playTurnEnd();
-        dispatch({ type: "END_TURN" });
-      }, 800);
-      return () => clearTimeout(t);
-    }
-  }, [state.gameState.dice, state.legalMoves.length, state.movesMade.length, state.gameState.currentPlayer]);
+  // ── Always require manual confirmation — no auto-end ──
+  // When no legal moves remain (after roll or mid-turn), the Confirm button
+  // shows automatically via canEndTurn in GameScreen. Player must tap it.
 
   // ── AI turn ─────────────────────────────────────────────────
 

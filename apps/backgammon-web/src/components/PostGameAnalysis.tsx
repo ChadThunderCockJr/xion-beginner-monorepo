@@ -641,67 +641,54 @@ export function PostGameAnalysis({
       minHeight: "100vh", background: C.bg.deepest,
       display: "flex", flexDirection: "column", fontFamily: F.body, color: C.text.primary,
     }}>
-      {/* ─── Top Bar ─── */}
+      {/* ─── Header ─── */}
       <header style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
-      }}
-      className="px-3 py-2 sm:px-6 sm:py-3"
-      >
-        <button onClick={onBack} style={{
-          background: "none", border: "none", color: C.text.secondary,
-          cursor: "pointer", fontSize: 14, fontWeight: W.medium,
-          display: "flex", alignItems: "center", gap: 6, fontFamily: F.body,
-        }}>&larr; Back to lobby</button>
-        <span style={{ fontSize: 13, fontWeight: W.semibold, color: C.text.muted }}>Match Analysis</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onBackToLobby} style={{
-            padding: "6px 14px", borderRadius: R.button,
-            border: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
-            fontSize: 12, fontWeight: W.semibold, color: C.text.secondary, cursor: "pointer", fontFamily: F.body,
-          }}>Share</button>
-          <button onClick={onRematch} style={{
-            padding: "6px 14px", borderRadius: R.button, border: "none",
-            background: `linear-gradient(135deg, ${C.gold.primary}, ${C.gold.light})`, color: C.gold.text,
-            fontSize: 12, fontWeight: W.bold, cursor: "pointer", fontFamily: F.body,
-          }}>Rematch</button>
+        background: C.bg.surface, borderBottom: `1px solid ${C.bg.subtle}`,
+        padding: "12px 16px",
+      }}>
+        {/* Top row: nav + actions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <button onClick={onBack} style={{
+            background: "none", border: "none", color: C.text.secondary,
+            cursor: "pointer", fontSize: 13, fontWeight: W.medium,
+            display: "flex", alignItems: "center", gap: 4, fontFamily: F.body, padding: 0,
+          }}>&larr; Back</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={onBackToLobby} style={{
+              padding: "6px 14px", borderRadius: R.button,
+              border: `1px solid ${C.bg.subtle}`, background: "transparent",
+              fontSize: 12, fontWeight: W.semibold, color: C.text.secondary, cursor: "pointer", fontFamily: F.body,
+            }}>Home</button>
+            <button onClick={onRematch} style={{
+              padding: "6px 14px", borderRadius: R.button, border: "none",
+              background: `linear-gradient(135deg, ${C.gold.primary}, ${C.gold.light})`, color: C.gold.text,
+              fontSize: 12, fontWeight: W.bold, cursor: "pointer", fontFamily: F.body,
+            }}>Rematch</button>
+          </div>
+        </div>
+
+        {/* Result row: players + outcome */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Avatar name="Y" size={32} />
+            <span style={{ fontSize: 13, fontWeight: W.bold }}>You</span>
+          </div>
+          <div style={{
+            fontSize: 14, fontWeight: W.bold, fontFamily: F.display,
+            color: iWon ? C.gold.primary : C.error,
+            padding: "2px 10px", borderRadius: 4,
+            background: iWon ? C.gold.faint : "rgba(204,68,68,0.1)",
+          }}>
+            {iWon ? "Victory" : "Defeat"} &middot; {resultLabel}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: W.bold }}>{opponentName}</span>
+            <Avatar name={opponentName[0] || "O"} size={32} />
+          </div>
         </div>
       </header>
-
-      {/* ─── Result Banner ─── */}
-      <div className="gap-4 sm:gap-8 px-3 py-3 sm:px-6 sm:py-5" style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: C.bg.surface, borderBottom: `1px solid ${C.bg.subtle}`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Avatar name="Y" size={48} />
-          <div>
-            <div style={{ fontSize: 16, fontWeight: W.bold }}>You</div>
-            <div style={{ fontSize: 12, color: C.text.muted }}>{myColor}</div>
-          </div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            fontSize: 20, fontWeight: W.bold, letterSpacing: "-0.02em", fontFamily: F.display,
-            color: iWon ? C.gold.primary : C.error,
-          }}>
-            {iWon ? "Victory!" : "Defeat"}
-          </div>
-          <div style={{
-            fontSize: 12, fontWeight: W.bold,
-            color: iWon ? C.gold.primary : C.error,
-            background: iWon ? C.gold.faint : "rgba(204,68,68,0.15)",
-            padding: "3px 12px", borderRadius: 4, marginTop: 4, display: "inline-block",
-          }}>{resultLabel}</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexDirection: "row-reverse" }}>
-          <Avatar name={opponentName[0] || "O"} size={48} />
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 16, fontWeight: W.bold }}>{opponentName}</div>
-            <div style={{ fontSize: 12, color: C.text.muted }}>{myColor === "white" ? "black" : "white"}</div>
-          </div>
-        </div>
-      </div>
 
       {/* ─── Tab Bar ─── */}
       <div style={{

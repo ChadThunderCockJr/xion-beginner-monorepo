@@ -20,8 +20,8 @@ export interface BoardProps {
   centerControls?: ReactNode;
   /** Pip counts: [opponent, player] from the viewing player's perspective */
   pipCounts?: [number, number];
-  /** Active die index for dice swap (Phase 5) */
-  activeDieIndex?: 0 | 1 | null;
+  /** Active die index — front die is always used for moves */
+  activeDieIndex?: 0 | 1;
 }
 
 // ─── Design constants ────────────────────────────────────────────
@@ -224,7 +224,6 @@ export function Board({
   pipCounts,
   activeDieIndex,
 }: BoardProps) {
-  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const flipped = myColor === "black";
   const repeatDestRef = useRef<number | null>(null);
 
@@ -239,21 +238,39 @@ export function Board({
     isPlayerMove: boolean;
   } | null>(null);
 
-  // ─── Drag state ───────────────────────────────────────────────
+  // ─── Hold + drag state ─────────────────────────────────────────
+  // holdPoint: when set, shows destination previews for that source
+  const [holdPoint, setHoldPoint] = useState<number | null>(null);
   const [dragState, setDragState] = useState<{
     sourcePoint: number;
     color: "white" | "black";
     cursorX: number;
     cursorY: number;
   } | null>(null);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerDownRef = useRef<{ x: number; y: number; time: number; point: number } | null>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDraggingRef = useRef(false);
-  const dragOccurredRef = useRef(false);
+  const tapHandledRef = useRef(false);
 
+  // Destinations visible during hold
+  const holdDests = useMemo(() => {
+    if (holdPoint === null) return new Map<number, number[]>();
+    const map = new Map<number, number[]>();
+    for (const m of legalMoves) {
+      if (m.from !== holdPoint) continue;
+      const existing = map.get(m.to) || [];
+      existing.push(m.die);
+      map.set(m.to, existing);
+    }
+    return map;
+  }, [holdPoint, legalMoves]);
+
+  // Legacy compat: selectedPoint for rendering (= holdPoint)
+  const selectedPoint = holdPoint;
   const legalDests = useMemo(() => {
-    if (selectedPoint === null) return new Set<number>();
-    return new Set(legalMoves.filter((m) => m.from === selectedPoint).map((m) => m.to));
-  }, [selectedPoint, legalMoves]);
+    if (holdPoint === null) return new Set<number>();
+    return new Set(legalMoves.filter((m) => m.from === holdPoint).map((m) => m.to));
+  }, [holdPoint, legalMoves]);
 
   const legalSources = useMemo(
     () => new Set(legalMoves.map((m) => m.from)),
@@ -293,17 +310,15 @@ export function Board({
       repeatDestRef.current = null;
       return;
     }
-    // Clear immediately so it only fires once per rapid-click
     repeatDestRef.current = null;
-    let move = legalMoves.find((m) => m.to === dest);
-    if (activeDieIndex != null && dice && move) {
-      const preferredValue = dice[activeDieIndex];
-      const preferred = legalMoves.find((m) => m.to === dest && m.die === preferredValue);
+    const candidates = legalMoves.filter((m) => m.to === dest);
+    if (candidates.length === 0) return;
+    let move = candidates[0];
+    if (activeDieIndex != null && dice) {
+      const preferred = candidates.find((m) => m.die === dice[activeDieIndex]);
       if (preferred) move = preferred;
     }
-    if (move) {
-      onMove(move.from, move.to);
-    }
+    onMove(move.from, move.to);
   }, [legalMoves, isMyTurn, onMove, activeDieIndex, dice]);
 
   // ─── Opponent move animation ──────────────────────────────────
@@ -327,97 +342,58 @@ export function Board({
     }
   }, [lastOpponentMove]);
 
-  // ─── Click handlers ──────────────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────
 
-  const lastClickRef = useRef<{ point: number; time: number } | null>(null);
+  function pickMove(moves: Move[]): Move {
+    if (moves.length === 1) return moves[0];
+    if (activeDieIndex != null && dice) {
+      const preferred = moves.find((m) => m.die === dice[activeDieIndex]);
+      if (preferred) return preferred;
+    }
+    return moves[0];
+  }
 
+  function tapMove(point: number) {
+    const movesFrom = legalMoves.filter((m) => m.from === point);
+    if (movesFrom.length === 0) return;
+    const move = pickMove(movesFrom);
+    onMove(move.from, move.to);
+    setHoldPoint(null);
+    repeatDestRef.current = move.to;
+  }
+
+  // Clicking a point directly (for backwards compat with rendering)
   function handleClick(point: number) {
-    if (!isMyTurn) return;
-
-    // Skip if drag just occurred
-    if (dragOccurredRef.current) {
-      dragOccurredRef.current = false;
-      return;
-    }
-
-    const now = Date.now();
-    const last = lastClickRef.current;
-    const isRapidRepeat = last !== null && last.point === point && now - last.time < 500;
-    lastClickRef.current = { point, time: now };
-
-    // If a source is selected and this is a legal destination → move
-    if (selectedPoint !== null) {
-      if (legalDests.has(point)) {
-        onMove(selectedPoint, point);
-        setSelectedPoint(null);
-        if (isRapidRepeat) {
-          repeatDestRef.current = point;
-        }
-        return;
-      }
-      if (point === selectedPoint) {
-        setSelectedPoint(null);
-        return;
-      }
-    }
-
-    // Auto-move: if legal moves go TO this point
-    const movesTo = legalMoves.filter((m) => m.to === point);
-    if (movesTo.length > 0) {
-      const uniqueSources = new Set(movesTo.map((m) => m.from));
-      // Auto-move when: not a legal source, only one source can reach here, or rapid repeat
-      if (!legalSources.has(point) || uniqueSources.size === 1 || isRapidRepeat) {
-        let best = movesTo[0];
-        if (activeDieIndex != null && dice) {
-          const preferredValue = dice[activeDieIndex];
-          const preferred = movesTo.find((m) => m.die === preferredValue);
-          if (preferred) best = preferred;
-        }
-        onMove(best.from, point);
-        setSelectedPoint(null);
-        if (isRapidRepeat) {
-          repeatDestRef.current = point;
-        }
-        return;
-      }
-    }
-
-    // Select as source
-    if (legalSources.has(point)) {
-      setSelectedPoint(point);
-    }
+    // No-op — all interaction handled by pointer events
   }
 
   function handleBearOff() {
     if (!isMyTurn) return;
 
-    // If a checker is selected and bear-off is a legal dest for it, use that
-    if (selectedPoint !== null) {
+    // If holding and bear-off is a legal dest, use that
+    if (holdPoint !== null) {
       const target = legalDests.has(0) ? 0 : legalDests.has(25) ? 25 : null;
       if (target !== null) {
-        onMove(selectedPoint, target);
-        setSelectedPoint(null);
+        onMove(holdPoint, target);
+        setHoldPoint(null);
         repeatDestRef.current = target;
         return;
       }
     }
 
-    // No selection — find any legal bear-off move and auto-execute
+    // No hold — find any legal bear-off move and auto-execute with front die
     const bearOffMoves = legalMoves.filter((m) => m.to === 0 || m.to === 25);
     if (bearOffMoves.length > 0) {
-      let best = bearOffMoves[0];
-      if (activeDieIndex != null && dice) {
-        const preferredValue = dice[activeDieIndex];
-        const preferred = bearOffMoves.find((m) => m.die === preferredValue);
-        if (preferred) best = preferred;
-      }
+      const best = pickMove(bearOffMoves);
       onMove(best.from, best.to);
-      setSelectedPoint(null);
+      setHoldPoint(null);
       repeatDestRef.current = best.to;
     }
   }
 
-  // ─── Drag-and-drop handlers ───────────────────────────────────
+  // ─── Pointer handlers: tap vs hold vs drag ────────────────────
+
+  const HOLD_DELAY = 250; // ms before hold mode activates
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!isMyTurn || gameOver) return;
@@ -430,38 +406,67 @@ export function Board({
     const val = board.points[point];
     const color: "white" | "black" = val > 0 ? "white" : val < 0 ? "black" : myColor;
 
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    pointerDownRef.current = { x: e.clientX, y: e.clientY, time: Date.now(), point };
     isDraggingRef.current = false;
-    dragOccurredRef.current = false;
+    tapHandledRef.current = false;
 
     setDragState({ sourcePoint: point, color, cursorX: e.clientX, cursorY: e.clientY });
+
+    // Start hold timer
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = setTimeout(() => {
+      if (!pointerDownRef.current) return;
+      // Enter hold mode — show destinations
+      setHoldPoint(point);
+      // Capture pointer so we get events even if cursor leaves element
+      try {
+        (e.target as HTMLElement).closest("[data-board-root]")?.setPointerCapture(e.pointerId);
+      } catch {}
+    }, HOLD_DELAY);
   }, [isMyTurn, gameOver, legalSources, board.points, myColor]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragStartRef.current || !dragState) return;
+    if (!pointerDownRef.current || !dragState) return;
 
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
+    const dx = e.clientX - pointerDownRef.current.x;
+    const dy = e.clientY - pointerDownRef.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (!isDraggingRef.current && Math.sqrt(dx * dx + dy * dy) > 5) {
+    // If moved significantly before hold timer, cancel hold and start drag
+    if (dist > 8 && !isDraggingRef.current) {
       isDraggingRef.current = true;
-      setSelectedPoint(dragState.sourcePoint);
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
+      setHoldPoint(dragState.sourcePoint);
+      try {
+        (e.target as HTMLElement).closest("[data-board-root]")?.setPointerCapture(e.pointerId);
+      } catch {}
     }
 
-    if (isDraggingRef.current) {
+    if (isDraggingRef.current || holdPoint !== null) {
       setDragState((prev) => (prev ? { ...prev, cursorX: e.clientX, cursorY: e.clientY } : null));
     }
-  }, [dragState]);
+  }, [dragState, holdPoint]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!dragStartRef.current) return;
+    if (!pointerDownRef.current) return;
 
-    if (isDraggingRef.current && dragState) {
-      dragOccurredRef.current = true;
+    if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
 
+    const elapsed = Date.now() - pointerDownRef.current.time;
+    const point = pointerDownRef.current.point;
+    const dx = e.clientX - pointerDownRef.current.x;
+    const dy = e.clientY - pointerDownRef.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Quick tap (< hold delay, minimal movement) → auto-move by front die
+    if (elapsed < HOLD_DELAY && dist < 12 && !tapHandledRef.current) {
+      tapHandledRef.current = true;
+      tapMove(point);
+    }
+    // Hold or drag release → check if near a destination
+    else if (holdPoint !== null || isDraggingRef.current) {
       const boardEl = boardInnerRef.current;
-      if (boardEl) {
+      if (boardEl && dragState) {
         const boardRect = boardEl.getBoundingClientRect();
         const cursorX = e.clientX - boardRect.left;
         const cursorY = e.clientY - boardRect.top;
@@ -476,28 +481,25 @@ export function Board({
         for (const dest of destsForSource) {
           const center = getPointCenter(dest);
           if (!center) continue;
-          const dist = Math.sqrt((center.x - cursorX) ** 2 + (center.y - cursorY) ** 2);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestPoint = dest;
-          }
+          const d = Math.sqrt((center.x - cursorX) ** 2 + (center.y - cursorY) ** 2);
+          if (d < closestDist) { closestDist = d; closestPoint = dest; }
         }
 
         if (closestPoint >= 0 && closestDist < 80) {
           onMove(dragState.sourcePoint, closestPoint);
-          setSelectedPoint(null);
         }
       }
-
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {}
+      setHoldPoint(null);
     }
+
+    try {
+      (e.target as HTMLElement).closest("[data-board-root]")?.releasePointerCapture(e.pointerId);
+    } catch {}
 
     setDragState(null);
     isDraggingRef.current = false;
-    dragStartRef.current = null;
-  }, [dragState, legalMoves, getPointCenter, onMove]);
+    pointerDownRef.current = null;
+  }, [holdPoint, dragState, legalMoves, getPointCenter, onMove, activeDieIndex, dice]);
 
   // ─── Point ordering (respects flip) ──────────────────────────
 
@@ -599,8 +601,8 @@ export function Board({
           />
         )}
 
-        {/* Legal source subtle pulsing glow */}
-        {isSrc && !isSel && selectedPoint === null && (
+        {/* Legal source subtle pulsing glow (only when no hold active) */}
+        {isSrc && !isSel && holdPoint === null && (
           <div
             className="absolute animate-legal-pulse rounded-full"
             style={{
@@ -615,29 +617,10 @@ export function Board({
           />
         )}
 
-        {/* Green destination dot indicator */}
+        {/* Hold destination: ghost checker with die label */}
         {isDest && (
           <div
-            className="absolute animate-dest-pulse"
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: "50%",
-              background: "rgba(100, 220, 120, 0.9)",
-              boxShadow: "0 0 8px rgba(100, 220, 120, 0.6)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              top: fromTop ? POINT_H - 24 : 8,
-              zIndex: 15,
-              pointerEvents: "none",
-            }}
-          />
-        )}
-
-        {/* Legal destination ghost checker */}
-        {isDest && (
-          <div
-            className="absolute flex items-center justify-center"
+            className="absolute flex flex-col items-center justify-center"
             style={{
               top: fromTop
                 ? 6 + (col && displayCount > 0 ? Math.min(displayCount, MAX_SHOW) * CHECKER_VISIBLE : 0)
@@ -647,11 +630,28 @@ export function Board({
                 : "auto",
               left: "50%",
               transform: "translateX(-50%)",
-              zIndex: 3,
+              zIndex: 15,
               pointerEvents: "none",
             }}
           >
             <Checker color={myColor} isGhost />
+            {/* Die value badge */}
+            {holdDests.has(point) && (
+              <div style={{
+                position: "absolute",
+                bottom: -6,
+                background: "rgba(100,220,120,0.95)",
+                color: "#1a1a1a",
+                fontSize: 11,
+                fontWeight: 800,
+                borderRadius: 8,
+                padding: "1px 6px",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                lineHeight: "16px",
+              }}>
+                {holdDests.get(point)!.join("+")}
+              </div>
+            )}
           </div>
         )}
 
@@ -827,8 +827,9 @@ export function Board({
   return (
     <div
       ref={containerRef}
+      data-board-root
       className="w-full h-full flex items-center justify-center overflow-hidden"
-      style={{ touchAction: dragState ? "none" : "auto" }}
+      style={{ touchAction: dragState || holdPoint !== null ? "none" : "auto" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

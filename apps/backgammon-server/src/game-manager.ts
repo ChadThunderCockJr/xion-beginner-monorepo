@@ -94,12 +94,7 @@ export class GameManager {
       game.gameState.movesRemaining
     );
 
-    // If no legal moves, auto-end turn
-    if (legalMoves.length === 0) {
-      game.gameState = endTurn(game.gameState);
-    }
-
-    // Start turn timer
+    // Start turn timer — player must always confirm, even with no legal moves
     this.startTurnTimer(game);
 
     return { dice: [die1, die2], gameState: game.gameState, legalMoves };
