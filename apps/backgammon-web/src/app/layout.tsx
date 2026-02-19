@@ -78,9 +78,22 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Gammon</title>
-        <meta name="description" content="Play competitive backgammon online" />
+        <meta name="description" content="The world's fairest backgammon platform. Provably fair dice on the blockchain." />
         <meta name="theme-color" content="#F5F1EB" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* Open Graph */}
+        <meta property="og:title" content="Gammon" />
+        <meta property="og:description" content="The world's fairest backgammon platform. Provably fair dice on the blockchain." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://gammon.nyc" />
+        <meta property="og:image" content="https://gammon.nyc/opengraph-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Gammon" />
+        <meta name="twitter:description" content="The world's fairest backgammon platform. Provably fair dice on the blockchain." />
+        <meta name="twitter:image" content="https://gammon.nyc/opengraph-image.png" />
         {/* Inline script to set theme class before first paint — prevents flash */}
         <script
           dangerouslySetInnerHTML={{
