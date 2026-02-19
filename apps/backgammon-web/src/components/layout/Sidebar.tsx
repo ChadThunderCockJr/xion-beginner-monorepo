@@ -202,24 +202,15 @@ export function Sidebar() {
           padding: "4px 16px 24px",
         }}
       >
-        <div
+        <img
+          src="/logo-transparent.png"
+          alt="Gammon"
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 6,
-            background: "var(--color-gold-primary)",
-            border: "1.5px solid var(--color-gold-light)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "var(--font-display)",
-            fontSize: 21,
-            fontWeight: 700,
-            color: "var(--color-accent-fg)",
+            width: 36,
+            height: 36,
+            objectFit: "contain",
           }}
-        >
-          G
-        </div>
+        />
         <span
           style={{
             color: "var(--color-text-primary)",
