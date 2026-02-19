@@ -286,13 +286,15 @@ export function Board({
     };
   }, []);
 
-  // ─── Auto-repeat: after legalMoves update, auto-play next move to same dest
+  // ─── Auto-repeat: after legalMoves update, auto-play next move to same dest (once)
   useEffect(() => {
     const dest = repeatDestRef.current;
     if (dest === null || !isMyTurn) {
       repeatDestRef.current = null;
       return;
     }
+    // Clear immediately so it only fires once per rapid-click
+    repeatDestRef.current = null;
     let move = legalMoves.find((m) => m.to === dest);
     if (activeDieIndex != null && dice && move) {
       const preferredValue = dice[activeDieIndex];
@@ -301,8 +303,6 @@ export function Board({
     }
     if (move) {
       onMove(move.from, move.to);
-    } else {
-      repeatDestRef.current = null;
     }
   }, [legalMoves, isMyTurn, onMove, activeDieIndex, dice]);
 
@@ -648,6 +648,7 @@ export function Board({
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 3,
+              pointerEvents: "none",
             }}
           >
             <Checker color={myColor} isGhost />
