@@ -269,6 +269,7 @@ export default function DashboardPage() {
   const social = useSocialContext();
   const { displayName, username } = social;
   const playerName = displayName || username || "Player";
+  const [rated, setRated] = useState(true);
 
   // Live data state
   const [stats, setStats] = useState<PlayerStats | null>(null);
@@ -624,7 +625,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ marginBottom: 40 }}>
 
         {/* Quick Match */}
-        <Card className="hover:shadow-elevated hover:-translate-y-px transition-all cursor-pointer">
+        <Card className="hover:shadow-elevated hover:-translate-y-px transition-all">
           <div
             style={{
               display: "flex",
@@ -645,19 +646,23 @@ export default function DashboardPage() {
             >
               Quick Match
             </h3>
-            <span
+            <button
+              onClick={() => setRated((r) => !r)}
               style={{
                 fontSize: 11,
-                color: "var(--color-burgundy-light)",
-                background: "var(--color-burgundy-faint)",
+                color: rated ? "var(--color-burgundy-light)" : "var(--color-text-muted)",
+                background: rated ? "var(--color-burgundy-faint)" : "var(--color-bg-subtle)",
                 padding: "3px 10px",
                 borderRadius: 20,
                 fontWeight: 600,
                 fontFamily: "var(--font-body)",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
-              Rated
-            </span>
+              {rated ? "Rated" : "Casual"}
+            </button>
           </div>
           <p
             style={{
@@ -670,23 +675,35 @@ export default function DashboardPage() {
             Find an opponent at your skill level instantly. Provably fair dice.
           </p>
           <div style={{ display: "flex", gap: 8 }}>
-            {["1pt", "3pt", "5pt", "7pt"].map((len) => (
-              <span
+            {[1, 3, 5, 7].map((len) => (
+              <button
                 key={len}
+                onClick={() => router.push(`/matchmaking?length=${len}&rated=${rated}`)}
                 style={{
                   flex: 1,
                   padding: "10px 14px",
                   borderRadius: 6,
                   border: "1px solid var(--color-bg-subtle)",
+                  background: "transparent",
                   fontSize: 14,
                   fontWeight: 600,
                   color: "var(--color-text-muted)",
                   fontFamily: "var(--font-mono)",
                   textAlign: "center",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--color-gold-primary)";
+                  e.currentTarget.style.color = "var(--color-gold-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--color-bg-subtle)";
+                  e.currentTarget.style.color = "var(--color-text-muted)";
                 }}
               >
-                {len}
-              </span>
+                {len}pt
+              </button>
             ))}
           </div>
         </Card>

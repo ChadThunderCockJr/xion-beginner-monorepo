@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useGame } from "@/hooks/useGame";
 import { useAuth } from "@/hooks/useAuth";
@@ -76,6 +76,9 @@ function Timer({ seconds }: { seconds: number }) {
 // ═════════════════════════════════════════════════════════════════════════
 export default function MatchmakingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const matchLength = parseInt(searchParams.get("length") || "1", 10);
+  const isRated = searchParams.get("rated") !== "false";
   const [elapsed, setElapsed] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [uiState, setUiState] = useState<"searching" | "found" | "countdown">("searching");
@@ -352,9 +355,9 @@ export default function MatchmakingPage() {
               }}
             >
               {[
-                { label: "Match", value: "Quick" },
+                { label: "Length", value: `${matchLength}pt` },
                 { label: "Wager", value: "Free" },
-                { label: "Mode", value: "Casual" },
+                { label: "Mode", value: isRated ? "Rated" : "Casual" },
               ].map((item, i) => (
                 <div key={i} style={{ textAlign: "center", minWidth: 60 }}>
                   <div
