@@ -301,17 +301,7 @@ export default function LoginPage() {
             maxWidth: 380,
           }}
         >
-          <img
-            src="/logo-transparent.png"
-            alt="Gammon"
-            style={{
-              width: 180,
-              height: 180,
-              objectFit: "contain",
-              margin: "0 auto",
-              display: "block",
-            }}
-          />
+          <BoardIllustration />
 
           <h2
             className="text-2xl lg:text-[32px]"
