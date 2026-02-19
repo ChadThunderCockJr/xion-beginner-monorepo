@@ -624,6 +624,77 @@ export default function DashboardPage() {
       {/* Play Mode Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ marginBottom: 40 }}>
 
+        {/* Play a Friend — spans full width */}
+        <Card className="md:col-span-2 hover:shadow-elevated hover:-translate-y-px transition-all cursor-pointer">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            {Icons.users("var(--color-gold-light)")}
+            <h3
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 26,
+                fontWeight: 700,
+                margin: 0,
+                color: "var(--color-text-primary)",
+              }}
+            >
+              Play a Friend
+            </h3>
+          </div>
+          <p
+            style={{
+              fontSize: 14,
+              color: "var(--color-text-muted)",
+              margin: "0 0 20px",
+              lineHeight: 1.5,
+            }}
+          >
+            Create a private game or join one with a code.
+          </p>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={() => router.push("/create-match")}
+              style={{
+                flex: 1,
+                padding: "14px 20px",
+                borderRadius: 6,
+                border: "none",
+                background: "var(--color-gold-primary)",
+                color: "var(--color-accent-fg)",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              Create Game &rarr; Get Code
+            </button>
+            <button
+              onClick={() => router.push("/join")}
+              style={{
+                flex: 1,
+                padding: "14px 20px",
+                borderRadius: 6,
+                border: "1.5px solid var(--color-bg-subtle)",
+                background: "transparent",
+                color: "var(--color-text-secondary)",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              Paste Code &rarr; Join Game
+            </button>
+          </div>
+        </Card>
+
         {/* Quick Match */}
         <Card className="hover:shadow-elevated hover:-translate-y-px transition-all">
           <div
@@ -768,77 +839,6 @@ export default function DashboardPage() {
                 {lvl}
               </button>
             ))}
-          </div>
-        </Card>
-
-        {/* Play a Friend — spans full width */}
-        <Card className="md:col-span-2 hover:shadow-elevated hover:-translate-y-px transition-all cursor-pointer">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 16,
-            }}
-          >
-            {Icons.users("var(--color-gold-light)")}
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 26,
-                fontWeight: 700,
-                margin: 0,
-                color: "var(--color-text-primary)",
-              }}
-            >
-              Play a Friend
-            </h3>
-          </div>
-          <p
-            style={{
-              fontSize: 14,
-              color: "var(--color-text-muted)",
-              margin: "0 0 20px",
-              lineHeight: 1.5,
-            }}
-          >
-            Create a private game or join one with a code.
-          </p>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={() => router.push("/create-match")}
-              style={{
-                flex: 1,
-                padding: "14px 20px",
-                borderRadius: 6,
-                border: "none",
-                background: "var(--color-gold-primary)",
-                color: "var(--color-accent-fg)",
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              Create Game &rarr; Get Code
-            </button>
-            <button
-              onClick={() => router.push("/join")}
-              style={{
-                flex: 1,
-                padding: "14px 20px",
-                borderRadius: 6,
-                border: "1.5px solid var(--color-bg-subtle)",
-                background: "transparent",
-                color: "var(--color-text-secondary)",
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "var(--font-body)",
-              }}
-            >
-              Paste Code &rarr; Join Game
-            </button>
           </div>
         </Card>
       </div>
