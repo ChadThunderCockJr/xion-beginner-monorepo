@@ -16,6 +16,7 @@ build/
 target/
 *.wasm
 !artifacts/*.wasm
+!apps/backgammon-web/public/gnubg/*.wasm
 
 # Expo
 .expo/

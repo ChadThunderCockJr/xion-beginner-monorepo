@@ -5,16 +5,27 @@ import {
   applySingleMove,
 } from "@xion-beginner/backgammon-core";
 import { evaluateBoard, WEIGHTS } from "./ai";
+import { getGnubgMoves, isGnubgReady, type GnubgMoveResult } from "./gnubg";
 
 /* ── Types ── */
 
 export type ErrorClass = "blunder" | "mistake" | "inaccuracy" | null;
+
+export interface WinProbability {
+  win: number;
+  winG: number;
+  winBG: number;
+  lose: number;
+  loseG: number;
+  loseBG: number;
+}
 
 export interface CandidateMove {
   moves: Move[];
   notation: string;
   equity: number; // normalized [-1, +1] from white's perspective
   isPlayed: boolean;
+  probability?: WinProbability;
 }
 
 export interface TurnAnalysis {
@@ -29,6 +40,7 @@ export interface TurnAnalysis {
   errorClass: ErrorClass;
   candidates: CandidateMove[]; // top 5, sorted best-first
   boardBefore: BoardState; // board state before this turn's moves
+  probability?: WinProbability; // gnubg win probability for played move
 }
 
 export interface PlayerSummary {
@@ -323,5 +335,259 @@ function computeSummary(turns: TurnAnalysis[], player: Player): PlayerSummary {
     inaccuracies,
     avgEquityLoss,
     performanceRating,
+  };
+}
+
+/* ── WASM-Based Analysis ── */
+
+/**
+ * Analyze a game using GNU Backgammon's WASM engine for proper equity scores.
+ * Returns the same GameAnalysis structure but with accurate neural-network equity
+ * and win probability data.
+ *
+ * Processes turns sequentially (each WASM call takes ~50-200ms).
+ * Falls back to heuristic analysis for any turn where WASM fails.
+ */
+export async function analyzeGameWithGnubg(
+  turnHistory: TurnRecord[],
+  onProgress?: (current: number, total: number) => void,
+): Promise<GameAnalysis> {
+  if (!isGnubgReady()) {
+    return analyzeGame(turnHistory);
+  }
+
+  let board = createInitialBoard();
+  const equityHistory: number[] = [0]; // gnubg equity starts at 0 (equal position)
+  const turns: TurnAnalysis[] = [];
+
+  for (let i = 0; i < turnHistory.length; i++) {
+    onProgress?.(i + 1, turnHistory.length);
+
+    const turn = turnHistory[i];
+    const { player, dice, moves: playedMoves } = turn;
+
+    // Use stored board state if available
+    if (turn.boardBefore) {
+      board = turn.boardBefore;
+    }
+
+    let turnAnalysis: TurnAnalysis;
+
+    try {
+      // Get all scored candidates from gnubg
+      const gnubgResults = await getGnubgMoves(board, player, dice, {
+        scoreMoves: true,
+        maxMoves: 0, // 0 = return all moves
+      });
+
+      turnAnalysis = buildGnubgTurnAnalysis(
+        i + 1,
+        player,
+        dice,
+        playedMoves,
+        board,
+        gnubgResults,
+      );
+    } catch {
+      // Fall back to heuristic analysis for this turn
+      turnAnalysis = buildHeuristicTurnAnalysis(
+        i + 1,
+        player,
+        dice,
+        playedMoves,
+        board,
+      );
+    }
+
+    turns.push(turnAnalysis);
+    equityHistory.push(turnAnalysis.equityAfter);
+
+    // Advance board state
+    board = applyMoveSequence(board, player, playedMoves);
+  }
+
+  const whiteSummary = computeSummary(turns, "white");
+  const blackSummary = computeSummary(turns, "black");
+
+  return { turns, equityHistory, whiteSummary, blackSummary };
+}
+
+/** Build a TurnAnalysis from gnubg scored results */
+function buildGnubgTurnAnalysis(
+  turnNumber: number,
+  player: Player,
+  dice: [number, number],
+  playedMoves: Move[],
+  board: BoardState,
+  gnubgResults: GnubgMoveResult[],
+): TurnAnalysis {
+  const playedKey = playedMoves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
+
+  // Build candidates from gnubg results
+  // gnubg returns them sorted best-first by equity
+  const candidates: CandidateMove[] = [];
+  let playedEquity: number | null = null;
+  let bestEquity: number | null = null;
+  let playedProbability: WinProbability | undefined;
+
+  for (const result of gnubgResults) {
+    const key = result.moves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
+    const isPlayed = key === playedKey;
+
+    // gnubg equity is from current player's perspective
+    // Convert to white's perspective for consistent display
+    const rawEq = result.evaluation?.eq ?? 0;
+    const whiteEq = player === "white" ? rawEq : -rawEq;
+
+    if (bestEquity === null) {
+      bestEquity = whiteEq; // first result is the best
+    }
+
+    if (isPlayed) {
+      playedEquity = whiteEq;
+      playedProbability = result.evaluation?.probability;
+    }
+
+    candidates.push({
+      moves: result.moves,
+      notation: formatNotation(result.moves),
+      equity: whiteEq,
+      isPlayed,
+      probability: result.evaluation?.probability,
+    });
+  }
+
+  // If no move matched played (edge case: gnubg may have different move generation),
+  // fall back to computing played equity from heuristic
+  if (playedEquity === null) {
+    const playedBoard = applyMoveSequence(board, player, playedMoves);
+    playedEquity = evalWhite(playedBoard);
+
+    // Add the played move to candidates
+    candidates.push({
+      moves: playedMoves,
+      notation: formatNotation(playedMoves),
+      equity: playedEquity,
+      isPlayed: true,
+    });
+  }
+
+  if (bestEquity === null) {
+    bestEquity = playedEquity;
+  }
+
+  // Equity loss: from the moving player's perspective
+  const bestPlayerEq = candidates.length > 0 ? (candidates[0].equity) : playedEquity;
+  const equityLoss = player === "white"
+    ? Math.max(0, bestPlayerEq - playedEquity)
+    : Math.max(0, playedEquity - bestPlayerEq); // for black, lower white equity is better
+
+  // Top 5 candidates + always include played
+  let topCandidates = candidates.slice(0, 5);
+  if (!topCandidates.some((c) => c.isPlayed)) {
+    const played = candidates.find((c) => c.isPlayed);
+    if (played) {
+      topCandidates = [...topCandidates.slice(0, 4), played];
+    }
+  }
+
+  return {
+    turnNumber,
+    player,
+    dice,
+    playedMoves,
+    playedNotation: formatNotation(playedMoves),
+    equityAfter: playedEquity,
+    bestEquity,
+    equityLoss,
+    errorClass: classifyError(equityLoss),
+    candidates: topCandidates,
+    boardBefore: board,
+    probability: playedProbability,
+  };
+}
+
+/** Fallback: build TurnAnalysis using heuristic evaluation (same as analyzeGame logic) */
+function buildHeuristicTurnAnalysis(
+  turnNumber: number,
+  player: Player,
+  dice: [number, number],
+  playedMoves: Move[],
+  board: BoardState,
+): TurnAnalysis {
+  const diceArray = buildDiceArray(dice);
+  const allSequences = generateAllMoveSequences(board, player, diceArray);
+  const playedKey = playedMoves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
+
+  const candidatesWithScore: (CandidateMove & { playerScore: number })[] = [];
+
+  if (allSequences.length === 0 || (allSequences.length === 1 && allSequences[0].length === 0)) {
+    candidatesWithScore.push({
+      moves: [],
+      notation: "(no moves)",
+      equity: evalWhite(board),
+      isPlayed: playedMoves.length === 0,
+      playerScore: evalPlayer(board, player),
+    });
+  } else {
+    for (const seq of allSequences) {
+      const resultBoard = applyMoveSequence(board, player, seq);
+      const key = seq.map((m) => `${m.from}/${m.to}`).sort().join(" ");
+      candidatesWithScore.push({
+        moves: seq,
+        notation: formatNotation(seq),
+        equity: evalWhite(resultBoard),
+        isPlayed: key === playedKey,
+        playerScore: evalPlayer(resultBoard, player),
+      });
+    }
+  }
+
+  candidatesWithScore.sort((a, b) => b.playerScore - a.playerScore);
+  const candidates: CandidateMove[] = candidatesWithScore.map(({ playerScore: _, ...rest }) => rest);
+
+  // Deduplicate
+  const seenMap = new Map<string, number>();
+  const uniqueCandidates: CandidateMove[] = [];
+  for (const c of candidates) {
+    const key = c.moves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
+    const existing = seenMap.get(key);
+    if (existing === undefined) {
+      seenMap.set(key, uniqueCandidates.length);
+      uniqueCandidates.push(c);
+    } else if (c.isPlayed) {
+      uniqueCandidates[existing] = { ...uniqueCandidates[existing], isPlayed: true };
+    }
+  }
+
+  let topCandidates = uniqueCandidates.slice(0, 5);
+  if (!topCandidates.some((c) => c.isPlayed)) {
+    const playedCandidate = uniqueCandidates.find((c) => c.isPlayed);
+    if (playedCandidate) {
+      topCandidates = [...topCandidates.slice(0, 4), playedCandidate];
+    }
+  }
+
+  const playedBoard = applyMoveSequence(board, player, playedMoves);
+  const playedEquity = evalWhite(playedBoard);
+  const bestEquity = uniqueCandidates.length > 0 ? uniqueCandidates[0].equity : playedEquity;
+  const bestPlayerScore = uniqueCandidates.length > 0
+    ? evalPlayer(applyMoveSequence(board, player, uniqueCandidates[0].moves), player)
+    : evalPlayer(playedBoard, player);
+  const playedPlayerScore = evalPlayer(playedBoard, player);
+  const equityLoss = Math.max(0, normalize(bestPlayerScore) - normalize(playedPlayerScore));
+
+  return {
+    turnNumber,
+    player,
+    dice,
+    playedMoves,
+    playedNotation: formatNotation(playedMoves),
+    equityAfter: playedEquity,
+    bestEquity,
+    equityLoss,
+    errorClass: classifyError(equityLoss),
+    candidates: topCandidates,
+    boardBefore: board,
   };
 }

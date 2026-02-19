@@ -7,6 +7,7 @@ import {
   getCheckerCount,
   canBearOff,
 } from "@xion-beginner/backgammon-core";
+import { getGnubgMoves, isGnubgReady } from "./gnubg";
 
 export type AIDifficulty = "beginner" | "club" | "expert" | "gm";
 
@@ -148,9 +149,39 @@ export function evaluateBoard(
 
 /**
  * Select the AI's move sequence for a given board state and difficulty.
+ * For GM difficulty, uses the GNU Backgammon WASM engine when available.
  * Returns the chosen move sequence, or null if no moves are available.
  */
-export function selectAIMove(
+export async function selectAIMove(
+  board: BoardState,
+  aiColor: Player,
+  movesRemaining: number[],
+  difficulty: AIDifficulty
+): Promise<Move[] | null> {
+  // GM difficulty: try WASM engine first
+  if (difficulty === "gm" && isGnubgReady()) {
+    try {
+      const dice: [number, number] = [
+        movesRemaining[0],
+        movesRemaining[movesRemaining.length > 1 ? 1 : 0],
+      ];
+      const results = await getGnubgMoves(board, aiColor, dice, {
+        maxMoves: 1,
+        scoreMoves: false,
+      });
+      if (results.length > 0 && results[0].moves.length > 0) {
+        return results[0].moves;
+      }
+    } catch {
+      // Fall through to heuristic
+    }
+  }
+
+  return selectHeuristicMove(board, aiColor, movesRemaining, difficulty);
+}
+
+/** Heuristic-based move selection (used for beginner/club/expert and as GM fallback) */
+function selectHeuristicMove(
   board: BoardState,
   aiColor: Player,
   movesRemaining: number[],

@@ -18,6 +18,7 @@ import {
   playGameOver,
 } from "@/lib/sounds";
 import { selectAIMove, getThinkingDelay, shouldAIDouble, shouldAIAcceptDouble, type AIDifficulty } from "@/lib/ai";
+import { preloadGnubg } from "@/lib/gnubg";
 
 // ── Persistence ───────────────────────────────────────────────
 
@@ -504,6 +505,13 @@ export function useLocalGame(difficulty: AIDifficulty) {
     saveToStorage(state, difficultyRef.current);
   }, [state]);
 
+  // Preload WASM engine for GM difficulty
+  useEffect(() => {
+    if (difficulty === "gm") {
+      preloadGnubg();
+    }
+  }, [difficulty]);
+
   const stateRef = useRef(state);
   stateRef.current = state;
   const aiAbortRef = useRef<(() => void) | null>(null);
@@ -807,87 +815,91 @@ export function useLocalGame(difficulty: AIDifficulty) {
 
       dispatch({ type: "AI_ROLLED", gameState: gs, legalMoves });
 
-      // Step 2: select and play moves
-      const moves = selectAIMove(
-        gs.board,
-        aiColor,
-        gs.movesRemaining,
-        difficultyRef.current
-      );
+      // Step 2: select and play moves (async for WASM GM engine)
+      (async () => {
+        const moves = await selectAIMove(
+          gs.board,
+          aiColor,
+          gs.movesRemaining,
+          difficultyRef.current
+        );
 
-      if (!moves || moves.length === 0) {
-        // No legal moves — end turn
-        const t2 = setTimeout(() => {
-          if (cancelled) return;
-          playTurnEnd();
-          const ended = coreEndTurn(gs);
-          aiThinkingRef.current = false;
-          dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-        }, 500);
-        timers.push(t2);
-        return;
-      }
+        if (cancelled) return;
 
-      // Animate moves one by one
-      let currentBoard = gs;
-
-      moves.forEach((move, i) => {
-        const delay = 350 + i * 350;
-        const t = setTimeout(() => {
-          if (cancelled) return;
-
-          const result = coreMakeMove(currentBoard, move.from, move.to);
-          if (!result) return;
-          currentBoard = result;
-
-          // Detect hit
-          const prevVal = stateRef.current.gameState.board.points[move.to];
-          const isHit =
-            (aiColor === "white" && prevVal === -1) ||
-            (aiColor === "black" && prevVal === 1);
-          if (isHit) {
-            playCheckerHit();
-          } else {
-            playCheckerPlace();
-          }
-
-          if (result.gameOver) {
-            playGameOver(result.winner !== stateRef.current.myColor);
+        if (!moves || moves.length === 0) {
+          // No legal moves — end turn
+          const t2 = setTimeout(() => {
+            if (cancelled) return;
+            playTurnEnd();
+            const ended = coreEndTurn(gs);
             aiThinkingRef.current = false;
-            dispatch({
-              type: "GAME_OVER",
-              winner: result.winner!,
-              resultType: result.resultType!,
-              gameState: result,
-              finalMove: move,
-            });
-            return;
-          }
+            dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+          }, 500);
+          timers.push(t2);
+          return;
+        }
 
-          dispatch({ type: "AI_MOVED", gameState: result, move });
+        // Animate moves one by one
+        let currentBoard = gs;
 
-          // After last move, end turn
-          if (i === moves.length - 1) {
-            const tEnd = setTimeout(() => {
-              if (cancelled) return;
-              // If turn hasn't auto-ended (currentPlayer already flipped), manually end
-              const latest = stateRef.current.gameState;
-              if (latest.currentPlayer !== stateRef.current.myColor && !latest.gameOver) {
-                playTurnEnd();
-                const ended = coreEndTurn(latest);
-                aiThinkingRef.current = false;
-                dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-              } else {
-                // Turn already flipped via makeMove auto-end
-                aiThinkingRef.current = false;
-                dispatch({ type: "AI_TURN_ENDED", gameState: latest });
-              }
-            }, 300);
-            timers.push(tEnd);
-          }
-        }, delay);
-        timers.push(t);
-      });
+        moves.forEach((move, i) => {
+          const delay = 350 + i * 350;
+          const t = setTimeout(() => {
+            if (cancelled) return;
+
+            const result = coreMakeMove(currentBoard, move.from, move.to);
+            if (!result) return;
+            currentBoard = result;
+
+            // Detect hit
+            const prevVal = stateRef.current.gameState.board.points[move.to];
+            const isHit =
+              (aiColor === "white" && prevVal === -1) ||
+              (aiColor === "black" && prevVal === 1);
+            if (isHit) {
+              playCheckerHit();
+            } else {
+              playCheckerPlace();
+            }
+
+            if (result.gameOver) {
+              playGameOver(result.winner !== stateRef.current.myColor);
+              aiThinkingRef.current = false;
+              dispatch({
+                type: "GAME_OVER",
+                winner: result.winner!,
+                resultType: result.resultType!,
+                gameState: result,
+                finalMove: move,
+              });
+              return;
+            }
+
+            dispatch({ type: "AI_MOVED", gameState: result, move });
+
+            // After last move, end turn
+            if (i === moves.length - 1) {
+              const tEnd = setTimeout(() => {
+                if (cancelled) return;
+                // If turn hasn't auto-ended (currentPlayer already flipped), manually end
+                const latest = stateRef.current.gameState;
+                if (latest.currentPlayer !== stateRef.current.myColor && !latest.gameOver) {
+                  playTurnEnd();
+                  const ended = coreEndTurn(latest);
+                  aiThinkingRef.current = false;
+                  dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+                } else {
+                  // Turn already flipped via makeMove auto-end
+                  aiThinkingRef.current = false;
+                  dispatch({ type: "AI_TURN_ENDED", gameState: latest });
+                }
+              }, 300);
+              timers.push(tEnd);
+            }
+          }, delay);
+          timers.push(t);
+        });
+      })();
     }, thinkDelay);
     timers.push(t1);
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import type { BoardState, Move, Player } from "@xion-beginner/backgammon-core";
 import { getPipCount } from "@xion-beginner/backgammon-core";
 import { Card } from "@/components/ui";
-import { analyzeGame, estimateWinProbability } from "@/lib/analysis";
-import type { GameAnalysis, TurnAnalysis, CandidateMove as CandidateMoveData, ErrorClass } from "@/lib/analysis";
+import { analyzeGame, analyzeGameWithGnubg, estimateWinProbability } from "@/lib/analysis";
+import { isGnubgReady } from "@/lib/gnubg";
+import type { GameAnalysis, TurnAnalysis, CandidateMove as CandidateMoveData, ErrorClass, WinProbability } from "@/lib/analysis";
 
 /* ── Theme Constants (CSS-variable-aware) ── */
 const C = {
@@ -459,10 +460,38 @@ export function PostGameAnalysis({
 }: PostGameAnalysisProps) {
   const hasRealData = turnHistory && turnHistory.length > 0;
 
-  // ── Analysis engine ──
-  const analysis: GameAnalysis | null = useMemo(() => {
-    if (!turnHistory || turnHistory.length === 0) return null;
-    return analyzeGame(turnHistory);
+  // ── Analysis engine (WASM-based when available, heuristic fallback) ──
+  const [analysis, setAnalysis] = useState<GameAnalysis | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState<{ current: number; total: number } | null>(null);
+
+  useEffect(() => {
+    if (!turnHistory || turnHistory.length === 0) {
+      setAnalysis(null);
+      return;
+    }
+
+    // Start with fast heuristic analysis immediately
+    setAnalysis(analyzeGame(turnHistory));
+
+    // Then upgrade to WASM analysis if available
+    if (isGnubgReady()) {
+      let cancelled = false;
+      setAnalysisProgress({ current: 0, total: turnHistory.length });
+
+      analyzeGameWithGnubg(turnHistory, (current, total) => {
+        if (!cancelled) setAnalysisProgress({ current, total });
+      }).then((wasmAnalysis) => {
+        if (!cancelled) {
+          setAnalysis(wasmAnalysis);
+          setAnalysisProgress(null);
+        }
+      }).catch(() => {
+        // Keep heuristic analysis on failure
+        if (!cancelled) setAnalysisProgress(null);
+      });
+
+      return () => { cancelled = true; };
+    }
   }, [turnHistory]);
 
   // Build display moves
@@ -525,13 +554,25 @@ export function PostGameAnalysis({
   const selectedTurnAnalysis = analysis?.turns.find(t => t.turnNumber === selectedMove) ?? null;
   const currentDisplayMove = displayMoves[selectedMove - 1];
 
-  // Monte Carlo win probability for selected position
+  // Win probability: use gnubg neural net data when available, else Monte Carlo
   useEffect(() => {
     if (!selectedTurnAnalysis?.boardBefore) {
       setWinProb(null);
       return;
     }
-    setWinProb(null); // clear while computing
+
+    // Use gnubg probability if available (from WASM analysis)
+    if (selectedTurnAnalysis.probability) {
+      const p = selectedTurnAnalysis.probability;
+      const whiteWin = selectedTurnAnalysis.player === "white"
+        ? Math.round((p.win + p.winG + p.winBG) * 100)
+        : Math.round((p.lose + p.loseG + p.loseBG) * 100);
+      setWinProb({ white: whiteWin, black: 100 - whiteWin });
+      return;
+    }
+
+    // Fallback: Monte Carlo simulation
+    setWinProb(null);
     const board = selectedTurnAnalysis.boardBefore;
     const nextPlayer = selectedTurnAnalysis.player;
     const handle = requestAnimationFrame(() => {
@@ -745,6 +786,25 @@ export function PostGameAnalysis({
         {/* ═══ ANALYSIS TAB (Galaxy-style) ═══ */}
         {activeTab === "analysis" && (
           <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* WASM analysis progress */}
+            {analysisProgress && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 14px", borderRadius: R.card,
+                background: C.gold.faint, border: `1px solid ${C.gold.subtle}`,
+              }}>
+                <div style={{
+                  width: 14, height: 14, border: `2px solid ${C.gold.primary}`,
+                  borderTopColor: "transparent", borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                }} />
+                <span style={{ fontSize: 12, fontWeight: W.semibold, color: C.gold.primary }}>
+                  Analyzing with GNU Backgammon engine... ({analysisProgress.current}/{analysisProgress.total})
+                </span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
+
             {/* Equity Graph */}
             <Card>
               <SectionHeader title="Equity Graph" right={
@@ -845,6 +905,23 @@ export function PostGameAnalysis({
                         whiteWin={winProb?.white ?? 50}
                         blackWin={winProb?.black ?? 50}
                       />
+                      {/* GnuBG detailed probability breakdown */}
+                      {selectedTurnAnalysis.probability && (
+                        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {[
+                            { label: "Win", val: selectedTurnAnalysis.probability.win },
+                            { label: "Gammon", val: selectedTurnAnalysis.probability.winG },
+                            { label: "BG", val: selectedTurnAnalysis.probability.winBG },
+                          ].map(({ label, val }) => (
+                            <div key={label} style={{
+                              fontSize: 10, color: C.text.muted, fontFamily: F.mono,
+                              padding: "2px 6px", borderRadius: 3, background: C.bg.elevated,
+                            }}>
+                              {label}: {(val * 100).toFixed(1)}%
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </Card>

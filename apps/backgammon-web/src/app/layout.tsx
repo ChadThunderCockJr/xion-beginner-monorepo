@@ -92,6 +92,12 @@ export default function RootLayout({
         <meta property="og:description" content="The world's fairest backgammon platform. Provably fair dice on the blockchain." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://gammon.nyc" />
+        <meta property="og:image" content="https://gammon.nyc/logo-full.png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:image:alt" content="Gammon — The world's fairest backgammon platform" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:image" content="https://gammon.nyc/logo-full.png" />
         {/* Inline script to set theme class before first paint — prevents flash */}
         <script
           dangerouslySetInnerHTML={{
