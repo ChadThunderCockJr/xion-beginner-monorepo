@@ -63,22 +63,17 @@ function GammonButton({
 
 function GLogo({ size = 48 }: { size?: number }) {
   return (
-    <div
+    <img
+      src="/logo-transparent.png"
+      alt="Gammon"
       style={{
         width: size,
         height: size,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "block",
         margin: "0 auto",
-        fontFamily: "var(--font-display)",
-        fontSize: size * 0.7,
-        fontWeight: 700,
-        color: "var(--color-gold-primary)",
+        objectFit: "contain",
       }}
-    >
-      G
-    </div>
+    />
   );
 }
 
@@ -306,7 +301,17 @@ export default function LoginPage() {
             maxWidth: 380,
           }}
         >
-          <BoardIllustration />
+          <img
+            src="/logo-transparent.png"
+            alt="Gammon"
+            style={{
+              width: 180,
+              height: 180,
+              objectFit: "contain",
+              margin: "0 auto",
+              display: "block",
+            }}
+          />
 
           <h2
             className="text-2xl lg:text-[32px]"
@@ -392,7 +397,7 @@ export default function LoginPage() {
         >
           {/* Logo + Brand */}
           <div style={{ textAlign: "center", marginBottom: 8 }}>
-            <GLogo size={56} />
+            <GLogo size={80} />
             <h1
               className="text-2xl lg:text-[32px]"
               style={{
