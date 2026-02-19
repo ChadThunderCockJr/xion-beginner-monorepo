@@ -149,7 +149,8 @@ export function evaluateBoard(
 
 /**
  * Select the AI's move sequence for a given board state and difficulty.
- * For GM difficulty, uses the GNU Backgammon WASM engine when available.
+ * Uses the GNU Backgammon WASM engine when available, with difficulty-based
+ * randomization among candidates. Falls back to heuristic if WASM isn't ready.
  * Returns the chosen move sequence, or null if no moves are available.
  */
 export async function selectAIMove(
@@ -158,19 +159,62 @@ export async function selectAIMove(
   movesRemaining: number[],
   difficulty: AIDifficulty
 ): Promise<Move[] | null> {
-  // GM difficulty: try WASM engine first
-  if (difficulty === "gm" && isGnubgReady()) {
+  if (isGnubgReady()) {
     try {
       const dice: [number, number] = [
         movesRemaining[0],
         movesRemaining[movesRemaining.length > 1 ? 1 : 0],
       ];
-      const results = await getGnubgMoves(board, aiColor, dice, {
-        maxMoves: 1,
-        scoreMoves: false,
-      });
-      if (results.length > 0 && results[0].moves.length > 0) {
-        return results[0].moves;
+
+      // GM: just get the single best move
+      if (difficulty === "gm") {
+        const results = await getGnubgMoves(board, aiColor, dice, {
+          maxMoves: 1,
+          scoreMoves: false,
+        });
+        if (results.length > 0 && results[0].moves.length > 0) {
+          return results[0].moves;
+        }
+      } else {
+        // Other difficulties: get all scored candidates, then pick with randomization
+        const results = await getGnubgMoves(board, aiColor, dice, {
+          maxMoves: 0, // all moves
+          scoreMoves: true,
+        });
+
+        if (results.length > 0) {
+          const nonEmpty = results.filter((r) => r.moves.length > 0);
+          if (nonEmpty.length === 0) return [];
+
+          // Beginner: pick uniformly at random from all candidates
+          if (difficulty === "beginner") {
+            return nonEmpty[Math.floor(Math.random() * nonEmpty.length)].moves;
+          }
+
+          // Club/expert: weighted random from top candidates using equity
+          let candidates: typeof nonEmpty;
+          if (difficulty === "expert") {
+            candidates = nonEmpty.slice(0, Math.min(3, nonEmpty.length));
+          } else {
+            // club: top 50%
+            candidates = nonEmpty.slice(0, Math.max(1, Math.ceil(nonEmpty.length / 2)));
+          }
+
+          // Weighted random: use equity differences (gnubg returns best-first)
+          const bestEq = candidates[0].evaluation?.eq ?? 0;
+          const adjusted = candidates.map((c) => {
+            const eq = c.evaluation?.eq ?? 0;
+            // Weight = inverse of equity loss + small baseline so worst isn't zero
+            return { moves: c.moves, weight: Math.max(0.1, 1 - Math.abs(bestEq - eq)) };
+          });
+          const totalWeight = adjusted.reduce((sum, c) => sum + c.weight, 0);
+          let roll = Math.random() * totalWeight;
+          for (const c of adjusted) {
+            roll -= c.weight;
+            if (roll <= 0) return c.moves;
+          }
+          return candidates[0].moves;
+        }
       }
     } catch {
       // Fall through to heuristic

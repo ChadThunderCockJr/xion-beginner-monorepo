@@ -505,12 +505,10 @@ export function useLocalGame(difficulty: AIDifficulty) {
     saveToStorage(state, difficultyRef.current);
   }, [state]);
 
-  // Preload WASM engine for GM difficulty
+  // Preload WASM engine for all AI difficulties
   useEffect(() => {
-    if (difficulty === "gm") {
-      preloadGnubg();
-    }
-  }, [difficulty]);
+    preloadGnubg();
+  }, []);
 
   const stateRef = useRef(state);
   stateRef.current = state;
