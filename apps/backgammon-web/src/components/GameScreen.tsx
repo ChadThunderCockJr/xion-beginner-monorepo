@@ -760,16 +760,28 @@ export function GameScreen({
 
         {/* Game over overlay */}
         {gameState.gameOver && (
-          <div className="absolute inset-0 flex items-center justify-center animate-fade-in z-30">
+          <div className="absolute inset-0 flex items-center justify-center animate-fade-in z-30"
+            style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+          >
             <div
-              className={`panel p-6 sm:p-8 text-center max-w-xs mx-4 ${
+              className={`panel p-8 sm:p-10 text-center max-w-xs mx-4 shadow-2xl ${
                 winner === myColor
-                  ? "border-[rgba(212,168,67,0.3)]"
-                  : "border-[rgba(248,113,113,0.25)]"
+                  ? "border-[rgba(212,168,67,0.4)]"
+                  : "border-[rgba(248,113,113,0.3)]"
               }`}
+              style={{ boxShadow: winner === myColor
+                ? "0 8px 40px rgba(212,168,67,0.15), 0 2px 12px rgba(0,0,0,0.2)"
+                : "0 8px 40px rgba(248,113,113,0.1), 0 2px 12px rgba(0,0,0,0.2)"
+              }}
             >
+              <div className="mb-4" style={{
+                fontSize: 40,
+                lineHeight: 1,
+              }}>
+                {winner === myColor ? "🏆" : "💔"}
+              </div>
               <h2
-                className={`font-display text-[32px] font-semibold mb-1 ${
+                className={`font-display text-[36px] font-bold mb-2 ${
                   winner === myColor
                     ? "text-[var(--color-gold-primary)]"
                     : "text-[var(--color-danger)]"
@@ -777,19 +789,19 @@ export function GameScreen({
               >
                 {winner === myColor ? "Victory!" : "Defeat"}
               </h2>
-              <p className="text-sm text-[var(--color-text-muted)] mb-6">
+              <p className="text-sm text-[var(--color-text-muted)] mb-8" style={{ letterSpacing: "0.02em" }}>
                 {resultLabel}
                 {resultType === "gammon" && " — Double points"}
                 {resultType === "backgammon" && " — Triple points"}
               </p>
-              <div className="flex flex-col gap-2.5">
-                <button onClick={() => setShowPostGame(true)} className="btn-primary w-full">
+              <div className="flex flex-col gap-3">
+                <button onClick={() => setShowPostGame(true)} className="btn-primary w-full" style={{ fontSize: 16, padding: "16px 20px" }}>
                   View Analysis
                 </button>
                 <button onClick={onNewGame} className="btn-secondary w-full">
                   Play Again
                 </button>
-                <button onClick={onBackToLobby ?? onNewGame} className="btn-secondary w-full">
+                <button onClick={onBackToLobby ?? onNewGame} className="btn-secondary w-full" style={{ fontSize: 13, padding: "12px 20px", opacity: 0.8 }}>
                   Back to Lobby
                 </button>
               </div>

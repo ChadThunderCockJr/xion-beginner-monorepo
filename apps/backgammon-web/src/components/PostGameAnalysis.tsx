@@ -705,7 +705,7 @@ export function PostGameAnalysis({
 
       {/* ─── Tab Bar ─── */}
       <div style={{
-        display: "flex", gap: 0, borderBottom: `1px solid ${C.bg.subtle}`,
+        display: "flex", gap: 4, borderBottom: `1px solid ${C.bg.subtle}`,
         background: C.bg.surface, padding: "0 24px",
       }}>
         {[
