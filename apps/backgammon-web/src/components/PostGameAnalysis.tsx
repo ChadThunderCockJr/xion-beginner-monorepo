@@ -26,7 +26,7 @@ const C = {
   // Analysis-page gold accent (uses CSS vars for theme-aware contrast)
   gold: { primary: "var(--color-analysis-gold)", light: "var(--color-analysis-gold-light)", subtle: "var(--color-analysis-gold-subtle)", faint: "var(--color-analysis-gold-faint)", text: "var(--color-analysis-gold-text)" },
   // Checker/piece colors (fixed, theme-independent)
-  piece: { white: "#DCD8D0", black: "#6E1A30" },
+  piece: { white: "var(--color-checker-white)", black: "var(--color-checker-black)" },
   success: "var(--color-success)",
   error: "var(--color-danger)",
 };
@@ -178,8 +178,8 @@ function BoardWireframe({ board, pip1, pip2, dice, arrows, arrowColor }: {
   const pointIsTop = (pt: number) => pt >= 13 && pt <= 24;
   const arrowY = (pt: number) => pointIsTop(pt) ? 18 : bH - 18;
 
-  const darkGreenTri = "#1A2818";
-  const lightGreenTri = "#243020";
+  const darkGreenTri = "var(--color-board-felt-dark)";
+  const lightGreenTri = "var(--color-board-felt-light)";
 
   // Build checker data from board state
   const checkers: { point: number; count: number; isWhite: boolean; isTop: boolean }[] = [];

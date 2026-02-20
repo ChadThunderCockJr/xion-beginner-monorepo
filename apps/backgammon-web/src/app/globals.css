@@ -12,7 +12,7 @@
   --color-text-primary: #ECE8E0;
   --color-text-secondary: #B0AAA0;
   --color-text-muted: #787268;
-  --color-text-faint: #4A4840;
+  --color-text-faint: #5A5850;
 
   /* ─── Accent — dark burgundy ─── */
   --color-gold-primary: #581428;
@@ -76,15 +76,15 @@
   --color-board-border: #4A3F2F;
   --color-board-bar: #2A2118;
   --color-checker-white: #DCD8D0;
-  --color-checker-black: #6E1A30;
+  --color-checker-black: #8A2040;
   --color-checker-white-border: #A8A098;
-  --color-checker-black-border: var(--color-burgundy-deep);
+  --color-checker-black-border: #A04060;
   --color-board-point-light: #D4A86A;
   --color-board-point-dark: #8B4513;
   --color-die-white-face: #DCD8D0;
   --color-die-white-stroke: #B8B4AC;
   --color-die-white-dot: #2A2018;
-  --color-die-black-face: #6E1A30;
+  --color-die-black-face: #8A2040;
   --color-die-black-stroke: #8A2840;
   --color-die-black-dot: #DCD8D0;
 }
@@ -105,7 +105,7 @@ html.light {
   --color-text-primary: #1A1814;
   --color-text-secondary: #4A4640;
   --color-text-muted: #6B6560;
-  --color-text-faint: #8D877C;
+  --color-text-faint: #7D776C;
 
   /* ─── Accent — burgundy on light ─── */
   --color-gold-primary: #7A1830;
@@ -183,7 +183,7 @@ html.lux {
   --color-text-primary: #E8B84A;
   --color-text-secondary: #D4A843;
   --color-text-muted: #B8922E;
-  --color-text-faint: #8A7248;
+  --color-text-faint: #A08850;
 
   /* ─── Accent — gold buttons on burgundy backgrounds ─── */
   --color-gold-primary: #C5973E;
@@ -228,16 +228,16 @@ html.lux {
   --color-board-border: #C9A84C;
   --color-board-bar: #2A2018;
   --color-checker-white: #F5F0E0;
-  --color-checker-black: #800020;
+  --color-checker-black: #9A1830;
   --color-checker-white-border: #D4C8B0;
-  --color-checker-black-border: #600018;
+  --color-checker-black-border: #B83050;
   --color-board-point-light: #C9A84C;
   --color-board-point-dark: #8B6914;
   --color-die-white-face: #F5F0E0;
   --color-die-white-stroke: #D4C8B0;
   --color-die-white-dot: #2A2018;
-  --color-die-black-face: #800020;
-  --color-die-black-stroke: #A00030;
+  --color-die-black-face: #9A1830;
+  --color-die-black-stroke: #B83050;
   --color-die-black-dot: #F5F0E0;
 }
 
@@ -270,6 +270,7 @@ body {
   --font-body: var(--font-outfit), "Outfit", system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
   font-family: var(--font-body);
+  line-height: 1.5;
   background: var(--color-bg-base);
   color: var(--color-text-primary);
   min-height: 100dvh;

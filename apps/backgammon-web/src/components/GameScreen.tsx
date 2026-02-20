@@ -147,7 +147,7 @@ function PlayerBar({
         >
           {formatTime(timer)}
           {isActive && timer <= 10 && (
-            <span className="text-[9px] font-bold block" style={{ color: "var(--color-danger)" }}>Low time!</span>
+            <span className="text-[11px] font-bold block" style={{ color: "var(--color-danger)" }}>Low time!</span>
           )}
         </div>
       )}

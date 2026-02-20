@@ -1476,8 +1476,8 @@ export default function CreateMatchPage() {
                       marginBottom: 12,
                       padding: "8px 12px",
                       borderRadius: "var(--radius-button)",
-                      background: "rgba(176,64,64,0.1)",
-                      border: "1px solid rgba(176,64,64,0.2)",
+                      background: "var(--color-danger-muted)",
+                      border: "1px solid var(--color-danger)",
                     }}
                   >
                     {error}

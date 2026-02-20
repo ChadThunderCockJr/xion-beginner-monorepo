@@ -181,7 +181,7 @@ function Die({ value, used = false, player }: { value: number; used?: boolean; p
           cx={px * DIE_SIZE}
           cy={py * DIE_SIZE}
           r={r}
-          fill={used ? "#999" : dotFill}
+          fill={used ? "var(--color-text-muted)" : dotFill}
         />
       ))}
     </svg>
@@ -644,7 +644,7 @@ export function Board({
                 position: "absolute",
                 bottom: -6,
                 background: "rgba(100,220,120,0.95)",
-                color: "#1a1a1a",
+                color: "var(--color-bg-deepest)",
                 fontSize: "0.6875rem",
                 fontWeight: 800,
                 borderRadius: 8,
@@ -712,7 +712,7 @@ export function Board({
           <>
             {pipLabel !== null && (
               <div className="text-center leading-none">
-                <div className="text-[8px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">PIP</div>
+                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">PIP</div>
                 <div className="text-[13px] font-bold text-[var(--color-text-secondary)]">{pipLabel}</div>
               </div>
             )}
@@ -764,7 +764,7 @@ export function Board({
             {pipLabel !== null && (
               <div className="text-center leading-none">
                 <div className="text-[13px] font-bold text-[var(--color-text-secondary)]">{pipLabel}</div>
-                <div className="text-[8px] text-[var(--color-text-muted)] uppercase tracking-wider mt-0.5">PIP</div>
+                <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mt-0.5">PIP</div>
               </div>
             )}
           </>
@@ -782,13 +782,13 @@ export function Board({
         style={{
           padding: "0 6px",
           height: 20,
-          opacity: showPointNumbersProp ? 0.5 : 0,
+          opacity: showPointNumbersProp ? 0.7 : 0,
           transition: "opacity 200ms ease",
         }}
       >
         <div className="flex flex-1" style={{ gap: POINT_GAP }}>
           {numbers.slice(0, 6).map((n) => (
-            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.625rem" }}>
+            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.6875rem" }}>
               {n}
             </div>
           ))}
@@ -796,7 +796,7 @@ export function Board({
         <div style={{ width: BAR_W + 8 }} />
         <div className="flex flex-1" style={{ gap: POINT_GAP }}>
           {numbers.slice(6).map((n) => (
-            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.625rem" }}>
+            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.6875rem" }}>
               {n}
             </div>
           ))}

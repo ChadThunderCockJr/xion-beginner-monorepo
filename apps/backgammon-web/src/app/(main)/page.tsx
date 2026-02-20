@@ -171,7 +171,7 @@ function MatchRowStyled({
             fontFamily: "var(--font-mono)",
             color: result === "W" ? "var(--color-success)" : "var(--color-danger)",
             background:
-              result === "W" ? "rgba(74,123,82,0.15)" : "rgba(176,64,64,0.15)",
+              result === "W" ? "var(--color-success-muted)" : "var(--color-danger-muted)",
             padding: "2px 8px",
             borderRadius: 20,
           }}
@@ -380,7 +380,7 @@ export default function DashboardPage() {
         <div>
           {onlineCount !== null && onlineCount > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-success)" }} />
               {onlineCount} online
             </div>
           )}
@@ -627,24 +627,7 @@ export default function DashboardPage() {
             >
               USDC
             </span>
-            {balance !== null && balance === "0.00" && (
-              <button
-                onClick={() => router.push("/settings")}
-                style={{
-                  fontSize: "0.625rem",
-                  fontWeight: 600,
-                  color: "var(--color-gold-primary)",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  fontFamily: "var(--font-body)",
-                  padding: 0,
-                }}
-              >
-                Deposit
-              </button>
-            )}
+            {/* Deposit link hidden until wallet settings section is implemented */}
           </div>
 
           {/* Logout */}
