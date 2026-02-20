@@ -15,10 +15,10 @@ function Card({
     <div
       style={{
         background: "var(--color-bg-surface)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
         borderRadius: 8,
         padding: 20,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+        boxShadow: "var(--shadow-card)",
         ...style,
       }}
     >
@@ -60,7 +60,7 @@ export default function JoinPage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "12px 24px",
-          borderBottom: "1px solid var(--color-bg-subtle)",
+          borderBottom: "1px solid var(--color-border-subtle)",
           background: "var(--color-bg-surface)",
         }}
       >
@@ -97,7 +97,7 @@ export default function JoinPage() {
             alignItems: "center",
             gap: 8,
             padding: "6px 12px",
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             borderRadius: 20,
             background: "var(--color-bg-surface)",
           }}
@@ -197,7 +197,7 @@ export default function JoinPage() {
                   width: "100%",
                   padding: "14px 16px",
                   borderRadius: 6,
-                  border: `2px solid ${code.length > 0 ? "var(--color-gold-primary)" : "var(--color-bg-subtle)"}`,
+                  border: `2px solid ${code.length > 0 ? "var(--color-gold-primary)" : "var(--color-border-subtle)"}`,
                   background: "var(--color-bg-base)",
                   fontSize: "1.25rem",
                   fontWeight: 700,
@@ -252,7 +252,7 @@ export default function JoinPage() {
                   width: "100%",
                   padding: "10px 14px",
                   borderRadius: 6,
-                  border: "1.5px solid var(--color-bg-subtle)",
+                  border: "1.5px solid var(--color-border-subtle)",
                   background: "var(--color-bg-base)",
                   fontSize: "0.75rem",
                   color: "var(--color-text-secondary)",

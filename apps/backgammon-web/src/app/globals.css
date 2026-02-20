@@ -337,8 +337,8 @@ html.lux .font-brand {
 /* ─── Selection & Focus ─── */
 
 ::selection {
-  background: var(--color-gold-muted);
-  color: var(--color-text-primary);
+  background: var(--color-gold-primary);
+  color: var(--color-accent-fg);
 }
 
 :focus-visible {
@@ -406,13 +406,13 @@ html.lux .font-brand {
   font-size: 15px;
   padding: 14px 20px;
   border-radius: var(--radius-button);
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid var(--color-danger-muted);
   cursor: pointer;
   transition: all 150ms ease;
 }
 .btn-danger:hover {
   background: var(--color-danger-muted);
-  border-color: rgba(248, 113, 113, 0.5);
+  border-color: var(--color-danger);
 }
 .btn-danger:active {
   transform: scale(0.98);
@@ -420,7 +420,7 @@ html.lux .font-brand {
 
 .input {
   background: var(--color-bg-elevated);
-  border: 1.5px solid var(--color-bg-subtle);
+  border: 1.5px solid var(--color-border-default);
   border-radius: var(--radius-button);
   padding: 13px 16px;
   color: var(--color-text-primary);

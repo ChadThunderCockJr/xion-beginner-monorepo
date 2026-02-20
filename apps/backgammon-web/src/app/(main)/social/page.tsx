@@ -118,7 +118,7 @@ function PlayerKebabMenu({
           width: 26,
           height: 26,
           borderRadius: 6,
-          border: "1px solid var(--color-bg-subtle)",
+          border: "1px solid var(--color-border-subtle)",
           background: open ? "var(--color-bg-elevated)" : "transparent",
           display: "flex",
           alignItems: "center",
@@ -145,8 +145,8 @@ function PlayerKebabMenu({
             padding: showReport ? "10px 12px" : "4px",
             borderRadius: 8,
             background: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-bg-subtle)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            border: "1px solid var(--color-border-subtle)",
+            boxShadow: "var(--shadow-card)",
             zIndex: 50,
           }}
         >
@@ -163,7 +163,7 @@ function PlayerKebabMenu({
                 onChange={(e) => setReason(e.target.value)}
                 style={{
                   padding: "5px 8px", borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   background: "var(--color-bg-surface)",
                   color: "var(--color-text-primary)",
                   fontSize: "0.6875rem", fontFamily: "var(--font-body)", outline: "none", cursor: "pointer",
@@ -174,7 +174,7 @@ function PlayerKebabMenu({
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => setShowReport(false)} style={{
                   flex: 1, padding: "4px 8px", borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)", background: "transparent",
+                  border: "1px solid var(--color-border-subtle)", background: "transparent",
                   color: "var(--color-text-muted)", fontSize: "0.6875rem", fontWeight: 600,
                   cursor: "pointer", fontFamily: "var(--font-body)",
                 }}>
@@ -187,7 +187,7 @@ function PlayerKebabMenu({
                   setShowReport(false);
                 }} style={{
                   flex: 1, padding: "4px 8px", borderRadius: 6,
-                  border: "none", background: "var(--color-danger)", color: "#fff",
+                  border: "none", background: "var(--color-danger)", color: "var(--color-accent-fg)",
                   fontSize: "0.6875rem", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)",
                 }}>
                   Submit
@@ -254,7 +254,7 @@ function ChallengeConfigPanel({
         padding: "10px 12px",
         borderRadius: 8,
         background: "var(--color-bg-elevated)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
         marginTop: 6,
       }}
     >
@@ -280,7 +280,7 @@ function ChallengeConfigPanel({
                 borderRadius: 5,
                 border: matchLength === len
                   ? "1px solid var(--color-gold-primary)"
-                  : "1px solid var(--color-bg-subtle)",
+                  : "1px solid var(--color-border-subtle)",
                 background: matchLength === len ? "var(--color-gold-muted)" : "transparent",
                 color: matchLength === len ? "var(--color-gold-primary)" : "var(--color-text-muted)",
                 fontSize: "0.6875rem",
@@ -303,7 +303,7 @@ function ChallengeConfigPanel({
         <div style={{
           display: "flex", alignItems: "center", gap: 4,
           padding: "3px 8px", borderRadius: 5,
-          border: "1px solid var(--color-bg-subtle)",
+          border: "1px solid var(--color-border-subtle)",
           background: "var(--color-bg-surface)",
         }}>
           <span style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>$</span>
@@ -334,7 +334,7 @@ function ChallengeConfigPanel({
             borderRadius: 5,
             border: doublingCube
               ? "1px solid var(--color-gold-primary)"
-              : "1px solid var(--color-bg-subtle)",
+              : "1px solid var(--color-border-subtle)",
             background: doublingCube ? "var(--color-gold-muted)" : "transparent",
             color: doublingCube ? "var(--color-gold-primary)" : "var(--color-text-muted)",
             fontSize: "0.6875rem",
@@ -351,7 +351,7 @@ function ChallengeConfigPanel({
       <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
         <button onClick={onCancel} style={{
           flex: 1, padding: "5px 10px", borderRadius: 6,
-          border: "1px solid var(--color-bg-subtle)", background: "transparent",
+          border: "1px solid var(--color-border-subtle)", background: "transparent",
           color: "var(--color-text-muted)", fontSize: "0.6875rem", fontWeight: 600,
           cursor: "pointer", fontFamily: "var(--font-body)",
         }}>
@@ -401,7 +401,7 @@ function FriendRow({
           alignItems: "center",
           gap: 10,
           padding: "8px 0",
-          borderBottom: showConfig ? "none" : "1px solid var(--color-bg-subtle)",
+          borderBottom: showConfig ? "none" : "1px solid var(--color-border-subtle)",
         }}
       >
         <Avatar name={name} size="sm" online={online} />
@@ -434,7 +434,7 @@ function FriendRow({
               borderRadius: 6,
               border: h || showConfig
                 ? "1px solid var(--color-gold-primary)"
-                : "1px solid var(--color-bg-subtle)",
+                : "1px solid var(--color-border-subtle)",
               background: h || showConfig ? "var(--color-gold-muted)" : "transparent",
               fontSize: "0.6875rem",
               fontWeight: 600,
@@ -467,7 +467,7 @@ function FriendRow({
         </button>
       </div>
       {showConfig && (
-        <div style={{ borderBottom: "1px solid var(--color-bg-subtle)", paddingBottom: 8 }}>
+        <div style={{ borderBottom: "1px solid var(--color-border-subtle)", paddingBottom: 8 }}>
           <ChallengeConfigPanel
             onSend={(config) => {
               onChallenge(config);
@@ -499,7 +499,7 @@ function RequestRow({
         alignItems: "center",
         gap: 10,
         padding: "8px 0",
-        borderBottom: "1px solid var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
       }}
     >
       <Avatar name={name} size="sm" />
@@ -530,7 +530,7 @@ function RequestRow({
           padding: "4px 10px",
           borderRadius: 6,
           border: "1px solid var(--color-success)",
-          background: "rgba(96,168,96,0.1)",
+          background: "var(--color-success-muted)",
           fontSize: "0.6875rem",
           fontWeight: 600,
           color: "var(--color-success)",
@@ -548,7 +548,7 @@ function RequestRow({
         style={{
           padding: "4px 10px",
           borderRadius: 6,
-          border: "1px solid var(--color-bg-subtle)",
+          border: "1px solid var(--color-border-subtle)",
           background: "transparent",
           fontSize: "0.6875rem",
           fontWeight: 600,
@@ -594,7 +594,7 @@ function ActivityRow({
         alignItems: "center",
         gap: 12,
         padding: "10px 0",
-        borderBottom: "1px solid var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
         background: h ? "var(--color-bg-elevated)" : "transparent",
         borderRadius: h ? 6 : 0,
         transition: "all 0.12s ease",
@@ -719,7 +719,7 @@ export default function SocialPage() {
                 alignItems: "center",
                 gap: 8,
                 padding: "8px 14px",
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 borderRadius: 6,
                 background: "var(--color-bg-surface)",
               }}
@@ -753,7 +753,7 @@ export default function SocialPage() {
                         alignItems: "center",
                         gap: 10,
                         padding: "8px 0",
-                        borderBottom: "1px solid var(--color-bg-subtle)",
+                        borderBottom: "1px solid var(--color-border-subtle)",
                       }}
                     >
                       <Avatar name={r.displayName || r.username || r.address.slice(0, 6)} size="sm" />
@@ -796,7 +796,7 @@ export default function SocialPage() {
                             padding: "4px 12px",
                             borderRadius: 6,
                             border: "1px solid var(--color-success)",
-                            background: "rgba(96,168,96,0.12)",
+                            background: "var(--color-success-muted)",
                             fontSize: "0.6875rem",
                             fontWeight: 600,
                             color: "var(--color-success)",
@@ -882,7 +882,7 @@ export default function SocialPage() {
                 alignItems: "center",
                 gap: 8,
                 padding: "8px 14px",
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 borderRadius: 6,
                 background: "var(--color-bg-surface)",
                 marginBottom: 16,
@@ -923,7 +923,7 @@ export default function SocialPage() {
                     border:
                       tab === t.id
                         ? "1px solid var(--color-gold-primary)"
-                        : "1px solid var(--color-bg-subtle)",
+                        : "1px solid var(--color-border-subtle)",
                     background:
                       tab === t.id ? "var(--color-gold-muted)" : "transparent",
                     fontSize: "0.8125rem",

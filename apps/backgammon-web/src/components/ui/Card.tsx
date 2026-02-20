@@ -23,7 +23,7 @@ export function Card({ padding = "md", className, style, ...props }: CardProps) 
   return (
     <div
       className={cn(
-        "bg-bg-surface border border-bg-subtle rounded-[var(--radius-card)] shadow-card",
+        "bg-bg-surface border border-border-subtle rounded-[var(--radius-card)] shadow-card",
         className,
       )}
       style={mergedStyle}

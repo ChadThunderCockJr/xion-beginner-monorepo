@@ -119,7 +119,7 @@ function TapAnimation() {
         padding: "12px 16px",
         borderRadius: 8,
         background: "var(--color-bg-deepest)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
       {/* Checker */}
@@ -147,7 +147,7 @@ function TapAnimation() {
           height: 28,
           borderRadius: "50%",
           border: "2px solid var(--color-success)",
-          background: "rgba(96, 168, 96, 0.15)",
+          background: "var(--color-success-muted)",
           flexShrink: 0,
         }}
       />
@@ -312,8 +312,8 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
           to { opacity: 0; }
         }
         @keyframes tutorial-tap-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(96, 168, 96, 0); transform: scale(1); }
-          50% { box-shadow: 0 0 0 6px rgba(96, 168, 96, 0.3); transform: scale(1.08); }
+          0%, 100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
+          50% { box-shadow: 0 0 0 6px var(--color-success-muted); transform: scale(1.08); }
         }
         @keyframes tutorial-checker-pulse {
           0%, 100% { box-shadow: 0 0 0 0 var(--color-gold-muted); transform: scale(1); }
@@ -362,9 +362,9 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
               width: "100%",
               maxWidth: 400,
               background: "var(--color-bg-surface)",
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               borderRadius: 12,
-              boxShadow: "0 16px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03)",
+              boxShadow: "var(--shadow-elevated)",
               overflow: "hidden",
               animation: "tutorial-card-enter 400ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
@@ -517,7 +517,7 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
                       flex: 0,
                       padding: "12px 20px",
                       borderRadius: 8,
-                      border: "1px solid var(--color-bg-subtle)",
+                      border: "1px solid var(--color-border-subtle)",
                       background: "transparent",
                       color: "var(--color-text-secondary)",
                       fontSize: "0.875rem",
@@ -533,7 +533,7 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
                       e.currentTarget.style.color = "var(--color-text-primary)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "var(--color-bg-subtle)";
+                      e.currentTarget.style.borderColor = "var(--color-border-subtle)";
                       e.currentTarget.style.color = "var(--color-text-secondary)";
                     }}
                   >
@@ -576,7 +576,7 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
                       flex: 0,
                       padding: "12px 20px",
                       borderRadius: 8,
-                      border: "1px solid var(--color-bg-subtle)",
+                      border: "1px solid var(--color-border-subtle)",
                       background: "transparent",
                       color: "var(--color-text-muted)",
                       fontSize: "0.875rem",

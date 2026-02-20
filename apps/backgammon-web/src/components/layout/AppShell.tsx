@@ -39,7 +39,7 @@ function ChallengeOverlay() {
             border: "1px solid var(--color-gold-primary)",
             borderRadius: 12,
             padding: "16px 20px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            boxShadow: "var(--shadow-elevated)",
             animation: "slideUp 0.3s ease",
           }}
         >
@@ -94,7 +94,7 @@ function ChallengeOverlay() {
                 flex: 1,
                 padding: "12px 16px",
                 borderRadius: 6,
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 background: "transparent",
                 color: "var(--color-text-secondary)",
                 fontSize: "0.8125rem",

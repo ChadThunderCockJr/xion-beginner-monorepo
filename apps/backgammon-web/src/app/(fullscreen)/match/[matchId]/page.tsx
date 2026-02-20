@@ -66,7 +66,7 @@ export default function MatchPage() {
             width: 40,
             height: 40,
             borderRadius: "50%",
-            border: "3px solid var(--color-bg-subtle)",
+            border: "3px solid var(--color-border-subtle)",
             borderTopColor: "var(--color-gold-primary)",
             animation: "spin 1s linear infinite",
           }}

@@ -224,7 +224,7 @@ export default function MatchmakingPage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "12px 24px",
-          borderBottom: "1px solid var(--color-bg-subtle)",
+          borderBottom: "1px solid var(--color-border-subtle)",
         }}
       >
         <Link
@@ -301,7 +301,7 @@ export default function MatchmakingPage() {
                     position: "absolute",
                     inset: -8,
                     borderRadius: "50%",
-                    border: "2.5px solid var(--color-bg-subtle)",
+                    border: "2.5px solid var(--color-border-subtle)",
                     borderTopColor: "var(--color-gold-primary)",
                   }}
                 />
@@ -350,7 +350,7 @@ export default function MatchmakingPage() {
                 gap: 12,
                 padding: "12px 16px",
                 background: "var(--color-bg-surface)",
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 borderRadius: 10,
               }}
             >

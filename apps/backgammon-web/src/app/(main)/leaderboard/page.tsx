@@ -50,7 +50,7 @@ function PodiumSpot({ rank, entry, height }: {
         "rounded-full bg-bg-elevated flex items-center justify-center font-bold text-text-secondary shrink-0",
         rank === 1
           ? "w-14 h-14 border-[3px] border-gold-primary text-xl"
-          : "w-11 h-11 border-2 border-bg-subtle text-base",
+          : "w-11 h-11 border-2 border-border-subtle text-base",
       )}>
         {name[0]}
       </div>

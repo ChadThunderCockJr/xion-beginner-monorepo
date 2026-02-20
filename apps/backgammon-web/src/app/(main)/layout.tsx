@@ -37,7 +37,7 @@ export default function MainLayout({
             width: 32,
             height: 32,
             borderRadius: "50%",
-            border: "3px solid var(--color-bg-subtle)",
+            border: "3px solid var(--color-border-subtle)",
             borderTopColor: "var(--color-gold-primary)",
             animation: "spin 1s linear infinite",
           }}
@@ -103,11 +103,11 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
               aria-labelledby="username-dialog-title"
               style={{
                 background: "var(--color-bg-surface)",
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 borderRadius: 16,
                 maxWidth: 400,
                 width: "90%",
-                boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+                boxShadow: "var(--shadow-elevated)",
               }}
             >
               <div
@@ -173,7 +173,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
                 borderRadius: 8,
                 border: usernameError
                   ? "2px solid var(--color-danger)"
-                  : "2px solid var(--color-bg-subtle)",
+                  : "2px solid var(--color-border-subtle)",
                 background: "var(--color-bg-base)",
                 fontSize: "1rem",
                 fontWeight: 600,
@@ -188,7 +188,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
                 if (!usernameError) e.target.style.borderColor = "var(--color-gold-primary)";
               }}
               onBlur={(e) => {
-                if (!usernameError) e.target.style.borderColor = "var(--color-bg-subtle)";
+                if (!usernameError) e.target.style.borderColor = "var(--color-border-subtle)";
               }}
               autoFocus
             />

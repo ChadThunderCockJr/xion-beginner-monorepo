@@ -29,7 +29,7 @@ export function Avatar({ name, size = "md", online, className }: AvatarProps) {
     <div className={cn("relative inline-flex shrink-0", className)}>
       <div
         className={cn(
-          "rounded-full bg-bg-elevated border-2 border-bg-subtle flex items-center justify-center font-bold text-text-secondary",
+          "rounded-full bg-bg-elevated border-2 border-border-subtle flex items-center justify-center font-bold text-text-secondary",
           s.container,
           s.text,
         )}

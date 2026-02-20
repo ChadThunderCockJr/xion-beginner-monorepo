@@ -14,7 +14,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "bg-gold-primary text-[var(--color-accent-fg)] font-semibold hover:bg-gold-light hover:shadow-gold active:bg-gold-dark active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed",
   secondary:
-    "bg-bg-surface text-text-primary border border-bg-subtle font-semibold hover:bg-bg-elevated hover:border-gold-dark active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed",
+    "bg-bg-surface text-text-primary border border-border-subtle font-semibold hover:bg-bg-elevated hover:border-gold-primary active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed",
   ghost:
     "bg-transparent text-text-muted hover:text-gold-primary active:scale-[0.98]",
   destructive:

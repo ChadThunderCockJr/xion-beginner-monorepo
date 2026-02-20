@@ -19,10 +19,10 @@ function Card({
     <div
       style={{
         background: "var(--color-bg-surface)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
         borderRadius: 8,
         padding: 20,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+        boxShadow: "var(--shadow-card)",
         ...style,
       }}
     >
@@ -168,7 +168,7 @@ export default function JoinCodePage() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "12px 24px",
-          borderBottom: "1px solid var(--color-bg-subtle)",
+          borderBottom: "1px solid var(--color-border-subtle)",
           background: "var(--color-bg-surface)",
         }}
       >
@@ -269,7 +269,7 @@ export default function JoinCodePage() {
                   padding: "8px 16px",
                   background: "var(--color-bg-base)",
                   borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   wordBreak: "break-all",
                 }}
               >
@@ -381,7 +381,7 @@ export default function JoinCodePage() {
                   color: "var(--color-gold-primary)",
                   fontFamily: "var(--font-mono)",
                   letterSpacing: "-0.02em",
-                  textShadow: "0 0 20px rgba(88,20,40,0.3)",
+                  textShadow: "var(--shadow-gold)",
                 }}
               >
                 {countdownVal > 0 ? countdownVal : "GO"}
@@ -421,7 +421,7 @@ export default function JoinCodePage() {
                   height: 64,
                   borderRadius: "50%",
                   background: "var(--color-bg-elevated)",
-                  border: "2px solid var(--color-bg-subtle)",
+                  border: "2px solid var(--color-border-subtle)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -510,7 +510,7 @@ export default function JoinCodePage() {
                       fontWeight: 700,
                       cursor: "pointer",
                       fontFamily: "var(--font-body)",
-                      boxShadow: "0 2px 12px rgba(196,154,60,0.2)",
+                      boxShadow: "var(--shadow-gold)",
                     }}
                   >
                     Try Another Code
@@ -522,7 +522,7 @@ export default function JoinCodePage() {
                       width: "100%",
                       padding: "14px 20px",
                       borderRadius: 6,
-                      border: "1.5px solid var(--color-bg-subtle)",
+                      border: "1.5px solid var(--color-border-subtle)",
                       background: "var(--color-bg-surface)",
                       color: "var(--color-text-secondary)",
                       fontSize: "0.875rem",

@@ -17,6 +17,9 @@ const C = {
     elevated: "var(--color-bg-elevated)",
     subtle: "var(--color-bg-subtle)",
   },
+  border: {
+    subtle: "var(--color-border-subtle)",
+  },
   text: {
     primary: "var(--color-text-primary)",
     secondary: "var(--color-text-secondary)",
@@ -43,7 +46,7 @@ function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: C.bg.elevated, border: `2px solid ${C.bg.subtle}`,
+      background: C.bg.elevated, border: `2px solid ${C.border.subtle}`,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.38, fontWeight: 700, color: C.text.secondary, flexShrink: 0,
     }}>{name[0]}</div>
@@ -69,7 +72,7 @@ function StatBox({ label, value, sub, highlight }: { label: string; value: strin
     <div style={{
       textAlign: "center", flex: 1, padding: "12px 8px", borderRadius: 8,
       background: highlight ? C.bg.deep : "transparent",
-      border: highlight ? `1px solid ${C.bg.subtle}` : "none",
+      border: highlight ? `1px solid ${C.border.subtle}` : "none",
     }}>
       <div style={{ fontSize: "1.5rem", fontWeight: W.bold, color: C.text.primary, letterSpacing: "-0.02em" }}>{value}</div>
       <div style={{ fontSize: "0.625rem", color: C.text.muted, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: W.semibold }}>{label}</div>
@@ -314,11 +317,11 @@ function CandidateMoveRow({ notation, equityDiff, isPlayed, isBest, isSelected, 
       background: isPlayed ? C.gold.primary : isSelected ? C.bg.deep : "transparent",
       color: isPlayed ? C.gold.text : C.text.primary,
       cursor: "pointer", transition: "all 0.12s ease",
-      borderTop: isSelected && !isPlayed ? `1px solid ${C.bg.subtle}` : "none",
-      borderRight: isSelected && !isPlayed ? `1px solid ${C.bg.subtle}` : "none",
-      borderBottom: isSelected && !isPlayed ? `1px solid ${C.bg.subtle}` : !isPlayed ? `1px solid ${C.bg.elevated}` : "none",
-      borderLeft: isSelected && !isPlayed ? `1px solid ${C.bg.subtle}` : "none",
-      boxShadow: isSelected && !isPlayed ? "0 2px 12px rgba(0,0,0,0.3)" : "none",
+      borderTop: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
+      borderRight: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
+      borderBottom: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : !isPlayed ? `1px solid ${C.bg.elevated}` : "none",
+      borderLeft: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
+      boxShadow: isSelected && !isPlayed ? "var(--shadow-card)" : "none",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
         <div style={{
@@ -336,14 +339,14 @@ function CandidateMoveRow({ notation, equityDiff, isPlayed, isBest, isSelected, 
         {isPlayed && (
           <span style={{
             fontSize: "0.5625rem", fontWeight: W.bold, padding: "2px 6px", borderRadius: 3,
-            background: isPlayed && isBest ? C.gold.text : "rgba(4,6,4,0.3)",
+            background: isPlayed && isBest ? C.gold.text : "var(--color-bg-subtle)",
             color: isPlayed && isBest ? C.gold.primary : C.gold.text,
             textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap",
           }}>Played</span>
         )}
         <span style={{
           fontSize: "0.75rem", fontWeight: W.semibold, fontFamily: F.mono,
-          color: isPlayed ? "rgba(4,6,4,0.7)" : isBest ? C.text.primary : C.text.secondary,
+          color: isPlayed ? "var(--color-text-muted)" : isBest ? C.text.primary : C.text.secondary,
         }}>
           {isBest && !isPlayed ? equityDiff : `(${equityDiff})`}
         </span>
@@ -384,7 +387,7 @@ function MoveRow({ moveNum, dice, move, equity, error, isBlunder, isSelected, on
       display: "flex", alignItems: "center", gap: 10,
       padding: "8px 12px", borderRadius: R.button,
       background: isSelected ? C.bg.deep : "transparent",
-      border: isSelected ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
+      border: isSelected ? `1px solid ${C.border.subtle}` : "1px solid transparent",
       cursor: "pointer", transition: "background 0.1s",
     }}>
       <span style={{ width: 28, fontSize: "0.75rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>{moveNum}</span>
@@ -392,7 +395,7 @@ function MoveRow({ moveNum, dice, move, equity, error, isBlunder, isSelected, on
         <div style={{
           width: 12, height: 12, borderRadius: "50%",
           background: player === "white" ? C.piece.white : C.piece.black,
-          border: `1.5px solid ${player === "white" ? C.bg.subtle : C.piece.black}`,
+          border: `1.5px solid ${player === "white" ? C.border.subtle : C.piece.black}`,
           flexShrink: 0,
         }} />
       )}
@@ -400,7 +403,7 @@ function MoveRow({ moveNum, dice, move, equity, error, isBlunder, isSelected, on
         {dice.map((d, i) => (
           <div key={i} style={{
             width: 18, height: 18, borderRadius: 3,
-            background: C.bg.elevated, border: `1px solid ${C.bg.subtle}`,
+            background: C.bg.elevated, border: `1px solid ${C.border.subtle}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "0.625rem", fontWeight: W.bold, color: C.text.primary,
           }}>{d}</div>
@@ -643,7 +646,7 @@ export function PostGameAnalysis({
     }}>
       {/* ─── Header ─── */}
       <header style={{
-        background: C.bg.surface, borderBottom: `1px solid ${C.bg.subtle}`,
+        background: C.bg.surface, borderBottom: `1px solid ${C.border.subtle}`,
         padding: "12px 16px",
       }}>
         {/* Top row: nav + actions */}
@@ -656,7 +659,7 @@ export function PostGameAnalysis({
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={onBackToLobby} style={{
               padding: "6px 14px", borderRadius: R.button,
-              border: `1px solid ${C.bg.subtle}`, background: "transparent",
+              border: `1px solid ${C.border.subtle}`, background: "transparent",
               fontSize: "0.75rem", fontWeight: W.semibold, color: C.text.secondary, cursor: "pointer", fontFamily: F.body,
             }}>Home</button>
             {onRematch && (
@@ -687,7 +690,7 @@ export function PostGameAnalysis({
             fontSize: "0.875rem", fontWeight: W.bold, fontFamily: F.display,
             color: iWon ? C.gold.primary : C.error,
             padding: "2px 10px", borderRadius: 4,
-            background: iWon ? C.gold.faint : "rgba(204,68,68,0.1)",
+            background: iWon ? C.gold.faint : "var(--color-danger-muted)",
           }}>
             {iWon ? "Victory" : "Defeat"} &middot; {resultLabel}
           </div>
@@ -700,7 +703,7 @@ export function PostGameAnalysis({
 
       {/* ─── Tab Bar ─── */}
       <div style={{
-        display: "flex", gap: 4, borderBottom: `1px solid ${C.bg.subtle}`,
+        display: "flex", gap: 4, borderBottom: `1px solid ${C.border.subtle}`,
         background: C.bg.surface, padding: "0 24px",
       }}>
         {[
@@ -729,7 +732,7 @@ export function PostGameAnalysis({
               <Card>
                 <SectionHeader title="Performance Rating" />
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`, textAlign: "center" }}>
+                  <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.border.subtle}`, textAlign: "center" }}>
                     <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>You</div>
                     <div style={{ fontSize: "2rem", fontWeight: W.bold, color: C.text.primary }}>{mySummary.performanceRating}</div>
                     <div style={{ fontSize: "0.75rem", color: C.text.secondary, marginTop: 4 }}>
@@ -739,7 +742,7 @@ export function PostGameAnalysis({
                       {mySummary.blunders} blunder{mySummary.blunders !== 1 ? "s" : ""} · {mySummary.mistakes} mistake{mySummary.mistakes !== 1 ? "s" : ""} · {mySummary.inaccuracies} inaccurac{mySummary.inaccuracies !== 1 ? "ies" : "y"}
                     </div>
                   </div>
-                  <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`, textAlign: "center" }}>
+                  <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.border.subtle}`, textAlign: "center" }}>
                     <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>{opponentName}</div>
                     <div style={{ fontSize: "2rem", fontWeight: W.bold, color: C.text.muted }}>{oppSummary.performanceRating}</div>
                     <div style={{ fontSize: "0.75rem", color: C.text.secondary, marginTop: 4 }}>
@@ -822,7 +825,7 @@ export function PostGameAnalysis({
                   {/* Log / Checker toggle */}
                   <div style={{
                     display: "flex", gap: 0, marginBottom: 14,
-                    borderRadius: R.card, overflow: "hidden", border: `1px solid ${C.bg.subtle}`,
+                    borderRadius: R.card, overflow: "hidden", border: `1px solid ${C.border.subtle}`,
                   }}>
                     {(["log", "checker"] as const).map(mode => (
                       <button key={mode} onClick={() => setAnalysisMode(mode)} style={{
@@ -864,7 +867,7 @@ export function PostGameAnalysis({
                           display: "flex", alignItems: "center", gap: 8,
                           padding: "6px 10px", borderRadius: R.button, cursor: "pointer",
                           background: selectedMove === m.moveNum ? C.bg.deep : "transparent",
-                          border: selectedMove === m.moveNum ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
+                          border: selectedMove === m.moveNum ? `1px solid ${C.border.subtle}` : "1px solid transparent",
                         }}>
                           <span style={{ fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, width: 18 }}>{m.moveNum}</span>
                           <div style={{ display: "flex", gap: 2 }}>
@@ -931,13 +934,13 @@ export function PostGameAnalysis({
                       <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                         <button onClick={() => selectMove(Math.max(1, selectedMove - 1))} style={{
                           width: 28, height: 28, borderRadius: R.button,
-                          border: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
+                          border: `1px solid ${C.border.subtle}`, background: C.bg.surface,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "0.875rem", color: C.text.muted,
                         }}>&larr;</button>
                         <button onClick={() => selectMove(Math.min(totalTurns, selectedMove + 1))} style={{
                           width: 28, height: 28, borderRadius: R.button,
-                          border: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
+                          border: `1px solid ${C.border.subtle}`, background: C.bg.surface,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "0.875rem", color: C.text.muted,
                         }}>&rarr;</button>
@@ -967,7 +970,7 @@ export function PostGameAnalysis({
                         display: "flex", alignItems: "center", gap: 6,
                         padding: "6px 8px", borderRadius: R.button, cursor: "pointer",
                         background: selectedMove === m.moveNum ? C.bg.deep : "transparent",
-                        border: selectedMove === m.moveNum ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
+                        border: selectedMove === m.moveNum ? `1px solid ${C.border.subtle}` : "1px solid transparent",
                         transition: "background 0.1s",
                       }}>
                         <span style={{ fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, width: 18, textAlign: "center" }}>{m.moveNum}</span>
@@ -975,7 +978,7 @@ export function PostGameAnalysis({
                           {m.dice.map((d, i) => (
                             <div key={i} style={{
                               width: 15, height: 15, borderRadius: 3,
-                              background: C.bg.elevated, border: `1px solid ${C.bg.subtle}`,
+                              background: C.bg.elevated, border: `1px solid ${C.border.subtle}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontSize: "0.5625rem", fontWeight: W.bold, color: C.text.primary,
                             }}>{d}</div>
@@ -1005,7 +1008,7 @@ export function PostGameAnalysis({
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{
                     flex: 1, display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 14px", borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`,
+                    padding: "10px 14px", borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.border.subtle}`,
                   }}>
                     <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.text.muted, flexShrink: 0 }} />
                     <span style={{ fontSize: "0.8125rem", fontWeight: W.semibold, fontFamily: F.mono }}>{bottomBarPlayed}</span>

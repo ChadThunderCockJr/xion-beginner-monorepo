@@ -25,7 +25,7 @@ export function MatchRow({ opponent, result, score, matchLength, date, className
   return (
     <div
       className={cn(
-        "flex items-center gap-3 py-2.5 px-1 border-b border-bg-subtle last:border-b-0",
+        "flex items-center gap-3 py-2.5 px-1 border-b border-border-subtle last:border-b-0",
         className,
       )}
     >

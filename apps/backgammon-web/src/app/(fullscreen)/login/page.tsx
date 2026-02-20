@@ -117,7 +117,7 @@ function BoardIllustration() {
           points={`${18 + i * 19},15 ${28 + i * 19},60 ${38 + i * 19},15`}
           fill={
             i % 2 === 0
-              ? "var(--color-burgundy-deep)"
+              ? "var(--color-burgundy-accent)"
               : "var(--color-gold-muted)"
           }
           stroke="var(--color-bg-subtle)"
@@ -132,7 +132,7 @@ function BoardIllustration() {
           fill={
             i % 2 === 0
               ? "var(--color-gold-muted)"
-              : "var(--color-burgundy-deep)"
+              : "var(--color-burgundy-accent)"
           }
           stroke="var(--color-bg-subtle)"
           strokeWidth="0.5"
@@ -146,7 +146,7 @@ function BoardIllustration() {
           fill={
             i % 2 === 0
               ? "var(--color-gold-muted)"
-              : "var(--color-burgundy-deep)"
+              : "var(--color-burgundy-accent)"
           }
           stroke="var(--color-bg-subtle)"
           strokeWidth="0.5"
@@ -159,7 +159,7 @@ function BoardIllustration() {
           points={`${138 + i * 19},165 ${148 + i * 19},120 ${158 + i * 19},165`}
           fill={
             i % 2 === 0
-              ? "var(--color-burgundy-deep)"
+              ? "var(--color-burgundy-accent)"
               : "var(--color-gold-muted)"
           }
           stroke="var(--color-bg-subtle)"

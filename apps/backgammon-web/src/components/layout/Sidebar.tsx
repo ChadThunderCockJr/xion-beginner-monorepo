@@ -187,7 +187,7 @@ export function Sidebar() {
         flexDirection: "column",
         padding: "20px 12px",
         flexShrink: 0,
-        borderRight: "1px solid var(--color-burgundy-deep)",
+        borderRight: "1px solid var(--color-border-subtle)",
         height: "100dvh",
         position: "sticky",
         top: 0,
@@ -280,7 +280,7 @@ export function Sidebar() {
         style={{
           marginTop: "auto",
           padding: "16px 16px 8px",
-          borderTop: "1px solid var(--color-bg-subtle)",
+          borderTop: "1px solid var(--color-border-subtle)",
         }}
       >
         <Link

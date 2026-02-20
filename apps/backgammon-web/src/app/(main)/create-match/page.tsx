@@ -147,7 +147,7 @@ function MatchSummary({
         padding: "12px 16px",
         background: "var(--color-bg-base)",
         borderRadius: "var(--radius-card)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
         marginBottom: 20,
         flexWrap: "wrap",
       }}
@@ -207,7 +207,7 @@ function FriendRow({
         borderRadius: "var(--radius-button)",
         cursor: "pointer",
         background: selected ? "var(--color-bg-base)" : "transparent",
-        border: `1px solid ${selected ? "var(--color-bg-subtle)" : "transparent"}`,
+        border: `1px solid ${selected ? "var(--color-border-subtle)" : "transparent"}`,
         transition: "all 0.1s ease",
       }}
     >
@@ -283,8 +283,8 @@ function SessionToast({ message, onDismiss }: { message: string; onDismiss: () =
         padding: "12px 20px",
         borderRadius: "var(--radius-card)",
         background: "var(--color-bg-surface)",
-        border: "1px solid var(--color-bg-subtle)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        border: "1px solid var(--color-border-subtle)",
+        boxShadow: "var(--shadow-elevated)",
         maxWidth: 420,
         animation: "slideUp 0.3s ease",
       }}
@@ -383,9 +383,9 @@ function WagerConfirmModal({
             width: "90%",
             maxWidth: 440,
             background: "var(--color-bg-surface)",
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             borderRadius: "var(--radius-card, 12px)",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+            boxShadow: "var(--shadow-elevated)",
             overflow: "hidden",
             animation: "modalIn 0.2s ease",
           }}
@@ -394,7 +394,7 @@ function WagerConfirmModal({
           <div
             style={{
               padding: "20px 24px 16px",
-              borderBottom: "1px solid var(--color-bg-subtle)",
+              borderBottom: "1px solid var(--color-border-subtle)",
             }}
           >
             <h3
@@ -473,8 +473,8 @@ function WagerConfirmModal({
                 gap: 8,
                 padding: "10px 14px",
                 borderRadius: 8,
-                background: "rgba(248, 113, 113, 0.08)",
-                border: "1px solid rgba(248, 113, 113, 0.2)",
+                background: "var(--color-danger-muted)",
+                border: "1px solid var(--color-danger)",
                 marginBottom: 16,
               }}
             >
@@ -500,7 +500,7 @@ function WagerConfirmModal({
               padding: "8px 12px",
               borderRadius: 6,
               background: "var(--color-bg-base)",
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               marginBottom: 16,
             }}
           >
@@ -525,7 +525,7 @@ function WagerConfirmModal({
               flex: 1,
               padding: "12px 20px",
               borderRadius: "var(--radius-card, 12px)",
-              border: "1.5px solid var(--color-bg-subtle)",
+              border: "1.5px solid var(--color-border-subtle)",
               background: "var(--color-bg-surface)",
               color: "var(--color-text-secondary)",
               fontSize: "0.875rem",
@@ -732,7 +732,7 @@ export default function CreateMatchPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid var(--color-bg-subtle)",
+          borderBottom: "1px solid var(--color-border-subtle)",
           background: "var(--color-bg-surface)",
         }}
       >
@@ -769,7 +769,7 @@ export default function CreateMatchPage() {
             alignItems: "center",
             gap: 8,
             padding: "6px 12px",
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             borderRadius: "var(--radius-button)",
             background: "var(--color-bg-surface)",
           }}
@@ -821,7 +821,7 @@ export default function CreateMatchPage() {
                         gap: 8,
                         padding: "8px 12px",
                         borderRadius: "var(--radius-button)",
-                        border: "1px solid var(--color-bg-subtle)",
+                        border: "1px solid var(--color-border-subtle)",
                         background: "var(--color-bg-base)",
                         marginBottom: 10,
                       }}
@@ -878,7 +878,7 @@ export default function CreateMatchPage() {
                       padding: "12px 16px",
                       borderRadius: "var(--radius-card)",
                       background: "var(--color-bg-base)",
-                      border: "1px solid var(--color-bg-subtle)",
+                      border: "1px solid var(--color-border-subtle)",
                       fontSize: "0.75rem",
                       color: "var(--color-text-secondary)",
                       lineHeight: 1.6,
@@ -964,7 +964,7 @@ export default function CreateMatchPage() {
                           border: `1.5px solid ${
                             stakePerPoint === amt && !customStake
                               ? "var(--color-gold-primary)"
-                              : "var(--color-bg-subtle)"
+                              : "var(--color-border-subtle)"
                           }`,
                           background:
                             stakePerPoint === amt && !customStake
@@ -993,7 +993,7 @@ export default function CreateMatchPage() {
                         border: `1.5px solid ${
                           customStake
                             ? "var(--color-gold-primary)"
-                            : "var(--color-bg-subtle)"
+                            : "var(--color-border-subtle)"
                         }`,
                         borderRadius: "var(--radius-button)",
                         padding: "0 10px",
@@ -1096,7 +1096,7 @@ export default function CreateMatchPage() {
                           display: "flex",
                           borderRadius: "var(--radius-card)",
                           overflow: "hidden",
-                          border: "1px solid var(--color-bg-subtle)",
+                          border: "1px solid var(--color-border-subtle)",
                           flexShrink: 0,
                         }}
                       >
@@ -1120,7 +1120,7 @@ export default function CreateMatchPage() {
                               border: "none",
                               borderLeft:
                                 i > 0
-                                  ? "1px solid var(--color-bg-subtle)"
+                                  ? "1px solid var(--color-border-subtle)"
                                   : "none",
                               fontSize: "0.75rem",
                               fontWeight: 700,
@@ -1165,7 +1165,7 @@ export default function CreateMatchPage() {
                                   border: `1.5px solid ${
                                     maxCube === val
                                       ? "var(--color-gold-primary)"
-                                      : "var(--color-bg-subtle)"
+                                      : "var(--color-border-subtle)"
                                   }`,
                                   background:
                                     maxCube === val
@@ -1200,7 +1200,7 @@ export default function CreateMatchPage() {
                           padding: "8px 12px",
                           borderRadius: "var(--radius-button)",
                           background: "var(--color-bg-base)",
-                          border: "1px solid var(--color-bg-subtle)",
+                          border: "1px solid var(--color-border-subtle)",
                         }}
                       >
                         {/* Mini cube icon */}
@@ -1210,7 +1210,7 @@ export default function CreateMatchPage() {
                             height: 28,
                             borderRadius: 4,
                             background: "var(--color-bg-elevated)",
-                            border: "1.5px solid var(--color-bg-subtle)",
+                            border: "1.5px solid var(--color-border-subtle)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1248,7 +1248,7 @@ export default function CreateMatchPage() {
                         padding: "10px 14px",
                         borderRadius: "var(--radius-card)",
                         background: "var(--color-bg-surface)",
-                        border: "1.5px solid var(--color-bg-subtle)",
+                        border: "1.5px solid var(--color-border-subtle)",
                         marginBottom: 10,
                       }}
                     >
@@ -1300,7 +1300,7 @@ export default function CreateMatchPage() {
                       padding: "8px 12px",
                       borderRadius: "var(--radius-button)",
                       background: "var(--color-bg-base)",
-                      border: "1px solid var(--color-bg-subtle)",
+                      border: "1px solid var(--color-border-subtle)",
                     }}
                   >
                     <div
@@ -1533,7 +1533,7 @@ export default function CreateMatchPage() {
                     style={{
                       padding: "8px 20px",
                       borderRadius: "var(--radius-button)",
-                      border: "1.5px solid var(--color-bg-subtle)",
+                      border: "1.5px solid var(--color-border-subtle)",
                       background: "var(--color-bg-surface)",
                       color: "var(--color-text-secondary)",
                       fontSize: "0.75rem",
@@ -1554,7 +1554,7 @@ export default function CreateMatchPage() {
                     padding: "8px 12px",
                     borderRadius: "var(--radius-button)",
                     background: "var(--color-bg-base)",
-                    border: "1px solid var(--color-bg-subtle)",
+                    border: "1px solid var(--color-border-subtle)",
                     fontSize: "0.75rem",
                     fontFamily: "var(--font-mono)",
                     color: "var(--color-text-muted)",
@@ -1571,7 +1571,7 @@ export default function CreateMatchPage() {
                     width: 120,
                     height: 120,
                     margin: "0 auto",
-                    border: "2px dashed var(--color-bg-subtle)",
+                    border: "2px dashed var(--color-border-subtle)",
                     borderRadius: "var(--radius-card)",
                     display: "flex",
                     flexDirection: "column",
@@ -1643,7 +1643,7 @@ export default function CreateMatchPage() {
                   style={{
                     padding: "10px 24px",
                     borderRadius: "var(--radius-card)",
-                    border: "1.5px solid var(--color-bg-subtle)",
+                    border: "1.5px solid var(--color-border-subtle)",
                     background: "var(--color-bg-surface)",
                     color: "var(--color-text-secondary)",
                     fontSize: "0.8125rem",
@@ -1686,7 +1686,7 @@ export default function CreateMatchPage() {
                       height: 64,
                       borderRadius: "50%",
                       background: "var(--color-bg-elevated)",
-                      border: "2px solid var(--color-bg-subtle)",
+                      border: "2px solid var(--color-border-subtle)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1725,7 +1725,7 @@ export default function CreateMatchPage() {
                       height: 64,
                       borderRadius: "50%",
                       background: "var(--color-bg-elevated)",
-                      border: "2px solid var(--color-bg-subtle)",
+                      border: "2px solid var(--color-border-subtle)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1804,7 +1804,7 @@ export default function CreateMatchPage() {
                     padding: "8px 14px",
                     borderRadius: "var(--radius-button)",
                     background: "var(--color-bg-base)",
-                    border: "1px solid var(--color-bg-subtle)",
+                    border: "1px solid var(--color-border-subtle)",
                   }}
                 >
                   <ShieldIcon size={14} />

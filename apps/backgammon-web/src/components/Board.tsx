@@ -87,8 +87,8 @@ function Checker({
               : "var(--color-checker-black-border)"
         }`,
         boxShadow: highlighted
-          ? "var(--shadow-gold), 0 1px 3px rgba(0,0,0,0.3)"
-          : "0 1px 3px rgba(0,0,0,0.3)",
+          ? "var(--shadow-gold), var(--shadow-card)"
+          : "var(--shadow-card)",
         opacity: isGhost ? 0.35 : 1,
         cursor: onClick ? "pointer" : "default",
         zIndex: highlighted ? 10 : undefined,
@@ -199,7 +199,7 @@ export function DoublingCube({ value = 64 }: { value?: number }) {
         background: "var(--color-bg-elevated)",
         border: "1.5px solid var(--color-gold-primary)",
         color: "var(--color-gold-primary)",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       {value}
@@ -555,8 +555,8 @@ export function Board({
     const triangleFill = isDark ? DARK_FELT : LIGHT_FELT;
 
     let triHighlight: string | undefined;
-    if (isLastTo) triHighlight = isDark ? "#1A2840" : "#203040";
-    if (isLastFrom) triHighlight = isDark ? "#1A2838" : "#1E2C3A";
+    if (isLastTo) triHighlight = "var(--color-gold-muted)";
+    if (isLastFrom) triHighlight = "var(--color-gold-muted)";
 
     return (
       <div
@@ -649,7 +649,7 @@ export function Board({
                 fontWeight: 800,
                 borderRadius: 8,
                 padding: "1px 6px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                boxShadow: "var(--shadow-card)",
                 lineHeight: "16px",
               }}>
                 {holdDests.get(point)!.join("+")}
@@ -700,8 +700,8 @@ export function Board({
           background: "var(--color-bg-deepest)",
           margin: "0 4px",
           borderRadius: 4,
-          borderLeft: "1px solid var(--color-bg-subtle)",
-          borderRight: "1px solid var(--color-bg-subtle)",
+          borderLeft: "1px solid var(--color-border-subtle)",
+          borderRight: "1px solid var(--color-border-subtle)",
           justifyContent: isTop ? "flex-start" : "flex-end",
           padding: isTop ? "12px 0 0" : "0 0 12px",
           gap: 8,
@@ -864,10 +864,10 @@ export function Board({
         style={{
           background: "var(--color-bg-base)",
           borderRadius: "12px 0 0 12px",
-          border: "2px solid var(--color-bg-subtle)",
+          border: "2px solid var(--color-border-subtle)",
           borderRight: "none",
           padding: "4px 0",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+          boxShadow: "var(--shadow-elevated)",
           position: "relative",
         }}
       >
@@ -942,13 +942,13 @@ export function Board({
           width: BEAROFF_W,
           background: "var(--color-bg-base)",
           borderRadius: "0 12px 12px 0",
-          borderTop: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
-          borderRight: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
-          borderBottom: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
-          borderLeft: "1px solid var(--color-bg-subtle)",
+          borderTop: `2px solid ${canBear ? "var(--color-success)" : "var(--color-border-subtle)"}`,
+          borderRight: `2px solid ${canBear ? "var(--color-success)" : "var(--color-border-subtle)"}`,
+          borderBottom: `2px solid ${canBear ? "var(--color-success)" : "var(--color-border-subtle)"}`,
+          borderLeft: "1px solid var(--color-border-subtle)",
           boxShadow: canBear
-            ? "0 4px 24px rgba(0,0,0,0.5), 0 0 20px var(--color-success-muted)"
-            : "0 4px 24px rgba(0,0,0,0.5)",
+            ? "var(--shadow-elevated), 0 0 20px var(--color-success-muted)"
+            : "var(--shadow-elevated)",
           cursor: canBear ? "pointer" : "default",
           transition: "border-color 150ms ease, box-shadow 150ms ease",
           position: "relative",

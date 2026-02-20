@@ -27,7 +27,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             "w-full bg-bg-elevated rounded-[var(--radius-button)] py-[13px] px-4 text-[15px] text-text-primary placeholder:text-text-faint outline-none transition-[border-color] duration-200",
             error
               ? "border-[1.5px] border-danger focus:border-danger"
-              : "border-[1.5px] border-bg-subtle focus:border-gold-primary",
+              : "border-[1.5px] border-border-subtle focus:border-gold-primary",
             className,
           )}
           {...props}

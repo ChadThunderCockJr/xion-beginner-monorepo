@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 const STORAGE_KEY = "gammon-theme";
 const THEMES: Theme[] = ["dark", "light", "lux"];
-const THEME_COLORS: Record<Theme, string> = { light: "#F5F1EB", dark: "#040604", lux: "#1A0E06" };
+const THEME_COLORS: Record<Theme, string> = { light: "#F5F1EB", dark: "#040604", lux: "#2A0A16" };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");

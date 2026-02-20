@@ -87,9 +87,9 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     }}>
       <div style={{
         width: 18, height: 18, borderRadius: "50%",
-        background: "var(--color-text-primary)", position: "absolute", top: 2,
+        background: "var(--color-bg-elevated)", position: "absolute", top: 2,
         left: on ? 20 : 2, transition: "left 0.15s ease",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+        boxShadow: "var(--shadow-card)",
       }} />
     </div>
   );
@@ -102,11 +102,11 @@ function ProfileMatchRow({ opponent, result, score, pr, wager, date }: {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      padding: "10px 0", borderBottom: "1px solid var(--color-bg-subtle)",
+      padding: "10px 0", borderBottom: "1px solid var(--color-border-subtle)",
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: "50%",
-        background: "var(--color-bg-elevated)", border: "2px solid var(--color-bg-subtle)",
+        background: "var(--color-bg-elevated)", border: "2px solid var(--color-border-subtle)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
       }}>{opponent[0]}</div>
@@ -116,7 +116,7 @@ function ProfileMatchRow({ opponent, result, score, pr, wager, date }: {
       </div>
       <div style={{
         padding: "3px 8px", borderRadius: 4, fontSize: "0.6875rem", fontWeight: 700,
-        background: result === "W" ? "rgba(96,168,96,0.125)" : "rgba(204,68,68,0.125)",
+        background: result === "W" ? "var(--color-success-muted)" : "var(--color-danger-muted)",
         border: `1px solid ${result === "W" ? "var(--color-success)" : "var(--color-danger)"}`,
         color: result === "W" ? "var(--color-success)" : "var(--color-danger)",
       }}>{result} {score}</div>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         actions={
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
-            padding: "6px 12px", border: "1px solid var(--color-bg-subtle)",
+            padding: "6px 12px", border: "1px solid var(--color-border-subtle)",
             borderRadius: 8, background: "var(--color-bg-surface)",
           }}>
             <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-gold-primary)" }}>--</span>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
               <div style={{ position: "relative" }}>
                 <div style={{
                   width: 80, height: 80, borderRadius: "50%",
-                  background: "var(--color-bg-elevated)", border: "2px solid var(--color-bg-subtle)",
+                  background: "var(--color-bg-elevated)", border: "2px solid var(--color-border-subtle)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "1.875rem", fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
                 }}>{profileName[0]}</div>
@@ -255,7 +255,7 @@ export default function ProfilePage() {
                   <div style={{
                     display: "flex", alignItems: "baseline", gap: 4,
                     padding: "3px 10px", borderRadius: 6,
-                    background: "var(--color-bg-base)", border: "1px solid var(--color-bg-subtle)",
+                    background: "var(--color-bg-base)", border: "1px solid var(--color-border-subtle)",
                   }}>
                     <span style={{
                       fontSize: "1rem", fontWeight: 700, color: "var(--color-text-primary)",
@@ -297,7 +297,7 @@ export default function ProfilePage() {
             {/* Quick Stats */}
             <div style={{
               display: "flex", gap: 0, marginTop: 20, paddingTop: 16,
-              borderTop: "1px solid var(--color-bg-subtle)",
+              borderTop: "1px solid var(--color-border-subtle)",
             }}>
               <QuickStat label="Games" value={totalGames.toLocaleString()} />
               <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
@@ -312,9 +312,9 @@ export default function ProfilePage() {
           {/* ═══ TAB BAR ═════════════════════════════════════ */}
           <div style={{
             display: "flex", gap: 0, background: "var(--color-bg-surface)",
-            borderLeft: "1px solid var(--color-bg-subtle)",
-            borderRight: "1px solid var(--color-bg-subtle)",
-            borderBottom: "1px solid var(--color-bg-subtle)",
+            borderLeft: "1px solid var(--color-border-subtle)",
+            borderRight: "1px solid var(--color-border-subtle)",
+            borderBottom: "1px solid var(--color-border-subtle)",
             borderRadius: "0 0 8px 8px",
             marginBottom: 20,
           }}>
@@ -449,7 +449,7 @@ export default function ProfilePage() {
                   return (
                     <button key={id} onClick={() => setHistoryFilter(id)} style={{
                       padding: "6px 14px", borderRadius: 6,
-                      border: `1.5px solid ${active ? "var(--color-gold-primary)" : "var(--color-bg-subtle)"}`,
+                      border: `1.5px solid ${active ? "var(--color-gold-primary)" : "var(--color-border-subtle)"}`,
                       background: active ? "var(--color-gold-primary)" : "var(--color-bg-surface)",
                       color: active ? "var(--color-accent-fg)" : "var(--color-text-secondary)",
                       fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
@@ -462,7 +462,7 @@ export default function ProfilePage() {
               {/* Table header */}
               <div style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: "8px 0", borderBottom: "1.5px solid var(--color-bg-subtle)",
+                padding: "8px 0", borderBottom: "1.5px solid var(--color-border-subtle)",
                 marginBottom: 4,
               }}>
                 <div style={{ width: 32 }} />
@@ -498,7 +498,7 @@ export default function ProfilePage() {
               {/* Pagination */}
               <div style={{
                 marginTop: 12, paddingTop: 12,
-                borderTop: "1px solid var(--color-bg-subtle)",
+                borderTop: "1px solid var(--color-border-subtle)",
                 fontSize: "0.6875rem", color: "var(--color-text-muted)", textAlign: "center",
               }}>
                 Showing {filteredMatches.length} of {totalGames.toLocaleString()} matches
@@ -522,14 +522,14 @@ export default function ProfilePage() {
                     onChange={(e) => setDisplayName(e.target.value)}
                     style={{
                       width: "100%", padding: "10px 14px", borderRadius: 6,
-                      border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
+                      border: "1.5px solid var(--color-border-subtle)", background: "var(--color-bg-base)",
                       fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
                       fontFamily: "var(--font-body)",
                       boxSizing: "border-box",
                       transition: "border-color 0.2s",
                     }}
                     onFocus={(e) => { e.target.style.borderColor = "var(--color-gold-primary)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "var(--color-bg-subtle)"; handleDisplayNameBlur(); }}
+                    onBlur={(e) => { e.target.style.borderColor = "var(--color-border-subtle)"; handleDisplayNameBlur(); }}
                   />
                 </div>
                 <div style={{ marginBottom: 16 }}>
@@ -549,14 +549,14 @@ export default function ProfilePage() {
                     onChange={(e) => setEmail(e.target.value)}
                     style={{
                       width: "100%", padding: "10px 14px", borderRadius: 6,
-                      border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
+                      border: "1.5px solid var(--color-border-subtle)", background: "var(--color-bg-base)",
                       fontSize: "0.875rem", color: "var(--color-text-primary)", outline: "none",
                       fontFamily: "var(--font-body)",
                       boxSizing: "border-box",
                       transition: "border-color 0.2s",
                     }}
                     onFocus={(e) => { e.target.style.borderColor = "var(--color-gold-primary)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "var(--color-bg-subtle)"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "var(--color-border-subtle)"; }}
                   />
                 </div>
                 <div>
@@ -566,7 +566,7 @@ export default function ProfilePage() {
                   }}>Avatar</div>
                   <button style={{
                     padding: "8px 16px", borderRadius: 6,
-                    border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-surface)",
+                    border: "1.5px solid var(--color-border-subtle)", background: "var(--color-bg-surface)",
                     fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-secondary)",
                     cursor: "pointer", fontFamily: "var(--font-body)",
                   }}>Change Avatar</button>
@@ -636,7 +636,7 @@ export default function ProfilePage() {
                   <div key={item.key} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "12px 0",
-                    borderBottom: i < 2 ? "1px solid var(--color-bg-subtle)" : "none",
+                    borderBottom: i < 2 ? "1px solid var(--color-border-subtle)" : "none",
                   }}>
                     <div>
                       <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>
@@ -661,7 +661,7 @@ export default function ProfilePage() {
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "14px 16px", borderRadius: 6,
-                  background: "var(--color-bg-base)", border: "1px solid var(--color-bg-subtle)",
+                  background: "var(--color-bg-base)", border: "1px solid var(--color-border-subtle)",
                   marginBottom: 16,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

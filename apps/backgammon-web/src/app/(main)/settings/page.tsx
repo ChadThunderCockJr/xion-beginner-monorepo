@@ -66,9 +66,9 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     }}>
       <div style={{
         width: 18, height: 18, borderRadius: "50%",
-        background: "var(--color-text-primary)", position: "absolute", top: 2,
+        background: "var(--color-bg-elevated)", position: "absolute", top: 2,
         left: on ? 20 : 2, transition: "left 0.15s ease",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+        boxShadow: "var(--shadow-card)",
       }} />
     </div>
   );
@@ -177,7 +177,7 @@ export default function SettingsPage() {
               <div style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 14px", borderRadius: 6,
-                border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
+                border: "1.5px solid var(--color-border-subtle)", background: "var(--color-bg-base)",
               }}>
                 <span style={{
                   flex: 1, fontSize: "0.8125rem", color: "var(--color-text-secondary)",
@@ -216,14 +216,14 @@ export default function SettingsPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleSaveDisplayName()}
                   style={{
                     flex: 1, padding: "10px 14px", borderRadius: 6,
-                    border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
+                    border: "1.5px solid var(--color-border-subtle)", background: "var(--color-bg-base)",
                     fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
                     fontFamily: "var(--font-body)",
                     boxSizing: "border-box",
                     transition: "border-color 0.2s",
                   }}
                   onFocus={(e) => { e.target.style.borderColor = "var(--color-gold-primary)"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "var(--color-bg-subtle)"; handleSaveDisplayName(); }}
+                  onBlur={(e) => { e.target.style.borderColor = "var(--color-border-subtle)"; handleSaveDisplayName(); }}
                 />
                 <button
                   onClick={handleSaveDisplayName}
@@ -251,14 +251,14 @@ export default function SettingsPage() {
 
             {/* Logout */}
             <div style={{
-              paddingTop: 12, borderTop: "1px solid var(--color-bg-subtle)",
+              paddingTop: 12, borderTop: "1px solid var(--color-border-subtle)",
             }}>
               <button
                 onClick={logout}
                 style={{
                   padding: "10px 20px", borderRadius: 6,
                   border: "1.5px solid var(--color-danger)",
-                  background: "rgba(204,68,68,0.08)",
+                  background: "var(--color-danger-muted)",
                   color: "var(--color-danger)",
                   fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--font-body)",
@@ -325,7 +325,7 @@ export default function SettingsPage() {
               <div key={item.key} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "12px 0",
-                borderBottom: i < 2 ? "1px solid var(--color-bg-subtle)" : "none",
+                borderBottom: i < 2 ? "1px solid var(--color-border-subtle)" : "none",
               }}>
                 <div>
                   <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>

@@ -78,7 +78,7 @@ export default function UserProfilePage() {
         <Card>
           <div className="flex gap-5 items-start">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-bg-elevated border-2 border-bg-subtle flex items-center justify-center text-[30px] font-bold text-text-secondary">
+              <div className="w-20 h-20 rounded-full bg-bg-elevated border-2 border-border-subtle flex items-center justify-center text-[30px] font-bold text-text-secondary">
                 {playerName[0]}
               </div>
               <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-success border-[3px] border-bg-surface" />

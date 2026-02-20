@@ -130,7 +130,7 @@ function MatchRowStyled({
         alignItems: "center",
         gap: 12,
         padding: "10px 0",
-        borderBottom: "1px solid var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
         background: h ? "var(--color-bg-elevated)" : "transparent",
         borderRadius: h ? 6 : 0,
         transition: "all 0.12s ease",
@@ -214,7 +214,7 @@ function PlayerRowStyled({
         alignItems: "center",
         gap: 10,
         padding: "8px 0",
-        borderBottom: "1px solid var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
       }}
     >
       <Avatar name={name} size="sm" online={status === "online"} />
@@ -246,7 +246,7 @@ function PlayerRowStyled({
           borderRadius: 6,
           border: h
             ? "1px solid var(--color-gold-primary)"
-            : "1px solid var(--color-bg-subtle)",
+            : "1px solid var(--color-border-subtle)",
           background: h ? "var(--color-gold-muted)" : "transparent",
           fontSize: "0.6875rem",
           fontWeight: 600,
@@ -417,7 +417,7 @@ export default function DashboardPage() {
               alignItems: "center",
               gap: 8,
               padding: "8px 14px",
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               borderRadius: 6,
               background: "var(--color-bg-surface)",
             }}
@@ -446,7 +446,7 @@ export default function DashboardPage() {
                 style={{
                   fontSize: "0.625rem",
                   color: "var(--color-text-faint)",
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   borderRadius: 4,
                   padding: "1px 6px",
                   fontFamily: "var(--font-mono)",
@@ -466,9 +466,9 @@ export default function DashboardPage() {
                   right: 0,
                   minWidth: 280,
                   background: "var(--color-bg-surface)",
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   borderRadius: 8,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                  boxShadow: "var(--shadow-elevated)",
                   zIndex: 50,
                   maxHeight: 300,
                   overflowY: "auto",
@@ -523,7 +523,7 @@ export default function DashboardPage() {
                             padding: "3px 8px",
                             borderRadius: 5,
                             border: "1px solid var(--color-success)",
-                            background: "rgba(96,168,96,0.12)",
+                            background: "var(--color-success-muted)",
                             fontSize: "0.625rem",
                             fontWeight: 600,
                             color: "var(--color-success)",
@@ -572,7 +572,7 @@ export default function DashboardPage() {
               width: 44,
               height: 44,
               borderRadius: 6,
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               background: "var(--color-bg-surface)",
               cursor: "pointer",
               display: "flex",
@@ -602,7 +602,7 @@ export default function DashboardPage() {
               alignItems: "center",
               gap: 8,
               padding: "8px 14px",
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               borderRadius: 6,
               background: "var(--color-gold-muted)",
               cursor: "pointer",
@@ -637,7 +637,7 @@ export default function DashboardPage() {
               width: 44,
               height: 44,
               borderRadius: 6,
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               background: "var(--color-bg-surface)",
               cursor: "pointer",
               display: "flex",
@@ -714,7 +714,7 @@ export default function DashboardPage() {
                 flex: 1,
                 padding: "14px 20px",
                 borderRadius: 6,
-                border: "1.5px solid var(--color-bg-subtle)",
+                border: "1.5px solid var(--color-border-subtle)",
                 background: "transparent",
                 color: "var(--color-text-secondary)",
                 fontSize: "0.875rem",
@@ -822,7 +822,7 @@ export default function DashboardPage() {
                   flex: 1,
                   padding: "12px 16px",
                   borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   background: "transparent",
                   fontSize: "0.875rem",
                   fontWeight: 600,
@@ -838,7 +838,7 @@ export default function DashboardPage() {
                   e.currentTarget.style.color = "var(--color-gold-primary)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-bg-subtle)";
+                  e.currentTarget.style.borderColor = "var(--color-border-subtle)";
                   e.currentTarget.style.color = "var(--color-text-muted)";
                 }}
               >
@@ -896,7 +896,7 @@ export default function DashboardPage() {
                   flex: 1,
                   padding: "12px 16px",
                   borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   background: "transparent",
                   fontSize: "0.875rem",
                   fontWeight: 600,
@@ -1097,7 +1097,7 @@ export default function DashboardPage() {
               onClick={() => router.push("/verify-rolls")}
               style={{
                 background: "transparent",
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 borderRadius: 6,
                 padding: "6px 12px",
                 fontSize: "0.6875rem",
@@ -1161,8 +1161,8 @@ export default function DashboardPage() {
                   style={{
                     padding: "8px 16px",
                     borderRadius: 6,
+                    background: "transparent",
                     border: "1px solid var(--color-gold-primary)",
-                    background: "var(--color-gold-muted)",
                     color: "var(--color-gold-primary)",
                     fontSize: "0.75rem",
                     fontWeight: 600,

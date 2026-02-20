@@ -115,7 +115,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--color-bg-subtle)" }}>
+              <tr style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                 <th style={thStyle}>#</th>
                 <th style={thStyle}>Player</th>
                 <th style={thStyle}>Dice</th>
@@ -124,7 +124,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
             </thead>
             <tbody>
               {moveHistory.map((record) => (
-                <tr key={record.turnNumber} style={{ borderBottom: "1px solid var(--color-bg-subtle)" }}>
+                <tr key={record.turnNumber} style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                   <td style={tdStyle}>{record.turnNumber}</td>
                   <td style={tdStyle}>
                     <span style={{
@@ -132,7 +132,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
-                      background: record.player === "white" ? "var(--color-text-primary)" : "#6E1A30",
+                      background: record.player === "white" ? "var(--color-text-primary)" : "var(--color-checker-black)",
                       border: `1px solid ${record.player === "white" ? "var(--color-text-secondary)" : "var(--color-burgundy-deep)"}`,
                       marginRight: 4,
                       verticalAlign: "middle",
@@ -223,7 +223,7 @@ function MatchRow({ match }: { match: MatchResult }) {
   const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
   return (
-    <div style={{ borderBottom: "1px solid var(--color-bg-subtle)" }}>
+    <div style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
       <button
         onClick={toggleExpand}
         style={{

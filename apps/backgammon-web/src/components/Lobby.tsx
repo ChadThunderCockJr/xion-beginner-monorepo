@@ -40,8 +40,8 @@ export function Lobby({
   if (!connected) {
     return (
       <div className="flex flex-col items-center gap-5 p-8 animate-fade-in">
-        <div className="w-8 h-8 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-[var(--text-muted)]">Connecting...</p>
+        <div className="w-8 h-8 border-2 border-gold-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-text-muted">Connecting...</p>
       </div>
     );
   }
@@ -50,10 +50,10 @@ export function Lobby({
   if (status === "queued") {
     return (
       <div className="flex flex-col items-center gap-6 p-8 max-w-xs mx-auto animate-fade-in">
-        <div className="w-10 h-10 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-2 border-gold-primary border-t-transparent rounded-full animate-spin" />
         <div className="text-center space-y-1.5">
           <h2 className="text-lg font-semibold">Finding opponent...</h2>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-text-muted">
             {matchPoints}-point match
           </p>
         </div>
@@ -68,10 +68,10 @@ export function Lobby({
   if (status === "waiting") {
     return (
       <div className="flex flex-col items-center gap-6 p-8 max-w-xs mx-auto animate-fade-in">
-        <div className="w-2.5 h-2.5 rounded-full bg-[var(--gold)] animate-pulse" />
+        <div className="w-2.5 h-2.5 rounded-full bg-gold-primary animate-pulse" />
         <div className="text-center space-y-1.5">
           <h2 className="text-lg font-semibold">Waiting for opponent</h2>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-text-muted">
             Share the game link with a friend
           </p>
         </div>
@@ -84,12 +84,12 @@ export function Lobby({
     <div className="flex flex-col gap-5 p-6 max-w-sm mx-auto w-full animate-fade-in">
       {/* Player header */}
       <div className="flex items-center gap-2.5 px-1">
-        <div className="w-7 h-7 rounded-full bg-[var(--bg-surface)] flex items-center justify-center text-xs font-semibold text-[var(--text-secondary)]">
+        <div className="w-7 h-7 rounded-full bg-bg-surface flex items-center justify-center text-xs font-semibold text-text-secondary">
           {address.charAt(0).toUpperCase()}
         </div>
-        <span className="text-sm font-medium text-[var(--text-secondary)]">{address}</span>
-        <span className="flex items-center gap-1 ml-auto text-[11px] text-[var(--success)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+        <span className="text-sm font-medium text-text-secondary">{address}</span>
+        <span className="flex items-center gap-1 ml-auto text-[11px] text-success">
+          <span className="w-1.5 h-1.5 rounded-full bg-success" />
           Online
         </span>
       </div>
@@ -97,10 +97,10 @@ export function Lobby({
       {/* Match length */}
       <div className="panel p-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-text-muted">
             Match Length
           </span>
-          <span className="text-[12px] text-[var(--text-faint)]">
+          <span className="text-[12px] text-[var(--color-text-faint)]">
             First to {matchPoints}
           </span>
         </div>
@@ -111,13 +111,13 @@ export function Lobby({
               onClick={() => setMatchPoints(points)}
               className={`py-3 rounded-[var(--radius-md)] font-semibold transition-colors ${
                 matchPoints === points
-                  ? "bg-[var(--gold)] text-[var(--bg-deepest)]"
-                  : "bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-gold-primary text-bg-deepest"
+                  : "bg-bg-surface text-text-secondary hover:text-text-primary"
               }`}
             >
               <span className="text-base">{label}</span>
               <span className={`block text-[9px] uppercase tracking-wider mt-0.5 ${
-                matchPoints === points ? "opacity-60" : "text-[var(--text-faint)]"
+                matchPoints === points ? "opacity-60" : "text-[var(--color-text-faint)]"
               }`}>
                 {sublabel}
               </span>
@@ -148,7 +148,7 @@ export function Lobby({
         <button
           onClick={() => setShowJoinInput(!showJoinInput)}
           className={`btn-secondary flex-1 text-sm ${
-            showJoinInput ? "border-[var(--gold)] text-[var(--text-primary)]" : ""
+            showJoinInput ? "border-gold-primary text-text-primary" : ""
           }`}
         >
           Join Game

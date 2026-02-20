@@ -132,7 +132,7 @@ function PlayerBar({
           style={{
             borderRadius: 5,
             background: isActive ? "var(--color-bg-deepest)" : "var(--color-bg-surface)",
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             fontWeight: 700,
             color: isActive
               ? timer <= 10
@@ -172,7 +172,7 @@ function TopNav({
     <header
       className="flex items-center justify-between shrink-0 px-2 py-1 sm:px-4 sm:py-1.5"
       style={{
-        borderBottom: "1px solid var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
       }}
     >
       <div className="flex items-center gap-2.5">
@@ -196,7 +196,7 @@ function TopNav({
           padding: "3px 12px",
           background: "var(--color-bg-surface)",
           borderRadius: 5,
-          border: "1px solid var(--color-bg-subtle)",
+          border: "1px solid var(--color-border-subtle)",
         }}
       >
         <span className="text-[15px] font-bold text-[var(--color-text-primary)]">0</span>
@@ -225,7 +225,7 @@ function TopNav({
             width: 36,
             height: 36,
             borderRadius: 7,
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             background: showPointNumbers ? "var(--color-bg-elevated)" : "transparent",
             color: showPointNumbers ? "var(--color-text-primary)" : "var(--color-text-muted)",
             fontSize: "0.6875rem",
@@ -243,7 +243,7 @@ function TopNav({
             width: 44,
             height: 44,
             borderRadius: 7,
-            border: "1px solid var(--color-bg-subtle)",
+            border: "1px solid var(--color-border-subtle)",
             background: "transparent",
             color: "var(--color-text-muted)",
           }}
@@ -301,10 +301,10 @@ function SlideOutMenu({
             width: 200,
             height: "100%",
             background: "var(--color-bg-surface)",
-            borderLeft: "1px solid var(--color-bg-subtle)",
+            borderLeft: "1px solid var(--color-border-subtle)",
             padding: "16px 14px",
             gap: 3,
-            boxShadow: "-4px 0 20px rgba(0,0,0,0.4)",
+            boxShadow: "var(--shadow-elevated)",
           }}
         >
         <div className="flex justify-between items-center mb-2.5">
@@ -470,7 +470,7 @@ function CenterControls({
             style={{
               padding: "8px 20px",
               borderRadius: 5,
-              border: "1px solid var(--color-bg-subtle)",
+              border: "1px solid var(--color-border-subtle)",
               background: "var(--color-bg-elevated)",
               color: "var(--color-danger)",
               fontSize: "0.75rem",
@@ -589,7 +589,7 @@ function CenterControls({
               style={{
                 padding: "10px 14px",
                 borderRadius: 5,
-                border: "1px solid var(--color-bg-subtle)",
+                border: "1px solid var(--color-border-subtle)",
                 background: "var(--color-bg-elevated)",
                 color: "var(--color-text-secondary)",
                 fontSize: "0.6875rem",
@@ -667,7 +667,7 @@ function OpponentKebabMenu({
           width: 28,
           height: 28,
           borderRadius: 6,
-          border: "1px solid var(--color-bg-subtle)",
+          border: "1px solid var(--color-border-subtle)",
           background: open ? "var(--color-bg-elevated)" : "transparent",
           display: "flex",
           alignItems: "center",
@@ -695,8 +695,8 @@ function OpponentKebabMenu({
             padding: showReport ? "10px 12px" : "4px",
             borderRadius: 8,
             background: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-bg-subtle)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            border: "1px solid var(--color-border-subtle)",
+            boxShadow: "var(--shadow-card)",
             zIndex: 50,
           }}
         >
@@ -719,7 +719,7 @@ function OpponentKebabMenu({
                 style={{
                   padding: "6px 8px",
                   borderRadius: 6,
-                  border: "1px solid var(--color-bg-subtle)",
+                  border: "1px solid var(--color-border-subtle)",
                   background: "var(--color-bg-surface)",
                   color: "var(--color-text-primary)",
                   fontSize: "0.75rem",
@@ -741,7 +741,7 @@ function OpponentKebabMenu({
                     flex: 1,
                     padding: "5px 10px",
                     borderRadius: 6,
-                    border: "1px solid var(--color-bg-subtle)",
+                    border: "1px solid var(--color-border-subtle)",
                     background: "transparent",
                     color: "var(--color-text-muted)",
                     fontSize: "0.6875rem",

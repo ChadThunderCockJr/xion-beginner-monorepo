@@ -26,7 +26,7 @@ export function PillGroup({ pills, activeId, onSelect, className }: PillGroupPro
             className="rounded-[var(--radius-button)] text-[12px] font-semibold transition-all duration-[120ms] cursor-pointer"
             style={{
               padding: "7px 14px",
-              border: `1.5px solid ${active ? "var(--color-gold-primary)" : "var(--color-bg-subtle)"}`,
+              border: `1.5px solid ${active ? "var(--color-gold-primary)" : "var(--color-border-subtle)"}`,
               background: active ? "var(--color-gold-primary)" : "var(--color-bg-surface)",
               color: active ? "var(--color-accent-fg, var(--color-bg-deepest))" : "var(--color-text-secondary)",
             }}
