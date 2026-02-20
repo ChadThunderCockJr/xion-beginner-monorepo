@@ -362,7 +362,7 @@ function WagerConfirmModal({
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0, 0, 0, 0.65)",
+          background: "var(--color-overlay)",
           zIndex: 100,
           animation: "fadeIn 0.15s ease",
         }}

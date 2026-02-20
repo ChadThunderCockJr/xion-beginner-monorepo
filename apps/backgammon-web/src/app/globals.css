@@ -37,6 +37,9 @@
   --color-burgundy-faint: #220C18;
   --color-burgundy-accent: #6B2D3E;
 
+  /* ─── Overlay ─── */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
   /* ─── Borders ─── */
   --color-border-subtle: #2A3026;
   --color-border-default: #2A3026;
@@ -71,6 +74,7 @@
   --shadow-glow: 0 0 60px rgba(88, 20, 40, 0.12);
 
   /* ─── Board colors ─── */
+  --color-board-highlight: rgba(88, 20, 40, 0.25);
   --color-board-felt-light: #243020;
   --color-board-felt-dark: #1A2818;
   --color-board-border: #4A3F2F;
@@ -130,6 +134,9 @@ html.light {
   --color-burgundy-faint: rgba(122, 24, 48, 0.06);
   --color-burgundy-accent: #8E2C44;
 
+  /* ─── Overlay ─── */
+  --color-overlay: rgba(0, 0, 0, 0.45);
+
   /* ─── Borders (darkened for visibility against light backgrounds) ─── */
   --color-border-subtle: #C4BCB0;
   --color-border-default: #8E8678;
@@ -149,6 +156,7 @@ html.light {
   --shadow-glow: 0 0 40px rgba(122, 24, 48, 0.06);
 
   /* ─── Board colors ─── */
+  --color-board-highlight: rgba(122, 24, 48, 0.15);
   --color-board-felt-light: #3A6B35;
   --color-board-felt-dark: #2D5A28;
   --color-board-border: #8B7355;
@@ -208,6 +216,9 @@ html.lux {
   --color-burgundy-faint: rgba(197, 151, 62, 0.1);
   --color-burgundy-accent: #B8922E;
 
+  /* ─── Overlay ─── */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+
   /* ─── Borders ─── */
   --color-border-subtle: #6B2D3E;
   --color-border-default: #7A1830;
@@ -223,6 +234,7 @@ html.lux {
   --shadow-glow: 0 0 60px rgba(197, 151, 62, 0.1);
 
   /* ─── Board colors ─── */
+  --color-board-highlight: rgba(197, 151, 62, 0.2);
   --color-board-felt-light: #1A3020;
   --color-board-felt-dark: #142818;
   --color-board-border: #C9A84C;

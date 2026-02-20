@@ -319,7 +319,7 @@ function CandidateMoveRow({ notation, equityDiff, isPlayed, isBest, isSelected, 
       cursor: "pointer", transition: "all 0.12s ease",
       borderTop: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
       borderRight: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
-      borderBottom: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : !isPlayed ? `1px solid ${C.bg.elevated}` : "none",
+      borderBottom: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : !isPlayed ? `1px solid ${C.border.subtle}` : "none",
       borderLeft: isSelected && !isPlayed ? `1px solid ${C.border.subtle}` : "none",
       boxShadow: isSelected && !isPlayed ? "var(--shadow-card)" : "none",
     }}>
@@ -668,7 +668,7 @@ export function PostGameAnalysis({
                 borderRadius: 8,
                 border: "none",
                 background: "var(--color-gold-primary)",
-                color: "var(--color-text-on-gold, #fff)",
+                color: "var(--color-text-on-gold)",
                 fontSize: "0.875rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -894,7 +894,7 @@ export function PostGameAnalysis({
 
                   {/* Winning Chances */}
                   {selectedTurnAnalysis && (
-                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.bg.elevated}` }}>
+                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border.subtle}` }}>
                       <div style={{
                         fontSize: "0.6875rem", fontWeight: W.bold, color: C.text.secondary,
                         textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10,
@@ -1040,7 +1040,7 @@ export function PostGameAnalysis({
               } />
               <div style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: "6px 12px", borderBottom: `1px solid ${C.bg.elevated}`, marginBottom: 4,
+                padding: "6px 12px", borderBottom: `1px solid ${C.border.subtle}`, marginBottom: 4,
               }}>
                 <span style={{ width: 28, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>#</span>
                 {hasRealData && <span style={{ width: 12 }} />}

@@ -187,7 +187,7 @@ function PlayerKebabMenu({
                   setShowReport(false);
                 }} style={{
                   flex: 1, padding: "4px 8px", borderRadius: 6,
-                  border: "none", background: "var(--color-danger)", color: "var(--color-accent-fg)",
+                  border: "none", background: "var(--color-danger)", color: "#fff",
                   fontSize: "0.6875rem", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)",
                 }}>
                   Submit

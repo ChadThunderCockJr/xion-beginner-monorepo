@@ -109,7 +109,7 @@ function NavItem({
         <span
           style={{
             marginLeft: "auto",
-            background: "var(--color-burgundy-deep)",
+            background: "var(--color-bg-subtle)",
             color: "var(--color-burgundy-light)",
             borderRadius: 10,
             padding: "2px 8px",
@@ -265,7 +265,7 @@ export function Sidebar() {
       <div
         style={{
           height: 1,
-          background: "var(--color-bg-subtle)",
+          background: "var(--color-border-subtle)",
           margin: "16px 12px",
         }}
       />

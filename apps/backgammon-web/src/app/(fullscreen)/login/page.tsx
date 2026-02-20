@@ -120,7 +120,7 @@ function BoardIllustration() {
               ? "var(--color-burgundy-accent)"
               : "var(--color-gold-muted)"
           }
-          stroke="var(--color-bg-subtle)"
+          stroke="var(--color-border-subtle)"
           strokeWidth="0.5"
         />
       ))}
@@ -134,7 +134,7 @@ function BoardIllustration() {
               ? "var(--color-gold-muted)"
               : "var(--color-burgundy-accent)"
           }
-          stroke="var(--color-bg-subtle)"
+          stroke="var(--color-border-subtle)"
           strokeWidth="0.5"
         />
       ))}
@@ -148,7 +148,7 @@ function BoardIllustration() {
               ? "var(--color-gold-muted)"
               : "var(--color-burgundy-accent)"
           }
-          stroke="var(--color-bg-subtle)"
+          stroke="var(--color-border-subtle)"
           strokeWidth="0.5"
         />
       ))}
@@ -162,7 +162,7 @@ function BoardIllustration() {
               ? "var(--color-burgundy-accent)"
               : "var(--color-gold-muted)"
           }
-          stroke="var(--color-bg-subtle)"
+          stroke="var(--color-border-subtle)"
           strokeWidth="0.5"
         />
       ))}
@@ -202,7 +202,7 @@ function BoardIllustration() {
           cx={cx}
           cy={cy}
           r="8"
-          fill="var(--color-burgundy-deep)"
+          fill="var(--color-checker-black)"
           stroke="var(--color-burgundy-primary)"
           strokeWidth="1"
           opacity="0.9"

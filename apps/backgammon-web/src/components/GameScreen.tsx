@@ -320,7 +320,7 @@ function SlideOutMenu({
 
         {menuItems.map((item, i) =>
           "type" in item && item.type === "separator" ? (
-            <div key={i} style={{ height: 1, background: "var(--color-bg-subtle)", margin: "5px 0" }} />
+            <div key={i} style={{ height: 1, background: "var(--color-border-subtle)", margin: "5px 0" }} />
           ) : (
             <button
               key={i}
@@ -349,7 +349,8 @@ function SlideOutMenu({
       {/* Resign confirmation modal */}
       {showResignConfirm && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm"
+          style={{ background: "var(--color-overlay)" }}
           onClick={() => setShowResignConfirm(false)}
         >
           <FocusTrap>
@@ -765,7 +766,7 @@ function OpponentKebabMenu({
                     borderRadius: 6,
                     border: "none",
                     background: "var(--color-danger)",
-                    color: "var(--color-text-primary)",
+                    color: "#fff",
                     fontSize: "0.6875rem",
                     fontWeight: 700,
                     cursor: "pointer",
@@ -1166,7 +1167,7 @@ export function GameScreen({
               padding: "8px 20px",
               borderRadius: 8,
               background: "var(--color-danger)",
-              color: "var(--color-text-primary)",
+              color: "#fff",
               fontSize: "0.8125rem",
               fontWeight: 700,
               backdropFilter: "blur(8px)",
@@ -1180,7 +1181,7 @@ export function GameScreen({
         {/* Game over overlay */}
         {gameState.gameOver && (
           <div className="absolute inset-0 flex items-center justify-center animate-fade-in z-30"
-            style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+            style={{ background: "var(--color-overlay)", backdropFilter: "blur(6px)" }}
           >
             <FocusTrap>
               <div
@@ -1194,8 +1195,8 @@ export function GameScreen({
                     ? "var(--color-gold-primary)"
                     : "var(--color-danger)",
                   boxShadow: winner === myColor
-                    ? "var(--shadow-gold), 0 2px 12px rgba(0,0,0,0.2)"
-                    : "0 8px 40px var(--color-danger-muted), 0 2px 12px rgba(0,0,0,0.2)",
+                    ? "var(--shadow-gold), var(--shadow-card)"
+                    : "0 8px 40px var(--color-danger-muted), var(--shadow-card)",
                 }}
               >
                 <h2

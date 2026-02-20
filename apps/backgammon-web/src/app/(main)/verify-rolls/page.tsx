@@ -133,7 +133,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
                       height: 8,
                       borderRadius: "50%",
                       background: record.player === "white" ? "var(--color-text-primary)" : "var(--color-checker-black)",
-                      border: `1px solid ${record.player === "white" ? "var(--color-text-secondary)" : "var(--color-burgundy-deep)"}`,
+                      border: `1px solid ${record.player === "white" ? "var(--color-text-secondary)" : "var(--color-border-subtle)"}`,
                       marginRight: 4,
                       verticalAlign: "middle",
                     }} />
@@ -309,7 +309,7 @@ export default function VerifyRollsPage() {
         <Card
           style={{
             background: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-burgundy-deep)",
+            border: "1px solid var(--color-border-subtle)",
             borderLeft: "3px solid var(--color-burgundy-primary)",
             marginBottom: 24,
           }}

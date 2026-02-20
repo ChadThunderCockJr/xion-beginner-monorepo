@@ -300,11 +300,11 @@ export default function ProfilePage() {
               borderTop: "1px solid var(--color-border-subtle)",
             }}>
               <QuickStat label="Games" value={totalGames.toLocaleString()} />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <QuickStat label="W / L" value={`${wins} / ${losses}`} />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <QuickStat label="Avg PR" value="--" />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <QuickStat label="Streak" value={streakStr} />
             </div>
           </Card>

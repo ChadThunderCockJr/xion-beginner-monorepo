@@ -72,7 +72,7 @@ function MoveIcon() {
   return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
       {/* Checker */}
-      <circle cx="14" cy="24" r="8" stroke="var(--color-gold-primary)" strokeWidth="1.5" fill="var(--color-gold-muted)" />
+      <circle cx="14" cy="24" r="8" stroke="var(--color-gold-primary)" strokeWidth="1.5" fill="var(--color-bg-elevated)" />
       <circle cx="14" cy="24" r="4" fill="var(--color-gold-primary)" opacity="0.4" />
       {/* Arrow */}
       <path d="M24 24 L36 24" stroke="var(--color-success)" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3" />
@@ -130,7 +130,7 @@ function TapAnimation() {
           height: 28,
           borderRadius: "50%",
           border: "2px solid var(--color-gold-primary)",
-          background: "var(--color-gold-muted)",
+          background: "var(--color-bg-elevated)",
           flexShrink: 0,
         }}
       />
@@ -346,7 +346,7 @@ export default function Tutorial({ forceShow = false, onClose }: TutorialProps) 
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(0,0,0,0.85)",
+            background: "var(--color-overlay)",
             padding: 16,
             animation: "tutorial-fade-in 300ms ease-out",
           }}

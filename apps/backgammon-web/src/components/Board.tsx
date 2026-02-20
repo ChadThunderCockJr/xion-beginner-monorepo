@@ -555,8 +555,8 @@ export function Board({
     const triangleFill = isDark ? DARK_FELT : LIGHT_FELT;
 
     let triHighlight: string | undefined;
-    if (isLastTo) triHighlight = "var(--color-gold-muted)";
-    if (isLastFrom) triHighlight = "var(--color-gold-muted)";
+    if (isLastTo) triHighlight = "var(--color-board-highlight)";
+    if (isLastFrom) triHighlight = "var(--color-board-highlight)";
 
     return (
       <div
@@ -992,7 +992,7 @@ export function Board({
           />
         )}
 
-        <div className="mx-2" style={{ height: 1, background: "var(--color-bg-subtle)" }} />
+        <div className="mx-2" style={{ height: 1, background: "var(--color-border-subtle)" }} />
 
         {/* Player borne-off (bottom) */}
         <div className="flex-1 flex flex-col items-center justify-end" style={{ padding: "8px 0 24px", gap: 1 }}>

@@ -964,11 +964,11 @@ export default function DashboardPage() {
                 value={stats ? stats.rating.toLocaleString() : "--"}
                 sub={stats && stats.ratingChange !== 0 ? `${stats.ratingChange > 0 ? "↑" : "↓"} ${Math.abs(stats.ratingChange)}` : undefined}
               />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <Stat label="W / L" value={stats ? `${stats.wins}/${stats.losses}` : "--"} />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <Stat label="Avg PR" value="--" />
-              <div style={{ width: 1, background: "var(--color-bg-subtle)" }} />
+              <div style={{ width: 1, background: "var(--color-border-subtle)" }} />
               <Stat
                 label="Streak"
                 value={stats && stats.currentStreak > 0 ? `${stats.currentStreak}${stats.currentStreakType}` : "--"}
@@ -1057,7 +1057,7 @@ export default function DashboardPage() {
           <Card
             style={{
               background: "var(--color-bg-elevated)",
-              border: "1px solid var(--color-burgundy-deep)",
+              border: "1px solid var(--color-border-subtle)",
               borderLeft: "3px solid var(--color-burgundy-primary)",
             }}
           >

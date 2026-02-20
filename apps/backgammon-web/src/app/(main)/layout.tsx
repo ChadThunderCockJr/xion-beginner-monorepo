@@ -87,7 +87,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.6)",
+            background: "var(--color-overlay)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -121,7 +121,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
                   width: 48,
                   height: 48,
                   borderRadius: "50%",
-                  background: "var(--color-gold-muted)",
+                  background: "var(--color-bg-elevated)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
