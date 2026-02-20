@@ -84,7 +84,7 @@ function NavItem({
         background: active
           ? "var(--color-gold-muted)"
           : h
-            ? "rgba(88,20,40,0.08)"
+            ? "var(--color-burgundy-faint)"
             : "transparent",
         border: "none",
         borderRadius: 6,

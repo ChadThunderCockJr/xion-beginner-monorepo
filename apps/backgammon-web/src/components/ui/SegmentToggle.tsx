@@ -20,7 +20,7 @@ export function SegmentToggle({ segments, activeId, onSelect, className }: Segme
       className={cn("flex overflow-hidden", className)}
       style={{
         borderRadius: "var(--radius-card)",
-        border: "1px solid var(--color-bg-subtle)",
+        border: "1px solid var(--color-border-subtle)",
       }}
     >
       {segments.map((segment, i) => {

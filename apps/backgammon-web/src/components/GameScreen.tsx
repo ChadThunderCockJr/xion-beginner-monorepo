@@ -765,7 +765,7 @@ function OpponentKebabMenu({
                     borderRadius: 6,
                     border: "none",
                     background: "var(--color-danger)",
-                    color: "#fff",
+                    color: "var(--color-text-primary)",
                     fontSize: "0.6875rem",
                     fontWeight: 700,
                     cursor: "pointer",
@@ -1165,8 +1165,8 @@ export function GameScreen({
             style={{
               padding: "8px 20px",
               borderRadius: 8,
-              background: "rgba(204,68,68,0.9)",
-              color: "#fff",
+              background: "var(--color-danger)",
+              color: "var(--color-text-primary)",
               fontSize: "0.8125rem",
               fontWeight: 700,
               backdropFilter: "blur(8px)",
@@ -1184,19 +1184,18 @@ export function GameScreen({
           >
             <FocusTrap>
               <div
-                className={`panel text-center max-w-xs mx-4 shadow-2xl ${
-                  winner === myColor
-                    ? "border-[rgba(212,168,67,0.4)]"
-                    : "border-[rgba(248,113,113,0.3)]"
-                }`}
+                className="panel text-center max-w-xs mx-4 shadow-2xl"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="gameover-dialog-title"
                 style={{
                   padding: "40px 32px 32px",
+                  borderColor: winner === myColor
+                    ? "var(--color-gold-primary)"
+                    : "var(--color-danger)",
                   boxShadow: winner === myColor
-                    ? "0 8px 40px rgba(212,168,67,0.15), 0 2px 12px rgba(0,0,0,0.2)"
-                    : "0 8px 40px rgba(248,113,113,0.1), 0 2px 12px rgba(0,0,0,0.2)",
+                    ? "var(--shadow-gold), 0 2px 12px rgba(0,0,0,0.2)"
+                    : "0 8px 40px var(--color-danger-muted), 0 2px 12px rgba(0,0,0,0.2)",
                 }}
               >
                 <h2

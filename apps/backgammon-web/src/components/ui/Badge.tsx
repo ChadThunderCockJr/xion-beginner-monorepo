@@ -9,7 +9,7 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  gold: "bg-gold-muted text-burgundy-light",
+  gold: "bg-gold-muted text-gold-primary",
   win: "bg-success-muted text-success",
   loss: "bg-danger-muted text-danger",
   draw: "bg-bg-subtle text-text-muted",

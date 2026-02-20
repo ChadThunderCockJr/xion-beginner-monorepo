@@ -87,7 +87,7 @@ function Checker({
               : "var(--color-checker-black-border)"
         }`,
         boxShadow: highlighted
-          ? "0 0 12px rgba(88,20,40,0.5), 0 1px 3px rgba(0,0,0,0.3)"
+          ? "var(--shadow-gold), 0 1px 3px rgba(0,0,0,0.3)"
           : "0 1px 3px rgba(0,0,0,0.3)",
         opacity: isGhost ? 0.35 : 1,
         cursor: onClick ? "pointer" : "default",
@@ -599,7 +599,7 @@ export function Board({
               borderRadius: 4,
               pointerEvents: "none",
               zIndex: 20,
-              boxShadow: "inset 0 0 12px rgba(88,20,40,0.15)",
+              boxShadow: "var(--shadow-glow)",
             }}
           />
         )}
@@ -643,7 +643,7 @@ export function Board({
               <div style={{
                 position: "absolute",
                 bottom: -6,
-                background: "rgba(100,220,120,0.95)",
+                background: "var(--color-success)",
                 color: "var(--color-bg-deepest)",
                 fontSize: "0.6875rem",
                 fontWeight: 800,
@@ -942,12 +942,12 @@ export function Board({
           width: BEAROFF_W,
           background: "var(--color-bg-base)",
           borderRadius: "0 12px 12px 0",
-          borderTop: `2px solid ${canBear ? "rgba(100,220,120,0.7)" : "var(--color-bg-subtle)"}`,
-          borderRight: `2px solid ${canBear ? "rgba(100,220,120,0.7)" : "var(--color-bg-subtle)"}`,
-          borderBottom: `2px solid ${canBear ? "rgba(100,220,120,0.7)" : "var(--color-bg-subtle)"}`,
+          borderTop: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
+          borderRight: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
+          borderBottom: `2px solid ${canBear ? "var(--color-success)" : "var(--color-bg-subtle)"}`,
           borderLeft: "1px solid var(--color-bg-subtle)",
           boxShadow: canBear
-            ? "0 4px 24px rgba(0,0,0,0.5), 0 0 20px rgba(100,220,120,0.3)"
+            ? "0 4px 24px rgba(0,0,0,0.5), 0 0 20px var(--color-success-muted)"
             : "0 4px 24px rgba(0,0,0,0.5)",
           cursor: canBear ? "pointer" : "default",
           transition: "border-color 150ms ease, box-shadow 150ms ease",
@@ -981,8 +981,8 @@ export function Board({
               width: 12,
               height: 12,
               borderRadius: "50%",
-              background: "rgba(100, 220, 120, 0.9)",
-              boxShadow: "0 0 8px rgba(100, 220, 120, 0.6)",
+              background: "var(--color-success)",
+              boxShadow: "0 0 8px var(--color-success-muted)",
               left: "50%",
               top: "50%",
               transform: "translate(-50%, -50%)",

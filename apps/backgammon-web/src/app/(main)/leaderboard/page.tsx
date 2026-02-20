@@ -77,7 +77,7 @@ function PodiumSpot({ rank, entry, height }: {
       >
         <span className={cn(
           "text-xl font-bold font-mono",
-          rank === 1 ? "text-[var(--color-accent-fg)]" : "text-text-secondary",
+          rank === 1 ? "text-[var(--color-text-on-gold)]" : "text-text-secondary",
         )}>
           {rank}
         </span>
@@ -128,7 +128,7 @@ function LeaderboardRow({ entry, isYou }: { entry: LeaderboardEntry; isYou: bool
           {name}
         </span>
         {isYou && (
-          <span className="text-[9px] px-1.5 py-px rounded-sm bg-gold-primary text-[var(--color-accent-fg)] font-bold font-body">
+          <span className="text-[9px] px-1.5 py-px rounded-sm bg-gold-primary text-[var(--color-text-on-gold)] font-bold font-body">
             YOU
           </span>
         )}
@@ -326,7 +326,7 @@ export default function LeaderboardPage() {
                             {name}
                           </span>
                           {isYou && (
-                            <span className="text-[9px] px-1.5 py-px rounded-sm bg-gold-primary text-[var(--color-accent-fg)] font-bold font-body">
+                            <span className="text-[9px] px-1.5 py-px rounded-sm bg-gold-primary text-[var(--color-text-on-gold)] font-bold font-body">
                               YOU
                             </span>
                           )}
@@ -371,7 +371,7 @@ export default function LeaderboardPage() {
                     className={cn(
                       "px-2.5 py-1 rounded-[var(--radius-button)] text-[11px] font-semibold cursor-pointer transition-colors",
                       sortBy === id
-                        ? "bg-gold-primary text-[var(--color-accent-fg)] border border-gold-primary"
+                        ? "bg-gold-primary text-[var(--color-text-on-gold)] border border-gold-primary"
                         : "bg-transparent text-text-muted border border-transparent hover:text-text-secondary",
                     )}
                   >
