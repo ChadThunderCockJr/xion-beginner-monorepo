@@ -36,9 +36,13 @@ export class EscrowClient {
     this.initialized = true;
 
     try {
-      const { SigningCosmWasmClient } = await import("@cosmjs/cosmwasm-stargate");
-      const { DirectSecp256k1HdWallet } = await import("@cosmjs/proto-signing");
-      const { GasPrice } = await import("@cosmjs/stargate");
+      const cosmwasmMod: any = await import("@cosmjs/cosmwasm-stargate");
+      const signingMod: any = await import("@cosmjs/proto-signing");
+      const stargateMod: any = await import("@cosmjs/stargate");
+
+      const SigningCosmWasmClient = cosmwasmMod.SigningCosmWasmClient ?? cosmwasmMod.default?.SigningCosmWasmClient;
+      const DirectSecp256k1HdWallet = signingMod.DirectSecp256k1HdWallet ?? signingMod.default?.DirectSecp256k1HdWallet;
+      const GasPrice = stargateMod.GasPrice ?? stargateMod.default?.GasPrice;
 
       const wallet = await DirectSecp256k1HdWallet.fromMnemonic(this.adminMnemonic, {
         prefix: "xion",
@@ -185,7 +189,8 @@ export class EscrowClient {
     if (!(await this.init())) return "0";
 
     try {
-      const { StargateClient } = await import("@cosmjs/stargate");
+      const stargateMod: any = await import("@cosmjs/stargate");
+      const StargateClient = stargateMod.StargateClient ?? stargateMod.default?.StargateClient;
       const client = await StargateClient.connect(this.rpcUrl);
       const balance = await client.getBalance(address, denom);
       return balance.amount;

@@ -72,8 +72,14 @@ export async function verifySignature(
   }
 
   try {
-    const { Secp256k1, Sha256 } = await import("@cosmjs/crypto");
-    const { pubkeyToAddress, encodeSecp256k1Pubkey, serializeSignDoc } = await import("@cosmjs/amino");
+    const cryptoMod: any = await import("@cosmjs/crypto");
+    const aminoMod: any = await import("@cosmjs/amino");
+
+    const Secp256k1 = cryptoMod.Secp256k1 ?? cryptoMod.default?.Secp256k1;
+    const Sha256 = cryptoMod.Sha256 ?? cryptoMod.default?.Sha256;
+    const pubkeyToAddress = aminoMod.pubkeyToAddress ?? aminoMod.default?.pubkeyToAddress;
+    const encodeSecp256k1Pubkey = aminoMod.encodeSecp256k1Pubkey ?? aminoMod.default?.encodeSecp256k1Pubkey;
+    const serializeSignDoc = aminoMod.serializeSignDoc ?? aminoMod.default?.serializeSignDoc;
 
     const pubkeyBytes = Buffer.from(pubkey, "base64");
     const sigBytes = Buffer.from(signature, "base64");

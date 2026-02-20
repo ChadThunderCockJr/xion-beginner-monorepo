@@ -38,6 +38,8 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 # tsx is required at runtime because backgammon-core is a raw TypeScript
 # workspace package with "main": "./src/index.ts" — Node cannot resolve it
 # without a TypeScript-aware loader.
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN pnpm add -g tsx@4
 
 COPY --from=build /app/apps/backgammon-server/dist/ ./apps/backgammon-server/dist/
