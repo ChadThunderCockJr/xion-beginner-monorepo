@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, Avatar } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
+import type { ChallengeConfig } from "@/hooks/useSocial";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -78,92 +79,404 @@ function displayLabel(friend: { displayName: string; address: string }): string 
   return friend.displayName || friend.address.slice(0, 12) + "...";
 }
 
+// ── Inline Block/Report Menu ───────────────────────────────────
+
+const REPORT_REASONS = ["Cheating", "Harassment", "Inappropriate name", "Other"];
+
+function PlayerKebabMenu({
+  onBlock,
+  onReport,
+}: {
+  onBlock: () => void;
+  onReport: (reason: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reason, setReason] = useState(REPORT_REASONS[0]);
+  const [blocked, setBlocked] = useState(false);
+  const [reported, setReported] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setShowReport(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-flex" }}>
+      <button
+        onClick={() => { setOpen((p) => !p); setShowReport(false); }}
+        aria-label="More options"
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 6,
+          border: "1px solid var(--color-bg-subtle)",
+          background: open ? "var(--color-bg-elevated)" : "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--color-text-muted)",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+          <circle cx="8" cy="3" r="1.5" />
+          <circle cx="8" cy="8" r="1.5" />
+          <circle cx="8" cy="13" r="1.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            right: 0,
+            minWidth: showReport ? 200 : 130,
+            padding: showReport ? "10px 12px" : "4px",
+            borderRadius: 8,
+            background: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-bg-subtle)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            zIndex: 50,
+          }}
+        >
+          {showReport ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{
+                fontSize: "0.625rem", fontWeight: 600, color: "var(--color-text-muted)",
+                textTransform: "uppercase", letterSpacing: "0.08em",
+              }}>
+                Report Reason
+              </span>
+              <select
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                style={{
+                  padding: "5px 8px", borderRadius: 6,
+                  border: "1px solid var(--color-bg-subtle)",
+                  background: "var(--color-bg-surface)",
+                  color: "var(--color-text-primary)",
+                  fontSize: "0.6875rem", fontFamily: "var(--font-body)", outline: "none", cursor: "pointer",
+                }}
+              >
+                {REPORT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => setShowReport(false)} style={{
+                  flex: 1, padding: "4px 8px", borderRadius: 6,
+                  border: "1px solid var(--color-bg-subtle)", background: "transparent",
+                  color: "var(--color-text-muted)", fontSize: "0.6875rem", fontWeight: 600,
+                  cursor: "pointer", fontFamily: "var(--font-body)",
+                }}>
+                  Cancel
+                </button>
+                <button onClick={() => {
+                  onReport(reason);
+                  setReported(true);
+                  setOpen(false);
+                  setShowReport(false);
+                }} style={{
+                  flex: 1, padding: "4px 8px", borderRadius: 6,
+                  border: "none", background: "var(--color-danger)", color: "#fff",
+                  fontSize: "0.6875rem", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)",
+                }}>
+                  Submit
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => { onBlock(); setBlocked(true); setOpen(false); }}
+                disabled={blocked}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "6px 10px", borderRadius: 5, border: "none",
+                  background: "transparent",
+                  color: blocked ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+                  fontSize: "0.6875rem", fontWeight: 500, cursor: blocked ? "default" : "pointer",
+                  fontFamily: "var(--font-body)", opacity: blocked ? 0.5 : 1,
+                }}
+              >
+                {blocked ? "Blocked" : "Block Player"}
+              </button>
+              <button onClick={() => setShowReport(true)}
+                disabled={reported}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "6px 10px", borderRadius: 5, border: "none",
+                  background: "transparent",
+                  color: reported ? "var(--color-text-muted)" : "var(--color-danger)",
+                  fontSize: "0.6875rem", fontWeight: 500, cursor: reported ? "default" : "pointer",
+                  fontFamily: "var(--font-body)", opacity: reported ? 0.5 : 1,
+                }}
+              >
+                {reported ? "Reported" : "Report Player"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Challenge Config Panel ────────────────────────────────────
+
+const MATCH_LENGTHS = [1, 3, 5, 7];
+
+function ChallengeConfigPanel({
+  onSend,
+  onCancel,
+}: {
+  onSend: (config: ChallengeConfig) => void;
+  onCancel: () => void;
+}) {
+  const [matchLength, setMatchLength] = useState(5);
+  const [wagerAmount, setWagerAmount] = useState(0);
+  const [doublingCube, setDoublingCube] = useState(true);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        padding: "10px 12px",
+        borderRadius: 8,
+        background: "var(--color-bg-elevated)",
+        border: "1px solid var(--color-bg-subtle)",
+        marginTop: 6,
+      }}
+    >
+      <span style={{
+        fontSize: "0.625rem", fontWeight: 600, color: "var(--color-text-muted)",
+        textTransform: "uppercase", letterSpacing: "0.08em",
+      }}>
+        Match Config
+      </span>
+
+      {/* Match Length */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: "0.6875rem", color: "var(--color-text-secondary)", fontFamily: "var(--font-body)", minWidth: 50 }}>
+          Length
+        </span>
+        <div style={{ display: "flex", gap: 4 }}>
+          {MATCH_LENGTHS.map((len) => (
+            <button
+              key={len}
+              onClick={() => setMatchLength(len)}
+              style={{
+                padding: "3px 10px",
+                borderRadius: 5,
+                border: matchLength === len
+                  ? "1px solid var(--color-gold-primary)"
+                  : "1px solid var(--color-bg-subtle)",
+                background: matchLength === len ? "var(--color-gold-muted)" : "transparent",
+                color: matchLength === len ? "var(--color-gold-primary)" : "var(--color-text-muted)",
+                fontSize: "0.6875rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              {len}pt
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Wager */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: "0.6875rem", color: "var(--color-text-secondary)", fontFamily: "var(--font-body)", minWidth: 50 }}>
+          Wager
+        </span>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "3px 8px", borderRadius: 5,
+          border: "1px solid var(--color-bg-subtle)",
+          background: "var(--color-bg-surface)",
+        }}>
+          <span style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>$</span>
+          <input
+            type="number"
+            min={0}
+            value={wagerAmount}
+            onChange={(e) => setWagerAmount(Math.max(0, Number(e.target.value)))}
+            style={{
+              width: 50, border: "none", outline: "none",
+              background: "transparent", fontSize: "0.6875rem",
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-mono)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Doubling Cube */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: "0.6875rem", color: "var(--color-text-secondary)", fontFamily: "var(--font-body)", minWidth: 50 }}>
+          Cube
+        </span>
+        <button
+          onClick={() => setDoublingCube((p) => !p)}
+          style={{
+            padding: "3px 10px",
+            borderRadius: 5,
+            border: doublingCube
+              ? "1px solid var(--color-gold-primary)"
+              : "1px solid var(--color-bg-subtle)",
+            background: doublingCube ? "var(--color-gold-muted)" : "transparent",
+            color: doublingCube ? "var(--color-gold-primary)" : "var(--color-text-muted)",
+            fontSize: "0.6875rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "var(--font-body)",
+          }}
+        >
+          {doublingCube ? "On" : "Off"}
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
+        <button onClick={onCancel} style={{
+          flex: 1, padding: "5px 10px", borderRadius: 6,
+          border: "1px solid var(--color-bg-subtle)", background: "transparent",
+          color: "var(--color-text-muted)", fontSize: "0.6875rem", fontWeight: 600,
+          cursor: "pointer", fontFamily: "var(--font-body)",
+        }}>
+          Cancel
+        </button>
+        <button onClick={() => onSend({ matchLength, wagerAmount, doublingCube })} style={{
+          flex: 1, padding: "5px 10px", borderRadius: 6, border: "none",
+          background: "linear-gradient(135deg, var(--color-gold-dark), var(--color-gold-primary))",
+          color: "var(--color-accent-fg)", fontSize: "0.6875rem", fontWeight: 700,
+          cursor: "pointer", fontFamily: "var(--font-body)",
+        }}>
+          Send Challenge
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Friend Row ─────────────────────────────────────────────────
 
 function FriendRow({
   name,
+  address,
   online,
   onChallenge,
   onRemove,
+  onBlock,
+  onReport,
 }: {
   name: string;
+  address: string;
   online: boolean;
-  onChallenge: () => void;
+  onChallenge: (config: ChallengeConfig) => void;
   onRemove: () => void;
+  onBlock: () => void;
+  onReport: (reason: string) => void;
 }) {
   const [h, setH] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
   return (
-    <div
-      onMouseEnter={() => setH(true)}
-      onMouseLeave={() => setH(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "8px 0",
-        borderBottom: "1px solid var(--color-bg-subtle)",
-      }}
-    >
-      <Avatar name={name} size="sm" online={online} />
-      <div style={{ flex: 1 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "var(--color-text-primary)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          {name}
+    <div>
+      <div
+        onMouseEnter={() => setH(true)}
+        onMouseLeave={() => setH(false)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "8px 0",
+          borderBottom: showConfig ? "none" : "1px solid var(--color-bg-subtle)",
+        }}
+      >
+        <Avatar name={name} size="sm" online={online} />
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-body)",
+            }}
+          >
+            {name}
+          </div>
+          <div
+            style={{
+              fontSize: "0.6875rem",
+              color: online ? "var(--color-success)" : "var(--color-text-muted)",
+              fontFamily: "var(--font-body)",
+            }}
+          >
+            {online ? "Online" : "Offline"}
+          </div>
         </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: online ? "var(--color-success)" : "var(--color-text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
-          {online ? "Online" : "Offline"}
-        </div>
-      </div>
-      {online && (
+        {online && (
+          <button
+            onClick={() => setShowConfig((p) => !p)}
+            style={{
+              padding: "4px 12px",
+              borderRadius: 6,
+              border: h || showConfig
+                ? "1px solid var(--color-gold-primary)"
+                : "1px solid var(--color-bg-subtle)",
+              background: h || showConfig ? "var(--color-gold-muted)" : "transparent",
+              fontSize: "0.6875rem",
+              fontWeight: 600,
+              color: h || showConfig ? "var(--color-gold-primary)" : "var(--color-text-muted)",
+              cursor: "pointer",
+              fontFamily: "var(--font-body)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            Challenge
+          </button>
+        )}
+        <PlayerKebabMenu onBlock={onBlock} onReport={onReport} />
         <button
-          onClick={onChallenge}
+          onClick={onRemove}
           style={{
-            padding: "4px 12px",
+            padding: "4px 8px",
             borderRadius: 6,
-            border: h
-              ? "1px solid var(--color-gold-primary)"
-              : "1px solid var(--color-bg-subtle)",
-            background: h ? "var(--color-gold-muted)" : "transparent",
-            fontSize: 11,
-            fontWeight: 600,
-            color: h ? "var(--color-gold-primary)" : "var(--color-text-muted)",
+            border: "1px solid transparent",
+            background: "transparent",
+            fontSize: "0.6875rem",
+            color: "var(--color-text-faint)",
             cursor: "pointer",
             fontFamily: "var(--font-body)",
             transition: "all 0.15s ease",
           }}
+          title="Remove friend"
         >
-          Challenge
+          {Icons.x("var(--color-text-faint)")}
         </button>
+      </div>
+      {showConfig && (
+        <div style={{ borderBottom: "1px solid var(--color-bg-subtle)", paddingBottom: 8 }}>
+          <ChallengeConfigPanel
+            onSend={(config) => {
+              onChallenge(config);
+              setShowConfig(false);
+            }}
+            onCancel={() => setShowConfig(false)}
+          />
+        </div>
       )}
-      <button
-        onClick={onRemove}
-        style={{
-          padding: "4px 8px",
-          borderRadius: 6,
-          border: "1px solid transparent",
-          background: "transparent",
-          fontSize: 11,
-          color: "var(--color-text-faint)",
-          cursor: "pointer",
-          fontFamily: "var(--font-body)",
-          transition: "all 0.15s ease",
-        }}
-        title="Remove friend"
-      >
-        {Icons.x("var(--color-text-faint)")}
-      </button>
     </div>
   );
 }
@@ -193,7 +506,7 @@ function RequestRow({
       <div style={{ flex: 1 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: "0.8125rem",
             fontWeight: 600,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-body)",
@@ -203,7 +516,7 @@ function RequestRow({
         </div>
         <div
           style={{
-            fontSize: 11,
+            fontSize: "0.6875rem",
             color: "var(--color-text-muted)",
             fontFamily: "var(--font-body)",
           }}
@@ -218,7 +531,7 @@ function RequestRow({
           borderRadius: 6,
           border: "1px solid var(--color-success)",
           background: "rgba(96,168,96,0.1)",
-          fontSize: 11,
+          fontSize: "0.6875rem",
           fontWeight: 600,
           color: "var(--color-success)",
           cursor: "pointer",
@@ -237,7 +550,7 @@ function RequestRow({
           borderRadius: 6,
           border: "1px solid var(--color-bg-subtle)",
           background: "transparent",
-          fontSize: 11,
+          fontSize: "0.6875rem",
           fontWeight: 600,
           color: "var(--color-text-muted)",
           cursor: "pointer",
@@ -295,7 +608,7 @@ function ActivityRow({
       <div style={{ flex: 1 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: "0.8125rem",
             fontWeight: 500,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-body)",
@@ -306,7 +619,7 @@ function ActivityRow({
       </div>
       <div
         style={{
-          fontSize: 11,
+          fontSize: "0.6875rem",
           color: "var(--color-text-faint)",
           fontFamily: "var(--font-body)",
           flexShrink: 0,
@@ -361,7 +674,7 @@ export default function SocialPage() {
         <h1
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: 30,
+            fontSize: "1.875rem",
             fontWeight: 700,
             color: "var(--color-text-primary)",
             margin: 0,
@@ -371,7 +684,7 @@ export default function SocialPage() {
         </h1>
         <p
           style={{
-            fontSize: 14,
+            fontSize: "0.875rem",
             color: "var(--color-text-muted)",
             margin: "4px 0 0",
             fontFamily: "var(--font-body)",
@@ -389,7 +702,7 @@ export default function SocialPage() {
           <Card>
             <h3
               style={{
-                fontSize: 11,
+                fontSize: "0.6875rem",
                 fontWeight: 600,
                 margin: "0 0 12px",
                 textTransform: "uppercase",
@@ -422,7 +735,7 @@ export default function SocialPage() {
                   border: "none",
                   outline: "none",
                   background: "transparent",
-                  fontSize: 13,
+                  fontSize: "0.8125rem",
                   color: "var(--color-text-primary)",
                   fontFamily: "var(--font-body)",
                 }}
@@ -446,7 +759,7 @@ export default function SocialPage() {
                       <Avatar name={r.displayName || r.username || r.address.slice(0, 6)} size="sm" />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: 13, fontWeight: 600,
+                          fontSize: "0.8125rem", fontWeight: 600,
                           color: "var(--color-text-primary)",
                           fontFamily: "var(--font-body)",
                         }}>
@@ -454,7 +767,7 @@ export default function SocialPage() {
                         </div>
                         {r.username && (
                           <div style={{
-                            fontSize: 11, color: "var(--color-text-muted)",
+                            fontSize: "0.6875rem", color: "var(--color-text-muted)",
                             fontFamily: "var(--font-mono)",
                           }}>
                             @{r.username}
@@ -463,14 +776,14 @@ export default function SocialPage() {
                       </div>
                       {social.friends.some((f) => f.address === r.address) ? (
                         <span style={{
-                          fontSize: 11, color: "var(--color-success)",
+                          fontSize: "0.6875rem", color: "var(--color-success)",
                           fontFamily: "var(--font-body)", fontWeight: 600,
                         }}>
                           Friends
                         </span>
                       ) : sentTo === r.address || social.outgoingRequests.includes(r.address) ? (
                         <span style={{
-                          fontSize: 11, color: "var(--color-text-muted)",
+                          fontSize: "0.6875rem", color: "var(--color-text-muted)",
                           fontFamily: "var(--font-body)", fontWeight: 600,
                           display: "flex", alignItems: "center", gap: 4,
                         }}>
@@ -484,7 +797,7 @@ export default function SocialPage() {
                             borderRadius: 6,
                             border: "1px solid var(--color-success)",
                             background: "rgba(96,168,96,0.12)",
-                            fontSize: 11,
+                            fontSize: "0.6875rem",
                             fontWeight: 600,
                             color: "var(--color-success)",
                             cursor: "pointer",
@@ -501,7 +814,7 @@ export default function SocialPage() {
                             borderRadius: 6,
                             border: "1px solid var(--color-gold-primary)",
                             background: "var(--color-gold-muted)",
-                            fontSize: 11,
+                            fontSize: "0.6875rem",
                             fontWeight: 600,
                             color: "var(--color-gold-primary)",
                             cursor: "pointer",
@@ -517,7 +830,7 @@ export default function SocialPage() {
                   <div style={{
                     padding: "12px 0",
                     textAlign: "center",
-                    fontSize: 12,
+                    fontSize: "0.75rem",
                     color: "var(--color-text-faint)",
                     fontFamily: "var(--font-body)",
                   }}>
@@ -540,7 +853,7 @@ export default function SocialPage() {
             >
               <h3
                 style={{
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   fontWeight: 600,
                   margin: 0,
                   textTransform: "uppercase",
@@ -553,7 +866,7 @@ export default function SocialPage() {
               </h3>
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-faint)",
                   fontFamily: "var(--font-mono)",
                 }}
@@ -585,7 +898,7 @@ export default function SocialPage() {
                   border: "none",
                   outline: "none",
                   background: "transparent",
-                  fontSize: 13,
+                  fontSize: "0.8125rem",
                   color: "var(--color-text-primary)",
                   fontFamily: "var(--font-body)",
                   width: "100%",
@@ -613,7 +926,7 @@ export default function SocialPage() {
                         : "1px solid var(--color-bg-subtle)",
                     background:
                       tab === t.id ? "var(--color-gold-muted)" : "transparent",
-                    fontSize: 13,
+                    fontSize: "0.8125rem",
                     fontWeight: 600,
                     color:
                       tab === t.id
@@ -659,7 +972,7 @@ export default function SocialPage() {
                   style={{
                     padding: "24px 0",
                     textAlign: "center",
-                    fontSize: 13,
+                    fontSize: "0.8125rem",
                     color: "var(--color-text-faint)",
                     fontFamily: "var(--font-body)",
                   }}
@@ -672,9 +985,12 @@ export default function SocialPage() {
                 <FriendRow
                   key={f.address}
                   name={displayLabel(f)}
+                  address={f.address}
                   online={f.online}
-                  onChallenge={() => social.challengeFriend(f.address)}
+                  onChallenge={(config) => social.challengeFriend(f.address, config)}
                   onRemove={() => social.removeFriend(f.address)}
+                  onBlock={() => social.blockUser(f.address)}
+                  onReport={(reason) => social.reportUser(f.address, reason)}
                 />
               ))
             ) : (
@@ -682,7 +998,7 @@ export default function SocialPage() {
                 style={{
                   padding: "24px 0",
                   textAlign: "center",
-                  fontSize: 13,
+                  fontSize: "0.8125rem",
                   color: "var(--color-text-faint)",
                   fontFamily: "var(--font-body)",
                 }}
@@ -708,7 +1024,7 @@ export default function SocialPage() {
             >
               <h3
                 style={{
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   fontWeight: 600,
                   margin: 0,
                   textTransform: "uppercase",
@@ -721,7 +1037,7 @@ export default function SocialPage() {
               </h3>
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-faint)",
                   fontFamily: "var(--font-mono)",
                 }}
@@ -745,7 +1061,7 @@ export default function SocialPage() {
                 style={{
                   padding: "32px 0",
                   textAlign: "center",
-                  fontSize: 13,
+                  fontSize: "0.8125rem",
                   color: "var(--color-text-faint)",
                   fontFamily: "var(--font-body)",
                 }}

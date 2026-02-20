@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Card, Avatar } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useBalance } from "@/hooks/useBalance";
 import { fetchStats, fetchMatches, fetchOnlineCount, timeAgo } from "@/lib/api";
 import type { PlayerStats, MatchResult } from "@/lib/api";
+import Tutorial from "@/components/Tutorial";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -66,7 +68,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
     <div style={{ textAlign: "center", flex: 1 }}>
       <div
         style={{
-          fontSize: 22,
+          fontSize: "1.375rem",
           fontWeight: 700,
           color: "var(--color-text-primary)",
           fontFamily: "var(--font-mono)",
@@ -76,7 +78,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       </div>
       <div
         style={{
-          fontSize: 10,
+          fontSize: "0.625rem",
           color: "var(--color-text-muted)",
           marginTop: 2,
           textTransform: "uppercase",
@@ -90,7 +92,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
       {sub && (
         <div
           style={{
-            fontSize: 11,
+            fontSize: "0.6875rem",
             color: "var(--color-gold-primary)",
             marginTop: 2,
             fontFamily: "var(--font-mono)",
@@ -143,7 +145,7 @@ function MatchRowStyled({
       <div style={{ flex: 1 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: "0.8125rem",
             fontWeight: 500,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-body)",
@@ -153,7 +155,7 @@ function MatchRowStyled({
         </div>
         <div
           style={{
-            fontSize: 11,
+            fontSize: "0.6875rem",
             color: "var(--color-text-faint)",
             fontFamily: "var(--font-body)",
           }}
@@ -164,7 +166,7 @@ function MatchRowStyled({
       <div style={{ textAlign: "right" }}>
         <span
           style={{
-            fontSize: 12,
+            fontSize: "0.75rem",
             fontWeight: 600,
             fontFamily: "var(--font-mono)",
             color: result === "W" ? "var(--color-success)" : "var(--color-danger)",
@@ -178,7 +180,7 @@ function MatchRowStyled({
         </span>
         <div
           style={{
-            fontSize: 10,
+            fontSize: "0.625rem",
             color: "var(--color-text-faint)",
             marginTop: 2,
             fontFamily: "var(--font-mono)",
@@ -219,7 +221,7 @@ function PlayerRowStyled({
       <div style={{ flex: 1 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: "0.8125rem",
             fontWeight: 600,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-body)",
@@ -229,7 +231,7 @@ function PlayerRowStyled({
         </div>
         <div
           style={{
-            fontSize: 11,
+            fontSize: "0.6875rem",
             color: "var(--color-text-muted)",
             fontFamily: "var(--font-mono)",
           }}
@@ -238,19 +240,21 @@ function PlayerRowStyled({
         </div>
       </div>
       <button
+        aria-label={`Challenge ${name}`}
         style={{
-          padding: "4px 12px",
+          padding: "12px 16px",
           borderRadius: 6,
           border: h
             ? "1px solid var(--color-gold-primary)"
             : "1px solid var(--color-bg-subtle)",
           background: h ? "var(--color-gold-muted)" : "transparent",
-          fontSize: 11,
+          fontSize: "0.6875rem",
           fontWeight: 600,
           color: h ? "var(--color-gold-primary)" : "var(--color-text-muted)",
           cursor: "pointer",
           fontFamily: "var(--font-body)",
           transition: "all 0.15s ease",
+          minHeight: 44,
         }}
       >
         Challenge
@@ -266,6 +270,7 @@ function PlayerRowStyled({
 export default function DashboardPage() {
   const router = useRouter();
   const { address, logout } = useAuth();
+  const { balance, isLoading: balanceLoading } = useBalance();
   const social = useSocialContext();
   const { displayName, username } = social;
   const playerName = displayName || username || "Player";
@@ -282,6 +287,24 @@ export default function DashboardPage() {
     fetchMatches(address, 4).then(setMatches).catch(() => {});
     fetchOnlineCount().then(setOnlineCount).catch(() => {});
   }, [address]);
+
+  // Poll online player count every 30s
+  useEffect(() => {
+    const fetchOnline = async () => {
+      try {
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "";
+        const apiBase = wsUrl.replace("/ws", "").replace("ws://", "http://").replace("wss://", "https://");
+        const res = await fetch(`${apiBase}/api/online-count`);
+        if (res.ok) {
+          const data = await res.json();
+          setOnlineCount(data.count ?? null);
+        }
+      } catch {}
+    };
+    fetchOnline();
+    const interval = setInterval(fetchOnline, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const onlineFriends = social.friends.filter(f => f.online);
 
@@ -350,10 +373,17 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:px-6 lg:px-8 lg:py-6" style={{ width: "100%" }}>
+      <Tutorial />
       {/* Top Bar */}
       <header className="flex flex-wrap items-center justify-between gap-4" style={{ marginBottom: 28 }}>
 
         <div>
+          {onlineCount !== null && onlineCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80" }} />
+              {onlineCount} online
+            </div>
+          )}
           <h1
             className="text-xl sm:text-2xl lg:text-[30px]"
             style={{
@@ -367,7 +397,7 @@ export default function DashboardPage() {
           </h1>
           <p
             style={{
-              fontSize: 14,
+              fontSize: "0.875rem",
               color: "var(--color-text-muted)",
               margin: "4px 0 0",
               fontFamily: "var(--font-body)",
@@ -405,7 +435,7 @@ export default function DashboardPage() {
                 border: "none",
                 outline: "none",
                 background: "transparent",
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 color: "var(--color-text-primary)",
                 fontFamily: "var(--font-body)",
                 width: 140,
@@ -414,7 +444,7 @@ export default function DashboardPage() {
             {!searchFocused && searchQuery.length === 0 && (
               <span
                 style={{
-                  fontSize: 10,
+                  fontSize: "0.625rem",
                   color: "var(--color-text-faint)",
                   border: "1px solid var(--color-bg-subtle)",
                   borderRadius: 4,
@@ -466,21 +496,21 @@ export default function DashboardPage() {
                     >
                       <Avatar name={r.displayName || r.username || r.address.slice(0, 6)} size="xs" />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                        <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)" }}>
                           {r.displayName || r.username || r.address.slice(0, 8)}
                         </div>
                         {r.username && (
-                          <div style={{ fontSize: 10, color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}>
+                          <div style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}>
                             @{r.username}
                           </div>
                         )}
                       </div>
                       {social.friends.some((f) => f.address === r.address) ? (
-                        <span style={{ fontSize: 10, color: "var(--color-success)", fontWeight: 600 }}>
+                        <span style={{ fontSize: "0.625rem", color: "var(--color-success)", fontWeight: 600 }}>
                           Friends
                         </span>
                       ) : social.outgoingRequests.includes(r.address) ? (
-                        <span style={{ fontSize: 10, color: "var(--color-text-muted)", fontWeight: 600 }}>
+                        <span style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontWeight: 600 }}>
                           Sent
                         </span>
                       ) : social.incomingRequests.some((req) => req.address === r.address) ? (
@@ -494,7 +524,7 @@ export default function DashboardPage() {
                             borderRadius: 5,
                             border: "1px solid var(--color-success)",
                             background: "rgba(96,168,96,0.12)",
-                            fontSize: 10,
+                            fontSize: "0.625rem",
                             fontWeight: 600,
                             color: "var(--color-success)",
                             cursor: "pointer",
@@ -514,7 +544,7 @@ export default function DashboardPage() {
                             borderRadius: 5,
                             border: "1px solid var(--color-gold-primary)",
                             background: "var(--color-gold-muted)",
-                            fontSize: 10,
+                            fontSize: "0.625rem",
                             fontWeight: 600,
                             color: "var(--color-gold-primary)",
                             cursor: "pointer",
@@ -527,7 +557,7 @@ export default function DashboardPage() {
                     </div>
                   ))
                 ) : (
-                  <div style={{ padding: "16px 12px", textAlign: "center", fontSize: 12, color: "var(--color-text-faint)" }}>
+                  <div style={{ padding: "16px 12px", textAlign: "center", fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
                     No players found
                   </div>
                 )}
@@ -537,9 +567,10 @@ export default function DashboardPage() {
 
           {/* Bell */}
           <button
+            aria-label="Notifications"
             style={{
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               borderRadius: 6,
               border: "1px solid var(--color-bg-subtle)",
               background: "var(--color-bg-surface)",
@@ -579,31 +610,49 @@ export default function DashboardPage() {
           >
             <span
               style={{
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 fontWeight: 700,
                 color: "var(--color-gold-primary)",
                 fontFamily: "var(--font-mono)",
               }}
             >
-              --
+              {balanceLoading || balance === null ? "$--" : `$${balance}`}
             </span>
             <span
               style={{
-                fontSize: 10,
+                fontSize: "0.625rem",
                 color: "var(--color-text-secondary)",
                 fontFamily: "var(--font-body)",
               }}
             >
               USDC
             </span>
+            {balance !== null && balance === "0.00" && (
+              <button
+                onClick={() => router.push("/settings")}
+                style={{
+                  fontSize: "0.625rem",
+                  fontWeight: 600,
+                  color: "var(--color-gold-primary)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  fontFamily: "var(--font-body)",
+                  padding: 0,
+                }}
+              >
+                Deposit
+              </button>
+            )}
           </div>
 
           {/* Logout */}
           <button
             onClick={() => { logout(); router.push("/login"); }}
             style={{
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               borderRadius: 6,
               border: "1px solid var(--color-bg-subtle)",
               background: "var(--color-bg-surface)",
@@ -613,6 +662,7 @@ export default function DashboardPage() {
               justifyContent: "center",
             }}
             title="Log out"
+            aria-label="Log out"
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
               <path d="M7 17H4a1 1 0 01-1-1V4a1 1 0 011-1h3M14 14l4-4-4-4M18 10H7" strokeLinecap="round" strokeLinejoin="round" />
@@ -638,7 +688,7 @@ export default function DashboardPage() {
             <h3
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 26,
+                fontSize: "1.625rem",
                 fontWeight: 700,
                 margin: 0,
                 color: "var(--color-text-primary)",
@@ -649,7 +699,7 @@ export default function DashboardPage() {
           </div>
           <p
             style={{
-              fontSize: 14,
+              fontSize: "0.875rem",
               color: "var(--color-text-muted)",
               margin: "0 0 20px",
               lineHeight: 1.5,
@@ -667,7 +717,7 @@ export default function DashboardPage() {
                 border: "none",
                 background: "var(--color-gold-primary)",
                 color: "var(--color-accent-fg)",
-                fontSize: 14,
+                fontSize: "0.875rem",
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
@@ -684,7 +734,7 @@ export default function DashboardPage() {
                 border: "1.5px solid var(--color-bg-subtle)",
                 background: "transparent",
                 color: "var(--color-text-secondary)",
-                fontSize: 14,
+                fontSize: "0.875rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
@@ -709,7 +759,7 @@ export default function DashboardPage() {
             <h3
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 26,
+                fontSize: "1.625rem",
                 fontWeight: 700,
                 margin: 0,
                 color: "var(--color-text-primary)",
@@ -719,17 +769,21 @@ export default function DashboardPage() {
             </h3>
             <button
               onClick={() => setRated((r) => !r)}
+              aria-label={rated ? "Switch to casual mode" : "Switch to rated mode"}
+              role="switch"
+              aria-checked={rated}
               style={{
-                fontSize: 11,
+                fontSize: "0.6875rem",
                 color: rated ? "var(--color-burgundy-light)" : "var(--color-text-muted)",
                 background: rated ? "var(--color-burgundy-faint)" : "var(--color-bg-subtle)",
-                padding: "3px 10px",
+                padding: "6px 12px",
                 borderRadius: 20,
                 fontWeight: 600,
                 fontFamily: "var(--font-body)",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
+                minHeight: 44,
               }}
             >
               {rated ? "Rated" : "Casual"}
@@ -737,7 +791,7 @@ export default function DashboardPage() {
           </div>
           <p
             style={{
-              fontSize: 14,
+              fontSize: "0.875rem",
               color: "var(--color-text-muted)",
               margin: "0 0 20px",
               lineHeight: 1.5,
@@ -750,19 +804,21 @@ export default function DashboardPage() {
               <button
                 key={len}
                 onClick={() => router.push(`/matchmaking?length=${len}&rated=${rated}`)}
+                aria-label={`Quick match ${len} point${len > 1 ? "s" : ""}`}
                 style={{
                   flex: 1,
-                  padding: "10px 14px",
+                  padding: "12px 16px",
                   borderRadius: 6,
                   border: "1px solid var(--color-bg-subtle)",
                   background: "transparent",
-                  fontSize: 14,
+                  fontSize: "0.875rem",
                   fontWeight: 600,
                   color: "var(--color-text-muted)",
                   fontFamily: "var(--font-mono)",
                   textAlign: "center",
                   cursor: "pointer",
                   transition: "all 0.12s ease",
+                  minHeight: 44,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "var(--color-gold-primary)";
@@ -793,7 +849,7 @@ export default function DashboardPage() {
             <h3
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 26,
+                fontSize: "1.625rem",
                 fontWeight: 700,
                 margin: 0,
                 color: "var(--color-text-primary)",
@@ -804,7 +860,7 @@ export default function DashboardPage() {
           </div>
           <p
             style={{
-              fontSize: 14,
+              fontSize: "0.875rem",
               color: "var(--color-text-muted)",
               margin: "0 0 20px",
               lineHeight: 1.5,
@@ -822,18 +878,20 @@ export default function DashboardPage() {
                     `/ai-match?difficulty=${lvl.toLowerCase()}`
                   )
                 }
+                aria-label={`Play AI ${lvl} difficulty`}
                 style={{
                   flex: 1,
-                  padding: "10px 14px",
+                  padding: "12px 16px",
                   borderRadius: 6,
                   border: "1px solid var(--color-bg-subtle)",
                   background: "transparent",
-                  fontSize: 14,
+                  fontSize: "0.875rem",
                   fontWeight: 600,
                   color: "var(--color-text-muted)",
                   fontFamily: "var(--font-body)",
                   textAlign: "center",
                   cursor: "pointer",
+                  minHeight: 44,
                 }}
               >
                 {lvl}
@@ -860,7 +918,7 @@ export default function DashboardPage() {
             >
               <h3
                 style={{
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   fontWeight: 600,
                   margin: 0,
                   textTransform: "uppercase",
@@ -875,7 +933,7 @@ export default function DashboardPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-secondary)",
                   cursor: "pointer",
                   display: "flex",
@@ -917,7 +975,7 @@ export default function DashboardPage() {
             >
               <h3
                 style={{
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   fontWeight: 600,
                   margin: 0,
                   textTransform: "uppercase",
@@ -932,7 +990,7 @@ export default function DashboardPage() {
                 style={{
                   background: "none",
                   border: "none",
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-secondary)",
                   cursor: "pointer",
                   display: "flex",
@@ -954,8 +1012,27 @@ export default function DashboardPage() {
                 date={timeAgo(m.timestamp)}
               />
             )) : (
-              <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: "var(--color-text-muted)" }}>
-                No matches yet. Play a game to see your history!
+              <div style={{ padding: "24px 0", textAlign: "center" }}>
+                <div style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginBottom: 12 }}>
+                  No recent matches yet. Start your first game!
+                </div>
+                <button
+                  onClick={() => router.push("/matchmaking?length=5&rated=true")}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: "var(--color-gold-primary)",
+                    color: "var(--color-accent-fg, var(--color-bg-deepest))",
+                    fontSize: "0.8125rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-body)",
+                    minHeight: 44,
+                  }}
+                >
+                  Quick Match
+                </button>
               </div>
             )}
           </Card>
@@ -983,7 +1060,7 @@ export default function DashboardPage() {
               <h3
                 style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: 17,
+                  fontSize: "1.0625rem",
                   fontWeight: 700,
                   margin: 0,
                   color: "var(--color-text-primary)",
@@ -994,7 +1071,7 @@ export default function DashboardPage() {
             </div>
             <p
               style={{
-                fontSize: 12,
+                fontSize: "0.75rem",
                 color: "var(--color-text-muted)",
                 margin: "0 0 12px",
                 lineHeight: 1.5,
@@ -1010,7 +1087,7 @@ export default function DashboardPage() {
                 border: "1px solid var(--color-bg-subtle)",
                 borderRadius: 6,
                 padding: "6px 12px",
-                fontSize: 11,
+                fontSize: "0.6875rem",
                 fontWeight: 600,
                 color: "var(--color-text-secondary)",
                 cursor: "pointer",
@@ -1033,7 +1110,7 @@ export default function DashboardPage() {
             >
               <h3
                 style={{
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   fontWeight: 600,
                   margin: 0,
                   textTransform: "uppercase",
@@ -1046,7 +1123,7 @@ export default function DashboardPage() {
               </h3>
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-faint)",
                   fontFamily: "var(--font-mono)",
                 }}
@@ -1062,8 +1139,27 @@ export default function DashboardPage() {
                 status="online"
               />
             )) : (
-              <div style={{ padding: "16px 0", textAlign: "center", fontSize: 12, color: "var(--color-text-muted)" }}>
-                {social.friends.length === 0 ? "Add friends to see them here" : "No friends online"}
+              <div style={{ padding: "20px 0", textAlign: "center" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginBottom: 10 }}>
+                  {social.friends.length === 0 ? "No friends added yet. Find players to connect with!" : "No friends online. Find new players!"}
+                </div>
+                <button
+                  onClick={() => router.push("/social")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 6,
+                    border: "1px solid var(--color-gold-primary)",
+                    background: "var(--color-gold-muted)",
+                    color: "var(--color-gold-primary)",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-body)",
+                    minHeight: 44,
+                  }}
+                >
+                  {social.friends.length === 0 ? "Find Players" : "Browse Players"}
+                </button>
               </div>
             )}
           </Card>

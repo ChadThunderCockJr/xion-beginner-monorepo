@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGame } from "@/hooks/useGame";
+import { useSocial } from "@/hooks/useSocial";
 import { GameScreen } from "@/components/GameScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { WS_URL } from "@/lib/ws-config";
@@ -29,6 +30,7 @@ export default function MatchPage() {
     canUndo,
     turnStartedAt,
     lastOpponentMove,
+    lastReaction,
     pendingConfirmation,
     forcedMoveNotice,
     disconnectCountdown,
@@ -37,8 +39,11 @@ export default function MatchPage() {
     endTurn,
     undoMove,
     resign,
+    sendReaction,
     reset,
   } = useGame(WS_URL, address);
+
+  const { blockUser, reportUser } = useSocial(WS_URL, address);
 
   // Loading state: waiting for server to send game state
   if (!gameState || !myColor) {
@@ -66,7 +71,7 @@ export default function MatchPage() {
             animation: "spin 1s linear infinite",
           }}
         />
-        <p style={{ fontSize: 14, color: "var(--color-text-secondary)" }}>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-secondary)" }}>
           {connected ? "Loading game..." : "Connecting..."}
         </p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -94,6 +99,11 @@ export default function MatchPage() {
       pendingConfirmation={pendingConfirmation}
       forcedMoveNotice={forcedMoveNotice}
       disconnectCountdown={disconnectCountdown}
+      onSendReaction={sendReaction}
+      lastReaction={lastReaction}
+      onBlockPlayer={blockUser}
+      onReportPlayer={reportUser}
+      opponentAddress={opponent}
       onNewGame={() => {
         reset();
         router.push("/matchmaking");

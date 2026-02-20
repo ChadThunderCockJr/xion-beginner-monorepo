@@ -270,6 +270,10 @@ fn execute_report_result(
         game.player_a.clone()
     };
 
+    // NOTE: Stats are saved before the escrow settlement message is dispatched.
+    // This is safe because CosmWasm executes all messages atomically — if the
+    // escrow settlement fails, the entire transaction (including stat updates) reverts.
+
     // Update winner stats
     let mut winner_stats = PLAYER_STATS.load(deps.storage, &winner_addr)?;
     winner_stats.games_played += 1;
@@ -528,6 +532,8 @@ fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
     })
 }
 
+// TODO: Add secondary index (e.g., Map<(Addr, u64), String>) for O(1) player game lookup
+// Current implementation is O(n) and will degrade with many games
 fn query_player_games(
     deps: Deps,
     address: String,

@@ -20,6 +20,7 @@
   --color-gold-dark: #3A0C1A;
   --color-gold-muted: #220C18;
   --color-accent-fg: #ECE8E0;
+  --color-text-on-gold: #ECE8E0;
 
   /* ─── Semantic ─── */
   --color-success: #60A860;
@@ -41,6 +42,13 @@
   --color-border-default: #2A3026;
   --color-border-strong: #3A4036;
 
+  /* ─── Analysis gold accent (post-game analysis page) ─── */
+  --color-analysis-gold: #D0A848;
+  --color-analysis-gold-light: #F0C868;
+  --color-analysis-gold-subtle: #988040;
+  --color-analysis-gold-faint: rgba(208, 168, 72, 0.12);
+  --color-analysis-gold-text: #1A1408;
+
   /* ─── Fonts ─── */
   --font-display: var(--font-cinzel), "Cinzel", Georgia, serif;
   --font-body: var(--font-josefin), "Josefin Sans", system-ui, -apple-system, sans-serif;
@@ -61,6 +69,24 @@
   --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-gold: 0 2px 12px rgba(88, 20, 40, 0.3);
   --shadow-glow: 0 0 60px rgba(88, 20, 40, 0.12);
+
+  /* ─── Board colors ─── */
+  --color-board-felt-light: #243020;
+  --color-board-felt-dark: #1A2818;
+  --color-board-border: #4A3F2F;
+  --color-board-bar: #2A2118;
+  --color-checker-white: #DCD8D0;
+  --color-checker-black: #6E1A30;
+  --color-checker-white-border: #A8A098;
+  --color-checker-black-border: var(--color-burgundy-deep);
+  --color-board-point-light: #D4A86A;
+  --color-board-point-dark: #8B4513;
+  --color-die-white-face: #DCD8D0;
+  --color-die-white-stroke: #B8B4AC;
+  --color-die-white-dot: #2A2018;
+  --color-die-black-face: #6E1A30;
+  --color-die-black-stroke: #8A2840;
+  --color-die-black-dot: #DCD8D0;
 }
 
 /* ═══════════════════════════════════════════
@@ -75,11 +101,11 @@ html.light {
   --color-bg-elevated: #FFFFFF;
   --color-bg-subtle: #E0DAD0;
 
-  /* ─── Text hierarchy ─── */
+  /* ─── Text hierarchy (WCAG AA compliant against #F5F1EB) ─── */
   --color-text-primary: #1A1814;
   --color-text-secondary: #4A4640;
-  --color-text-muted: #8A8478;
-  --color-text-faint: #B8B2A8;
+  --color-text-muted: #6B6560;
+  --color-text-faint: #8D877C;
 
   /* ─── Accent — burgundy on light ─── */
   --color-gold-primary: #7A1830;
@@ -87,13 +113,14 @@ html.light {
   --color-gold-dark: #5C1024;
   --color-gold-muted: rgba(122, 24, 48, 0.08);
   --color-accent-fg: #FFFFFF;
+  --color-text-on-gold: #FFFFFF;
 
   /* ─── Semantic ─── */
-  --color-success: #2D8A2D;
-  --color-success-muted: rgba(45, 138, 45, 0.1);
+  --color-success: #187518;
+  --color-success-muted: rgba(24, 117, 24, 0.1);
   --color-danger: #C03030;
   --color-danger-muted: rgba(192, 48, 48, 0.08);
-  --color-warning: #D49B08;
+  --color-warning: #8B6508;
   --color-info: #3070A0;
 
   /* ─── Burgundy ─── */
@@ -103,16 +130,41 @@ html.light {
   --color-burgundy-faint: rgba(122, 24, 48, 0.06);
   --color-burgundy-accent: #8E2C44;
 
-  /* ─── Borders ─── */
-  --color-border-subtle: #E0DAD0;
-  --color-border-default: #D0CAC0;
-  --color-border-strong: #B8B0A4;
+  /* ─── Borders (darkened for visibility against light backgrounds) ─── */
+  --color-border-subtle: #C4BCB0;
+  --color-border-default: #8E8678;
+  --color-border-strong: #766E62;
+
+  /* ─── Analysis gold accent (darkened for light backgrounds, WCAG AA) ─── */
+  --color-analysis-gold: #806410;
+  --color-analysis-gold-light: #A07818;
+  --color-analysis-gold-subtle: #6B5420;
+  --color-analysis-gold-faint: rgba(128, 100, 16, 0.10);
+  --color-analysis-gold-text: #1A1408;
 
   /* ─── Shadows ─── */
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-gold: 0 2px 8px rgba(122, 24, 48, 0.12);
   --shadow-glow: 0 0 40px rgba(122, 24, 48, 0.06);
+
+  /* ─── Board colors ─── */
+  --color-board-felt-light: #3A6B35;
+  --color-board-felt-dark: #2D5A28;
+  --color-board-border: #8B7355;
+  --color-board-bar: #6B5B45;
+  --color-checker-white: #F0EDE5;
+  --color-checker-black: #8B2252;
+  --color-checker-white-border: #C8C0B4;
+  --color-checker-black-border: #6B1A3A;
+  --color-board-point-light: #E8C78A;
+  --color-board-point-dark: #A0522D;
+  --color-die-white-face: #F0EDE5;
+  --color-die-white-stroke: #C8C0B4;
+  --color-die-white-dot: #2A2018;
+  --color-die-black-face: #8B2252;
+  --color-die-black-stroke: #A03060;
+  --color-die-black-dot: #F0EDE5;
 }
 
 /* ═══════════════════════════════════════════
@@ -139,6 +191,7 @@ html.lux {
   --color-gold-dark: #A07828;
   --color-gold-muted: rgba(197, 151, 62, 0.15);
   --color-accent-fg: #2A0A16;
+  --color-text-on-gold: #2A0A16;
 
   /* ─── Semantic ─── */
   --color-success: #60A860;
@@ -168,6 +221,24 @@ html.lux {
   --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-gold: 0 2px 12px rgba(197, 151, 62, 0.25);
   --shadow-glow: 0 0 60px rgba(197, 151, 62, 0.1);
+
+  /* ─── Board colors ─── */
+  --color-board-felt-light: #1A3020;
+  --color-board-felt-dark: #142818;
+  --color-board-border: #C9A84C;
+  --color-board-bar: #2A2018;
+  --color-checker-white: #F5F0E0;
+  --color-checker-black: #800020;
+  --color-checker-white-border: #D4C8B0;
+  --color-checker-black-border: #600018;
+  --color-board-point-light: #C9A84C;
+  --color-board-point-dark: #8B6914;
+  --color-die-white-face: #F5F0E0;
+  --color-die-white-stroke: #D4C8B0;
+  --color-die-white-dot: #2A2018;
+  --color-die-black-face: #800020;
+  --color-die-black-stroke: #A00030;
+  --color-die-black-dot: #F5F0E0;
 }
 
 /* ─── Lux mode scrollbar ─── */
@@ -413,4 +484,14 @@ html.lux body {
 }
 .animate-slide-in-right {
   animation: slide-in-right 200ms ease-out;
+}
+
+/* ─── Reduced motion support ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

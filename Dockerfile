@@ -35,8 +35,10 @@ COPY --from=build /app/packages/backgammon-core/package.json ./packages/backgamm
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Install tsx for running TypeScript at runtime (backgammon-core is raw TS)
-RUN npm install -g tsx
+# tsx is required at runtime because backgammon-core is a raw TypeScript
+# workspace package with "main": "./src/index.ts" — Node cannot resolve it
+# without a TypeScript-aware loader.
+RUN pnpm add -g tsx@4
 
 COPY --from=build /app/apps/backgammon-server/dist/ ./apps/backgammon-server/dist/
 COPY --from=build /app/packages/backgammon-core/ ./packages/backgammon-core/

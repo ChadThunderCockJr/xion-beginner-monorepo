@@ -90,7 +90,7 @@ function NavItem({
         borderRadius: 6,
         cursor: "pointer",
         color: active ? "var(--color-text-primary)" : "var(--color-text-secondary)",
-        fontSize: 14,
+        fontSize: "0.875rem",
         fontWeight: active ? 600 : 400,
         fontFamily: "var(--font-body)",
         transition: "all 0.12s ease",
@@ -113,7 +113,7 @@ function NavItem({
             color: "var(--color-burgundy-light)",
             borderRadius: 10,
             padding: "2px 8px",
-            fontSize: 11,
+            fontSize: "0.6875rem",
             fontWeight: 600,
           }}
         >
@@ -217,7 +217,7 @@ export function Sidebar() {
         <span
           style={{
             color: "var(--color-text-primary)",
-            fontSize: 21,
+            fontSize: "1.3125rem",
             fontWeight: 700,
             fontFamily: "var(--font-display)",
             letterSpacing: "-0.02em",
@@ -237,7 +237,7 @@ export function Sidebar() {
           border: "none",
           borderRadius: 6,
           color: "var(--color-accent-fg)",
-          fontSize: 15,
+          fontSize: "0.9375rem",
           fontWeight: 700,
           cursor: "pointer",
           display: "flex",
@@ -295,7 +295,7 @@ export function Sidebar() {
           <div>
             <div
               style={{
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 fontWeight: 600,
                 color: "var(--color-text-primary)",
               }}
@@ -304,7 +304,7 @@ export function Sidebar() {
             </div>
             <div
               style={{
-                fontSize: 12,
+                fontSize: "0.75rem",
                 color: "var(--color-text-muted)",
                 fontFamily: "var(--font-mono)",
                 fontWeight: 500,

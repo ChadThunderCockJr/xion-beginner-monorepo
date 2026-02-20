@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.burnt.com https://*.vercel.com https://*.vercel-storage.com ws://localhost:* wss://*",
+              "connect-src 'self' https://*.burnt.com https://*.vercel.com https://*.vercel-storage.com ws://localhost:* wss://*.railway.app wss://*.gammon.nyc wss://api.gammon.nyc",
               "frame-src 'self' https://*.burnt.com",
               "form-action 'self'",
               "base-uri 'self'",

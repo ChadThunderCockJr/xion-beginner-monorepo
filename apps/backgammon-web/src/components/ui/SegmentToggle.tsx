@@ -36,7 +36,7 @@ export function SegmentToggle({ segments, activeId, onSelect, className }: Segme
               color: active ? "var(--color-accent-fg, var(--color-bg-deepest))" : "var(--color-text-muted)",
               border: "none",
               borderLeft: i > 0 ? "1px solid var(--color-bg-subtle)" : "none",
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontWeight: 700,
               cursor: "pointer",
               fontFamily: "var(--font-body)",

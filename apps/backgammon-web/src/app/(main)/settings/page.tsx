@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Card, SectionLabel, SegmentToggle } from "@/components/ui";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,6 +78,7 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 // MAIN — SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════════════
 export default function SettingsPage() {
+  const router = useRouter();
   const { address, logout } = useAuth();
   const social = useSocialContext();
 
@@ -91,6 +93,15 @@ export default function SettingsPage() {
     friendRequests: true,
     tournamentAlerts: false,
   });
+
+  const handleReplayTutorial = useCallback(() => {
+    try {
+      localStorage.removeItem("gammon-tutorial-completed");
+    } catch {
+      // ignore
+    }
+    router.push("/");
+  }, [router]);
 
   // Sync display name from social context
   useEffect(() => {
@@ -133,7 +144,7 @@ export default function SettingsPage() {
             <h1
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 30,
+                fontSize: "1.875rem",
                 fontWeight: 700,
                 color: "var(--color-text-primary)",
                 margin: 0,
@@ -143,7 +154,7 @@ export default function SettingsPage() {
             </h1>
             <p
               style={{
-                fontSize: 14,
+                fontSize: "0.875rem",
                 color: "var(--color-text-muted)",
                 margin: "4px 0 0",
                 fontFamily: "var(--font-body)",
@@ -160,7 +171,7 @@ export default function SettingsPage() {
             {/* Address */}
             <div style={{ marginBottom: 16 }}>
               <div style={{
-                fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)",
+                fontSize: "0.6875rem", fontWeight: 600, color: "var(--color-text-muted)",
                 textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6,
               }}>Wallet Address</div>
               <div style={{
@@ -169,7 +180,7 @@ export default function SettingsPage() {
                 border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
               }}>
                 <span style={{
-                  flex: 1, fontSize: 13, color: "var(--color-text-secondary)",
+                  flex: 1, fontSize: "0.8125rem", color: "var(--color-text-secondary)",
                   fontFamily: "var(--font-mono)", overflow: "hidden",
                   textOverflow: "ellipsis", whiteSpace: "nowrap",
                 }}>
@@ -181,7 +192,7 @@ export default function SettingsPage() {
                     background: "none", border: "none", cursor: "pointer",
                     color: copied ? "var(--color-success)" : "var(--color-text-muted)",
                     display: "flex", alignItems: "center", gap: 4,
-                    fontSize: 11, fontWeight: 600, fontFamily: "var(--font-body)",
+                    fontSize: "0.6875rem", fontWeight: 600, fontFamily: "var(--font-body)",
                     padding: "2px 6px", borderRadius: 4,
                     transition: "color 0.15s ease",
                   }}
@@ -194,7 +205,7 @@ export default function SettingsPage() {
             {/* Display Name */}
             <div style={{ marginBottom: 16 }}>
               <div style={{
-                fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)",
+                fontSize: "0.6875rem", fontWeight: 600, color: "var(--color-text-muted)",
                 textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6,
               }}>Display Name</div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -206,7 +217,7 @@ export default function SettingsPage() {
                   style={{
                     flex: 1, padding: "10px 14px", borderRadius: 6,
                     border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
-                    fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
+                    fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
                     fontFamily: "var(--font-body)",
                     boxSizing: "border-box",
                     transition: "border-color 0.2s",
@@ -221,7 +232,7 @@ export default function SettingsPage() {
                     border: "none",
                     background: saved ? "var(--color-success)" : "var(--color-gold-primary)",
                     color: "var(--color-accent-fg)",
-                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    fontSize: "0.8125rem", fontWeight: 700, cursor: "pointer",
                     fontFamily: "var(--font-body)",
                     transition: "background 0.15s ease",
                     display: "flex", alignItems: "center", gap: 6,
@@ -232,7 +243,7 @@ export default function SettingsPage() {
                 </button>
               </div>
               <div style={{
-                fontSize: 11, color: "var(--color-text-faint)", marginTop: 6,
+                fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: 6,
               }}>
                 This is how other players see you in friend lists and matches
               </div>
@@ -249,7 +260,7 @@ export default function SettingsPage() {
                   border: "1.5px solid var(--color-danger)",
                   background: "rgba(204,68,68,0.08)",
                   color: "var(--color-danger)",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--font-body)",
                 }}
               >
@@ -263,7 +274,7 @@ export default function SettingsPage() {
             <SectionLabel>Appearance</SectionLabel>
             <div>
               <div style={{
-                fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
               }}>Theme</div>
               <SegmentToggle
                 segments={BOARD_THEMES}
@@ -271,7 +282,7 @@ export default function SettingsPage() {
                 onSelect={(id) => setTheme(id as "light" | "dark" | "lux")}
               />
               <div style={{
-                fontSize: 11, color: "var(--color-text-faint)", marginTop: 8,
+                fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: 8,
               }}>
                 Applies to the entire application
               </div>
@@ -283,7 +294,7 @@ export default function SettingsPage() {
             <SectionLabel>Game Preferences</SectionLabel>
             <div style={{ marginBottom: 16 }}>
               <div style={{
-                fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
               }}>Notation Style</div>
               <SegmentToggle
                 segments={NOTATION_STYLES}
@@ -295,8 +306,8 @@ export default function SettingsPage() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)" }}>Auto-Confirm Moves</div>
-                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)" }}>Auto-Confirm Moves</div>
+                <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 2 }}>
                   Automatically confirm obvious forced moves
                 </div>
               </div>
@@ -317,8 +328,8 @@ export default function SettingsPage() {
                 borderBottom: i < 2 ? "1px solid var(--color-bg-subtle)" : "none",
               }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>{item.desc}</div>
+                  <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>
+                  <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 2 }}>{item.desc}</div>
                 </div>
                 <ToggleSwitch
                   on={notifications[item.key]}
@@ -329,6 +340,40 @@ export default function SettingsPage() {
                 />
               </div>
             ))}
+          </Card>
+
+          {/* ═══ HELP ════════════════════════════════════════ */}
+          <Card style={{ marginBottom: 16 }}>
+            <SectionLabel>Help</SectionLabel>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div>
+                <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>Game Tutorial</div>
+                <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 2 }}>
+                  Review the basics of how to play backgammon
+                </div>
+              </div>
+              <button
+                onClick={handleReplayTutorial}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 6,
+                  border: "1px solid var(--color-gold-primary)",
+                  background: "var(--color-gold-muted)",
+                  color: "var(--color-gold-primary)",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-body)",
+                  transition: "all 0.15s ease",
+                  whiteSpace: "nowrap",
+                  minHeight: 44,
+                }}
+              >
+                Replay Tutorial
+              </button>
+            </div>
           </Card>
 
           {/* Wallet section hidden for now */}

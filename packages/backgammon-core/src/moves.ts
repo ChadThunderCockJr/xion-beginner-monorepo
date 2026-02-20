@@ -40,6 +40,10 @@ function isSingleMoveLegal(
   if (isBearingOff(dest, player)) {
     if (!canBearOff(board, player)) return { legal: false, to: dest };
 
+    // Validate that the source point actually has a checker of the correct color
+    if (getCheckerCount(board, from, player) <= 0)
+      return { legal: false, to: dest };
+
     if (player === "white") {
       const exactDest = from - die;
       if (exactDest === 0) return { legal: true, to: 0 }; // Exact bear off
@@ -54,8 +58,8 @@ function isSingleMoveLegal(
       const exactDest = from + die;
       if (exactDest === 25) return { legal: true, to: 25 }; // Exact bear off
       if (exactDest > 25) {
-        // Over-bearing: only legal if no checker on a lower point in home board (closer to 19)
-        for (let i = from - 1; i >= 19; i--) {
+        // Over-bearing: only legal if no black checker on a higher point in home board (closer to 24)
+        for (let i = from + 1; i <= 24; i++) {
           if (board.points[i] < 0) return { legal: false, to: 25 };
         }
         return { legal: true, to: 25 };

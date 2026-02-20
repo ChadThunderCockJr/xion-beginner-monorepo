@@ -80,7 +80,7 @@ function DistributionBar({ face, count, total }: { face: number; count: number; 
           }}
         />
       </div>
-      <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)", minWidth: 55, textAlign: "right" }}>
+      <span style={{ fontSize: "0.6875rem", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)", minWidth: 55, textAlign: "right" }}>
         {count} ({pct.toFixed(1)}%)
       </span>
     </div>
@@ -92,7 +92,7 @@ function DistributionBar({ face, count, total }: { face: number; count: number; 
 function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
   if (moveHistory.length === 0) {
     return (
-      <p style={{ fontSize: 12, color: "var(--color-text-faint)", textAlign: "center", padding: "12px 0" }}>
+      <p style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", textAlign: "center", padding: "12px 0" }}>
         No moves recorded for this game.
       </p>
     );
@@ -113,7 +113,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
       <div>
         <SectionLabel>Turn Log</SectionLabel>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-bg-subtle)" }}>
                 <th style={thStyle}>#</th>
@@ -145,7 +145,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
                       <DiceFace value={record.dice[1]} />
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                  <td style={{ ...tdStyle, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: "0.6875rem" }}>
                     {record.moves.length > 0
                       ? record.moves.map((m) => formatMove(m, record.player)).join(", ")
                       : "No moves"}
@@ -160,7 +160,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
       {/* Dice distribution */}
       <div>
         <SectionLabel>Dice Distribution</SectionLabel>
-        <p style={{ fontSize: 11, color: "var(--color-text-faint)", marginBottom: 10 }}>
+        <p style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)", marginBottom: 10 }}>
           {totalDice} dice rolled across {moveHistory.length} turns. Expected: ~16.7% each.
         </p>
         {[1, 2, 3, 4, 5, 6].map((face) => (
@@ -173,7 +173,7 @@ function RollLog({ moveHistory }: { moveHistory: MoveRecord[] }) {
 
 const thStyle: React.CSSProperties = {
   padding: "6px 8px",
-  fontSize: 10,
+  fontSize: "0.625rem",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.04em",
@@ -240,15 +240,15 @@ function MatchRow({ match }: { match: MatchResult }) {
       >
         <Avatar name={match.opponentName || match.opponent} size="xs" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--color-text-primary)" }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--color-text-primary)" }}>
             vs {match.opponentName || `${match.opponent.slice(0, 8)}...`}
           </div>
-          <div style={{ fontSize: 11, color: "var(--color-text-faint)" }}>{dateStr}</div>
+          <div style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)" }}>{dateStr}</div>
         </div>
         <Badge variant={match.result === "W" ? "win" : "loss"}>
           {match.result === "W" ? "Win" : "Loss"}
         </Badge>
-        <span style={{ fontSize: 10, color: "var(--color-text-faint)", fontFamily: "var(--font-mono)" }}>
+        <span style={{ fontSize: "0.625rem", color: "var(--color-text-faint)", fontFamily: "var(--font-mono)" }}>
           {match.gameId.slice(0, 6)}
         </span>
         <ChevronIcon open={expanded} />
@@ -257,7 +257,7 @@ function MatchRow({ match }: { match: MatchResult }) {
       {expanded && (
         <div style={{ padding: "0 4px 14px" }}>
           {loading ? (
-            <p style={{ fontSize: 12, color: "var(--color-text-faint)", textAlign: "center", padding: "12px 0" }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", textAlign: "center", padding: "12px 0" }}>
               Loading roll history...
             </p>
           ) : moveHistory ? (
@@ -318,7 +318,7 @@ export default function VerifyRollsPage() {
             <ShieldIcon size={22} />
             <h2 style={{
               fontFamily: "var(--font-display)",
-              fontSize: 18,
+              fontSize: "1.125rem",
               fontWeight: 700,
               margin: 0,
               color: "var(--color-text-primary)",
@@ -326,8 +326,8 @@ export default function VerifyRollsPage() {
               Provably Fair Dice
             </h2>
           </div>
-          <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.6 }}>
-            All dice rolls use <code style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-text-secondary)" }}>node:crypto</code> CSPRNG
+          <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", margin: 0, lineHeight: 1.6 }}>
+            All dice rolls use <code style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--color-text-secondary)" }}>node:crypto</code> CSPRNG
             (cryptographically secure pseudorandom number generator). Every roll is logged and can be audited.
             Expand any match below to inspect the full roll history and dice distribution.
           </p>
@@ -338,15 +338,15 @@ export default function VerifyRollsPage() {
           <SectionLabel>Past Matches</SectionLabel>
 
           {loading ? (
-            <p style={{ fontSize: 13, color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
               Loading matches...
             </p>
           ) : !address ? (
-            <p style={{ fontSize: 13, color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
               Connect your wallet to view past matches.
             </p>
           ) : matches.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
               No matches found. Play a game to see your roll history here.
             </p>
           ) : (

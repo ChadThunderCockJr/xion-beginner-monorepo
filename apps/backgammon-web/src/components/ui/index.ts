@@ -10,3 +10,4 @@ export { PillGroup } from "./PillGroup";
 export { SegmentToggle } from "./SegmentToggle";
 export { MatchRow } from "./MatchRow";
 export { PlayerRow } from "./PlayerRow";
+export { FocusTrap } from "./FocusTrap";

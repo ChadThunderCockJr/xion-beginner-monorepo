@@ -34,6 +34,12 @@ export interface PendingChallenge {
   receivedAt: number;
 }
 
+export interface ChallengeConfig {
+  matchLength: number;
+  wagerAmount: number;
+  doublingCube: boolean;
+}
+
 export interface SocialState {
   friends: FriendEntry[];
   incomingRequests: FriendRequestEntry[];
@@ -41,6 +47,7 @@ export interface SocialState {
   activity: ActivityItem[];
   pendingChallenges: PendingChallenge[];
   searchResults: SearchResult[];
+  blockedUsers: string[];
   displayName: string;
   username: string;
   usernameError: string;
@@ -63,6 +70,8 @@ type SocialAction =
   | { type: "USERNAME_ERROR"; message: string }
   | { type: "SEARCH_RESULTS"; results: SearchResult[] }
   | { type: "ADD_OUTGOING_REQUEST"; address: string }
+  | { type: "USER_BLOCKED"; address: string }
+  | { type: "USER_UNBLOCKED"; address: string }
   | { type: "CONNECTED" }
   | { type: "DISCONNECTED" };
 
@@ -73,6 +82,7 @@ const initialState: SocialState = {
   activity: [],
   pendingChallenges: [],
   searchResults: [],
+  blockedUsers: [],
   displayName: "",
   username: "",
   usernameError: "",
@@ -162,6 +172,18 @@ function socialReducer(state: SocialState, action: SocialAction): SocialState {
         outgoingRequests: state.outgoingRequests.includes(action.address)
           ? state.outgoingRequests
           : [...state.outgoingRequests, action.address],
+      };
+    case "USER_BLOCKED":
+      return {
+        ...state,
+        blockedUsers: state.blockedUsers.includes(action.address)
+          ? state.blockedUsers
+          : [...state.blockedUsers, action.address],
+      };
+    case "USER_UNBLOCKED":
+      return {
+        ...state,
+        blockedUsers: state.blockedUsers.filter((a) => a !== action.address),
       };
     case "CONNECTED":
       return { ...state, connected: true };
@@ -277,6 +299,9 @@ export function useSocial(wsUrl: string, address: string | null) {
           results: (msg.results || []) as SearchResult[],
         }),
       ),
+      on("block_user_success", (msg) =>
+        dispatch({ type: "USER_BLOCKED", address: msg.target as string }),
+      ),
       on("error", (msg) => {
         console.warn("[Social] Server error:", msg.message);
       }),
@@ -323,8 +348,14 @@ export function useSocial(wsUrl: string, address: string | null) {
   );
 
   const challengeFriend = useCallback(
-    (toAddress: string) => {
-      sendMessage({ type: "challenge_friend", to_address: toAddress });
+    (toAddress: string, config?: ChallengeConfig) => {
+      sendMessage({
+        type: "challenge_friend",
+        to_address: toAddress,
+        match_length: config?.matchLength ?? 5,
+        wager_amount: config?.wagerAmount ?? 0,
+        doubling_cube: config?.doublingCube ?? true,
+      });
     },
     [sendMessage],
   );
@@ -359,6 +390,29 @@ export function useSocial(wsUrl: string, address: string | null) {
     [sendMessage],
   );
 
+  const blockUser = useCallback(
+    (targetAddress: string) => {
+      sendMessage({ type: "block_user", target: targetAddress });
+      dispatch({ type: "USER_BLOCKED", address: targetAddress });
+    },
+    [sendMessage],
+  );
+
+  const unblockUser = useCallback(
+    (targetAddress: string) => {
+      sendMessage({ type: "unblock_user", target: targetAddress });
+      dispatch({ type: "USER_UNBLOCKED", address: targetAddress });
+    },
+    [sendMessage],
+  );
+
+  const reportUser = useCallback(
+    (targetAddress: string, reason: string) => {
+      sendMessage({ type: "report_user", target: targetAddress, reason });
+    },
+    [sendMessage],
+  );
+
   const refreshFriends = useCallback(() => {
     sendMessage({ type: "get_friends" });
   }, [sendMessage]);
@@ -379,6 +433,9 @@ export function useSocial(wsUrl: string, address: string | null) {
     challengeFriend,
     acceptChallenge,
     declineChallenge,
+    blockUser,
+    unblockUser,
+    reportUser,
     refreshFriends,
     refreshActivity,
   };

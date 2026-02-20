@@ -16,6 +16,90 @@ export class GameManager {
   private games = new Map<string, ServerGame>();
   private playerGames = new Map<string, string>(); // address -> gameId
 
+  private async persistGame(game: ServerGame): Promise<void> {
+    try {
+      const { getRedis: getR } = await import("./redis.js");
+      const r = getR();
+      if (!r) return;
+      const serializable = {
+        id: game.id,
+        gameState: game.gameState,
+        wagerAmount: game.wagerAmount,
+        status: game.status,
+        playerWhiteAddress: game.playerWhite?.address || null,
+        playerBlackAddress: game.playerBlack?.address || null,
+        turnMoveStack: game.turnMoveStack,
+        pendingConfirmation: game.pendingConfirmation,
+        moveHistory: game.gameState.moveHistory || [],
+      };
+      await r.set(`active_game:${game.id}`, JSON.stringify(serializable), "EX", 7200); // 2 hour TTL
+    } catch {
+      // Non-critical — don't crash on persistence failure
+    }
+  }
+
+  private async deletePersistedGame(gameId: string): Promise<void> {
+    try {
+      const { getRedis: getR } = await import("./redis.js");
+      const r = getR();
+      if (!r) return;
+      await r.del(`active_game:${gameId}`);
+    } catch {
+      // Non-critical failure
+    }
+  }
+
+  async restoreGames(): Promise<number> {
+    try {
+      const { getRedis: getR } = await import("./redis.js");
+      const r = getR();
+      if (!r) return 0;
+      const keys = await r.keys("active_game:*");
+      let restored = 0;
+      for (const key of keys) {
+        try {
+          const raw = await r.get(key);
+          if (!raw) continue;
+          const data = JSON.parse(raw);
+          if (data.status !== "playing") continue;
+
+          const game: ServerGame = {
+            id: data.id,
+            gameState: data.gameState,
+            wagerAmount: data.wagerAmount,
+            status: data.status,
+            playerWhite: null, // Players need to reconnect
+            playerBlack: null,
+            spectators: [],
+            createdAt: Date.now(),
+            turnTimer: null,
+            turnTimeLimit: 60,
+            turnMoveStack: data.turnMoveStack || [],
+            pendingConfirmation: data.pendingConfirmation || null,
+            disconnectTimer: null,
+            disconnectedPlayer: null,
+            disconnectedAt: null,
+          };
+          this.games.set(game.id, game);
+
+          // Track player-game mappings for reconnection
+          if (data.playerWhiteAddress) {
+            this.playerGames.set(data.playerWhiteAddress, game.id);
+          }
+          if (data.playerBlackAddress) {
+            this.playerGames.set(data.playerBlackAddress, game.id);
+          }
+          restored++;
+        } catch {
+          // Skip corrupted entries
+        }
+      }
+      return restored;
+    } catch {
+      return 0;
+    }
+  }
+
   private generateShortId(): string {
     // Generate a 4-digit numeric code, retry on collision
     for (let i = 0; i < 100; i++) {
@@ -97,6 +181,8 @@ export class GameManager {
     // Start turn timer — player must always confirm, even with no legal moves
     this.startTurnTimer(game);
 
+    void this.persistGame(game);
+
     return { dice: [die1, die2], gameState: game.gameState, legalMoves };
   }
 
@@ -132,6 +218,7 @@ export class GameManager {
     if (newState.gameOver) {
       game.status = "finished";
       this.clearTurnTimer(game);
+      void this.deletePersistedGame(gameId);
     }
 
     // If turn auto-ended (currentPlayer changed), set pending confirmation
@@ -140,6 +227,8 @@ export class GameManager {
       game.pendingConfirmation = playerAddress;
       // Don't clear timer — let it run for confirmation timeout
     }
+
+    void this.persistGame(game);
 
     return { move, playerColor: playerColor!, gameState: game.gameState, legalMoves, turnAutoEnded };
   }
@@ -153,6 +242,7 @@ export class GameManager {
       game.pendingConfirmation = null;
       game.turnMoveStack = [];
       this.clearTurnTimer(game);
+      void this.persistGame(game);
       return game.gameState;
     }
 
@@ -165,6 +255,8 @@ export class GameManager {
     game.turnMoveStack = [];
     game.gameState = endTurn(game.gameState);
     this.clearTurnTimer(game);
+
+    void this.persistGame(game);
 
     return game.gameState;
   }
@@ -193,6 +285,9 @@ export class GameManager {
       game.gameState.currentPlayer,
       game.gameState.movesRemaining
     );
+
+    void this.persistGame(game);
+
     return { gameState: game.gameState, legalMoves };
   }
 
@@ -209,6 +304,7 @@ export class GameManager {
     game.gameState.winner = winner;
     game.gameState.resultType = "normal";
     this.clearTurnTimer(game);
+    void this.deletePersistedGame(gameId);
 
     return { winner, loser: playerColor };
   }
@@ -245,6 +341,7 @@ export class GameManager {
       if (game.playerWhite) this.playerGames.delete(game.playerWhite.address);
       if (game.playerBlack) this.playerGames.delete(game.playerBlack.address);
       this.games.delete(gameId);
+      void this.deletePersistedGame(gameId);
     }
   }
 
@@ -320,6 +417,7 @@ export class GameManager {
           game.gameState.winner = winner;
           game.gameState.resultType = "normal";
           this.clearTurnTimer(game);
+          void this.deletePersistedGame(game.id);
           this.broadcastToGame(game, {
             type: "game_over",
             game_id: game.id,

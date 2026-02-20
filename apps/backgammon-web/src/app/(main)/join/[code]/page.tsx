@@ -179,7 +179,7 @@ export default function JoinCodePage() {
             border: "none",
             color: "var(--color-text-secondary)",
             cursor: "pointer",
-            fontSize: 14,
+            fontSize: "0.875rem",
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
@@ -191,13 +191,13 @@ export default function JoinCodePage() {
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {!connected && (
-            <span style={{ fontSize: 11, color: "var(--color-danger)", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.6875rem", color: "var(--color-danger)", fontWeight: 600 }}>
               Reconnecting...
             </span>
           )}
           <span
             style={{
-              fontSize: 17,
+              fontSize: "1.0625rem",
               fontWeight: 700,
               color: "var(--color-text-primary)",
               fontFamily: "var(--font-display)",
@@ -253,7 +253,7 @@ export default function JoinCodePage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                   }}
@@ -263,7 +263,7 @@ export default function JoinCodePage() {
               </div>
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "0.8125rem",
                   fontFamily: "var(--font-mono)",
                   color: "var(--color-text-muted)",
                   padding: "8px 16px",
@@ -308,7 +308,7 @@ export default function JoinCodePage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 700,
                       marginTop: 8,
                       color: "var(--color-text-primary)",
@@ -319,7 +319,7 @@ export default function JoinCodePage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 18,
+                    fontSize: "1.125rem",
                     fontWeight: 700,
                     color: "var(--color-gold-dark)",
                     padding: "0 8px",
@@ -338,7 +338,7 @@ export default function JoinCodePage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 700,
                       marginTop: 8,
                       color: "var(--color-text-primary)",
@@ -364,7 +364,7 @@ export default function JoinCodePage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                   }}
@@ -393,7 +393,7 @@ export default function JoinCodePage() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  fontSize: 11,
+                  fontSize: "0.6875rem",
                   color: "var(--color-text-secondary)",
                 }}
               >
@@ -425,7 +425,7 @@ export default function JoinCodePage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 28,
+                  fontSize: "1.75rem",
                   color: "var(--color-text-muted)",
                 }}
               >
@@ -435,7 +435,7 @@ export default function JoinCodePage() {
               <div style={{ textAlign: "center" }}>
                 <h2
                   style={{
-                    fontSize: 28,
+                    fontSize: "1.75rem",
                     fontWeight: 700,
                     margin: "0 0 8px",
                     letterSpacing: "-0.02em",
@@ -447,7 +447,7 @@ export default function JoinCodePage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                     maxWidth: 320,
@@ -468,7 +468,7 @@ export default function JoinCodePage() {
               >
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: "0.625rem",
                     color: "var(--color-text-muted)",
                     fontWeight: 600,
                     textTransform: "uppercase",
@@ -480,7 +480,7 @@ export default function JoinCodePage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 18,
+                    fontSize: "1.125rem",
                     fontWeight: 700,
                     color: "var(--color-text-muted)",
                     fontFamily: "var(--font-mono)",
@@ -506,7 +506,7 @@ export default function JoinCodePage() {
                       background:
                         "linear-gradient(135deg, var(--color-gold-primary) 0%, var(--color-gold-light) 100%)",
                       color: "var(--color-accent-fg)",
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 700,
                       cursor: "pointer",
                       fontFamily: "var(--font-body)",
@@ -525,7 +525,7 @@ export default function JoinCodePage() {
                       border: "1.5px solid var(--color-bg-subtle)",
                       background: "var(--color-bg-surface)",
                       color: "var(--color-text-secondary)",
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 600,
                       cursor: "pointer",
                       fontFamily: "var(--font-body)",

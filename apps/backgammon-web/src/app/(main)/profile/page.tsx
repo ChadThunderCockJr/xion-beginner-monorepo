@@ -63,15 +63,15 @@ function QuickStat({ label, value, sub }: { label: string; value: string; sub?: 
   return (
     <div style={{ textAlign: "center", flex: 1 }}>
       <div style={{
-        fontSize: 20, fontWeight: 700, color: "var(--color-text-primary)",
+        fontSize: "1.25rem", fontWeight: 700, color: "var(--color-text-primary)",
         fontFamily: "var(--font-mono)", letterSpacing: "-0.02em",
       }}>{value}</div>
       <div style={{
-        fontSize: 10, color: "var(--color-text-muted)", textTransform: "uppercase",
+        fontSize: "0.625rem", color: "var(--color-text-muted)", textTransform: "uppercase",
         letterSpacing: "0.04em", fontWeight: 600, marginTop: 2,
       }}>{label}</div>
       {sub && (
-        <div style={{ fontSize: 10, color: "var(--color-text-secondary)", marginTop: 1 }}>{sub}</div>
+        <div style={{ fontSize: "0.625rem", color: "var(--color-text-secondary)", marginTop: 1 }}>{sub}</div>
       )}
     </div>
   );
@@ -108,24 +108,24 @@ function ProfileMatchRow({ opponent, result, score, pr, wager, date }: {
         width: 32, height: 32, borderRadius: "50%",
         background: "var(--color-bg-elevated)", border: "2px solid var(--color-bg-subtle)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 12, fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
+        fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
       }}>{opponent[0]}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{opponent}</div>
-        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{date}</div>
+        <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{opponent}</div>
+        <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>{date}</div>
       </div>
       <div style={{
-        padding: "3px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700,
+        padding: "3px 8px", borderRadius: 4, fontSize: "0.6875rem", fontWeight: 700,
         background: result === "W" ? "rgba(96,168,96,0.125)" : "rgba(204,68,68,0.125)",
         border: `1px solid ${result === "W" ? "var(--color-success)" : "var(--color-danger)"}`,
         color: result === "W" ? "var(--color-success)" : "var(--color-danger)",
       }}>{result} {score}</div>
       <div style={{
-        fontSize: 11, color: "var(--color-text-secondary)", fontWeight: 600,
+        fontSize: "0.6875rem", color: "var(--color-text-secondary)", fontWeight: 600,
         fontFamily: "var(--font-mono)", minWidth: 36, textAlign: "right",
       }}>{pr}</div>
       <div style={{
-        fontSize: 11, color: wager === "Free" ? "var(--color-text-muted)" : "var(--color-text-primary)",
+        fontSize: "0.6875rem", color: wager === "Free" ? "var(--color-text-muted)" : "var(--color-text-primary)",
         fontWeight: 600, minWidth: 40, textAlign: "right",
       }}>{wager}</div>
     </div>
@@ -212,8 +212,8 @@ export default function ProfilePage() {
             padding: "6px 12px", border: "1px solid var(--color-bg-subtle)",
             borderRadius: 8, background: "var(--color-bg-surface)",
           }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-gold-primary)" }}>--</span>
-            <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>USDC</span>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-gold-primary)" }}>--</span>
+            <span style={{ fontSize: "0.625rem", color: "var(--color-text-muted)" }}>USDC</span>
           </div>
         }
       />
@@ -234,7 +234,7 @@ export default function ProfilePage() {
                   width: 80, height: 80, borderRadius: "50%",
                   background: "var(--color-bg-elevated)", border: "2px solid var(--color-bg-subtle)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 30, fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
+                  fontSize: "1.875rem", fontWeight: 700, color: "var(--color-text-secondary)", flexShrink: 0,
                 }}>{profileName[0]}</div>
                 <div style={{
                   position: "absolute", bottom: 2, right: 2,
@@ -247,7 +247,7 @@ export default function ProfilePage() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{
-                    fontSize: 36, fontWeight: 700, letterSpacing: "-0.02em",
+                    fontSize: "2.25rem", fontWeight: 700, letterSpacing: "-0.02em",
                     fontFamily: "var(--font-display)", color: "var(--color-text-primary)",
                   }}>
                     {social.displayName || social.username || profileName}
@@ -258,26 +258,26 @@ export default function ProfilePage() {
                     background: "var(--color-bg-base)", border: "1px solid var(--color-bg-subtle)",
                   }}>
                     <span style={{
-                      fontSize: 16, fontWeight: 700, color: "var(--color-text-primary)",
+                      fontSize: "1rem", fontWeight: 700, color: "var(--color-text-primary)",
                       fontFamily: "var(--font-mono)",
                     }}>{rating.toLocaleString()}</span>
                     <span style={{
-                      fontSize: 11, fontWeight: 700,
+                      fontSize: "0.6875rem", fontWeight: 700,
                       color: ratingChange >= 0 ? "var(--color-success)" : "var(--color-danger)",
                     }}>
                       {ratingChange >= 0 ? "\u2191" : "\u2193"}{Math.abs(ratingChange)}
                     </span>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 6 }}>
+                <div style={{ fontSize: "0.8125rem", color: "var(--color-text-secondary)", marginBottom: 6 }}>
                   {social.username ? `@${social.username}` : "No bio set"}
                 </div>
                 <div style={{
-                  fontSize: 11, color: "var(--color-text-muted)",
+                  fontSize: "0.6875rem", color: "var(--color-text-muted)",
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   {address && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.625rem" }}>
                       {address.slice(0, 16)}...{address.slice(-6)}
                     </span>
                   )}
@@ -324,7 +324,7 @@ export default function ProfilePage() {
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                   flex: 1, padding: "14px 0", background: "none", border: "none",
                   borderBottom: `2.5px solid ${active ? "var(--color-gold-primary)" : "transparent"}`,
-                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  fontSize: "0.8125rem", fontWeight: active ? 700 : 500,
                   color: active ? "var(--color-text-primary)" : "var(--color-text-muted)",
                   cursor: "pointer",
                   fontFamily: "var(--font-body)",
@@ -347,7 +347,7 @@ export default function ProfilePage() {
                 }}>
                   <SectionLabel>Recent Matches</SectionLabel>
                   <button onClick={() => setActiveTab("history")} style={{
-                    background: "none", border: "none", fontSize: 11,
+                    background: "none", border: "none", fontSize: "0.6875rem",
                     color: "var(--color-text-secondary)", fontWeight: 600, cursor: "pointer",
                     fontFamily: "var(--font-body)",
                   }}>View all &rarr;</button>
@@ -355,7 +355,7 @@ export default function ProfilePage() {
                 {matches.length > 0 ? matches.slice(0, 5).map((m, i) => (
                   <ProfileMatchRow key={i} opponent={m.opponentName || m.opponent.slice(0, 10)} result={m.result} score={m.resultType} pr="--" wager="Free" date={timeAgo(m.timestamp)} />
                 )) : (
-                  <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: "var(--color-text-muted)" }}>
+                  <div style={{ padding: "20px 0", textAlign: "center", fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                     No matches yet. Play a game to see your history!
                   </div>
                 )}
@@ -369,7 +369,7 @@ export default function ProfilePage() {
               {/* Rating Progression */}
               <Card style={{ marginBottom: 20 }}>
                 <SectionLabel>Rating Progression</SectionLabel>
-                <div style={{ padding: "32px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
+                <div style={{ padding: "32px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: "0.8125rem" }}>
                   Play more games to see your rating trend
                 </div>
               </Card>
@@ -408,11 +408,11 @@ export default function ProfilePage() {
                   {/* Win rate by bucket */}
                   <div style={{ flex: 1 }}>
                     <div style={{
-                      fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)",
+                      fontSize: "0.6875rem", fontWeight: 700, color: "var(--color-text-muted)",
                       textTransform: "uppercase", letterSpacing: "0.04em",
                       marginBottom: 12,
                     }}>Win Rate by Opponent Rating</div>
-                    <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: 12 }}>
+                    <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
                       Coming soon
                     </div>
                   </div>
@@ -422,7 +422,7 @@ export default function ProfilePage() {
               {/* Error Analysis */}
               <Card style={{ marginBottom: 20 }}>
                 <SectionLabel>Error Analysis</SectionLabel>
-                <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
+                <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: "0.8125rem" }}>
                   Coming soon
                 </div>
               </Card>
@@ -430,7 +430,7 @@ export default function ProfilePage() {
               {/* PR Trend */}
               <Card>
                 <SectionLabel>Performance Rating Trend</SectionLabel>
-                <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
+                <div style={{ padding: "20px 0", textAlign: "center", color: "var(--color-text-muted)", fontSize: "0.8125rem" }}>
                   Coming soon
                 </div>
               </Card>
@@ -452,7 +452,7 @@ export default function ProfilePage() {
                       border: `1.5px solid ${active ? "var(--color-gold-primary)" : "var(--color-bg-subtle)"}`,
                       background: active ? "var(--color-gold-primary)" : "var(--color-bg-surface)",
                       color: active ? "var(--color-accent-fg)" : "var(--color-text-secondary)",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--font-body)",
                     }}>{label}</button>
                   );
@@ -467,19 +467,19 @@ export default function ProfilePage() {
               }}>
                 <div style={{ width: 32 }} />
                 <div style={{
-                  flex: 1, fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)",
+                  flex: 1, fontSize: "0.625rem", fontWeight: 700, color: "var(--color-text-muted)",
                   textTransform: "uppercase", letterSpacing: "0.04em",
                 }}>Opponent</div>
                 <div style={{
-                  fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)",
+                  fontSize: "0.625rem", fontWeight: 700, color: "var(--color-text-muted)",
                   textTransform: "uppercase", letterSpacing: "0.04em", minWidth: 60, textAlign: "center",
                 }}>Result</div>
                 <div style={{
-                  fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)",
+                  fontSize: "0.625rem", fontWeight: 700, color: "var(--color-text-muted)",
                   textTransform: "uppercase", letterSpacing: "0.04em", minWidth: 36, textAlign: "right",
                 }}>PR</div>
                 <div style={{
-                  fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)",
+                  fontSize: "0.625rem", fontWeight: 700, color: "var(--color-text-muted)",
                   textTransform: "uppercase", letterSpacing: "0.04em", minWidth: 40, textAlign: "right",
                 }}>Wager</div>
               </div>
@@ -489,7 +489,7 @@ export default function ProfilePage() {
                 {filteredMatches.length > 0 ? filteredMatches.map((m, i) => (
                   <ProfileMatchRow key={i} opponent={m.opponentName || m.opponent.slice(0, 10)} result={m.result} score={m.resultType} pr="--" wager="Free" date={timeAgo(m.timestamp)} />
                 )) : (
-                  <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: "var(--color-text-muted)" }}>
+                  <div style={{ padding: "20px 0", textAlign: "center", fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                     No matches found
                   </div>
                 )}
@@ -499,7 +499,7 @@ export default function ProfilePage() {
               <div style={{
                 marginTop: 12, paddingTop: 12,
                 borderTop: "1px solid var(--color-bg-subtle)",
-                fontSize: 11, color: "var(--color-text-muted)", textAlign: "center",
+                fontSize: "0.6875rem", color: "var(--color-text-muted)", textAlign: "center",
               }}>
                 Showing {filteredMatches.length} of {totalGames.toLocaleString()} matches
               </div>
@@ -514,7 +514,7 @@ export default function ProfilePage() {
                 <SectionLabel>Account</SectionLabel>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)",
+                    fontSize: "0.6875rem", fontWeight: 600, color: "var(--color-text-muted)",
                     textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6,
                   }}>Display Name</div>
                   <input
@@ -523,7 +523,7 @@ export default function ProfilePage() {
                     style={{
                       width: "100%", padding: "10px 14px", borderRadius: 6,
                       border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
-                      fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
+                      fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text-primary)", outline: "none",
                       fontFamily: "var(--font-body)",
                       boxSizing: "border-box",
                       transition: "border-color 0.2s",
@@ -534,13 +534,13 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)",
+                    fontSize: "0.6875rem", fontWeight: 600, color: "var(--color-text-muted)",
                     textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6,
                     display: "flex", alignItems: "center", gap: 6,
                   }}>
                     Email
                     <span style={{
-                      fontSize: 9, padding: "1px 6px", borderRadius: 3,
+                      fontSize: "0.5625rem", padding: "1px 6px", borderRadius: 3,
                       background: "var(--color-gold-muted)", color: "var(--color-gold-primary)", fontWeight: 700,
                     }}>Verified</span>
                   </div>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
                     style={{
                       width: "100%", padding: "10px 14px", borderRadius: 6,
                       border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-base)",
-                      fontSize: 14, color: "var(--color-text-primary)", outline: "none",
+                      fontSize: "0.875rem", color: "var(--color-text-primary)", outline: "none",
                       fontFamily: "var(--font-body)",
                       boxSizing: "border-box",
                       transition: "border-color 0.2s",
@@ -561,13 +561,13 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)",
+                    fontSize: "0.6875rem", fontWeight: 600, color: "var(--color-text-muted)",
                     textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6,
                   }}>Avatar</div>
                   <button style={{
                     padding: "8px 16px", borderRadius: 6,
                     border: "1.5px solid var(--color-bg-subtle)", background: "var(--color-bg-surface)",
-                    fontSize: 12, fontWeight: 600, color: "var(--color-text-secondary)",
+                    fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-secondary)",
                     cursor: "pointer", fontFamily: "var(--font-body)",
                   }}>Change Avatar</button>
                 </div>
@@ -577,14 +577,14 @@ export default function ProfilePage() {
               <Card style={{ marginBottom: 16 }}>
                 <SectionLabel>Appearance</SectionLabel>
                 <div style={{
-                  fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                  fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
                 }}>Theme</div>
                 <SegmentToggle
                   segments={[{ id: "dark", label: "Dark" }, { id: "light", label: "Light" }]}
                   activeId={theme}
                   onSelect={(id) => setTheme(id as "light" | "dark")}
                 />
-                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6 }}>
+                <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 6 }}>
                   Applies to the entire application
                 </div>
               </Card>
@@ -594,7 +594,7 @@ export default function ProfilePage() {
                 <SectionLabel>Game Preferences</SectionLabel>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{
-                    fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                    fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
                   }}>Board Theme</div>
                   <SegmentToggle
                     segments={BOARD_THEMES}
@@ -604,7 +604,7 @@ export default function ProfilePage() {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{
-                    fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
+                    fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 8,
                   }}>Notation Style</div>
                   <SegmentToggle
                     segments={NOTATION_STYLES}
@@ -616,8 +616,8 @@ export default function ProfilePage() {
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                 }}>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-primary)" }}>Auto-Confirm Moves</div>
-                    <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-primary)" }}>Auto-Confirm Moves</div>
+                    <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 2 }}>
                       Automatically confirm obvious forced moves
                     </div>
                   </div>
@@ -639,8 +639,8 @@ export default function ProfilePage() {
                     borderBottom: i < 2 ? "1px solid var(--color-bg-subtle)" : "none",
                   }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>
-                      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>{item.desc}</div>
+                      <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>{item.label}</div>
+                      <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", marginTop: 2 }}>{item.desc}</div>
                     </div>
                     <ToggleSwitch
                       on={notifications[item.key]}
@@ -667,14 +667,14 @@ export default function ProfilePage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <WalletIcon />
                     <span style={{
-                      fontSize: 22, fontWeight: 700, color: "var(--color-gold-primary)",
+                      fontSize: "1.375rem", fontWeight: 700, color: "var(--color-gold-primary)",
                       fontFamily: "var(--font-mono)",
                     }}>--</span>
-                    <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>USDC</span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontWeight: 600 }}>USDC</span>
                   </div>
                   <div style={{
                     display: "flex", alignItems: "center", gap: 4,
-                    fontSize: 10, color: "var(--color-gold-primary)", fontWeight: 600,
+                    fontSize: "0.625rem", color: "var(--color-gold-primary)", fontWeight: 600,
                   }}>
                     <ShieldIcon size={12} />
                     On-chain escrow
@@ -683,11 +683,11 @@ export default function ProfilePage() {
 
                 {/* Transaction History */}
                 <div style={{
-                  fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)",
+                  fontSize: "0.6875rem", fontWeight: 700, color: "var(--color-text-muted)",
                   textTransform: "uppercase", letterSpacing: "0.04em",
                   marginBottom: 8,
                 }}>Recent Transactions</div>
-                <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: "var(--color-text-muted)" }}>
+                <div style={{ padding: "20px 0", textAlign: "center", fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                   Coming soon
                 </div>
               </Card>

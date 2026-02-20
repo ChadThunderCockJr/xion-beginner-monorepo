@@ -101,7 +101,7 @@ export default function AIMatchPage() {
             alignItems: "center",
             justifyContent: "center",
             color: "var(--color-text-secondary)",
-            fontSize: 14,
+            fontSize: "0.875rem",
           }}
         >
           Loading...

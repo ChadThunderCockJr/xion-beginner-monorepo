@@ -28,6 +28,8 @@ function ChallengeOverlay() {
   return (
     <div
       className="fixed z-[1000] flex flex-col gap-3 bottom-20 left-4 right-4 sm:bottom-6 sm:left-auto sm:right-6"
+      role="alert"
+      aria-label="Incoming game challenges"
     >
       {pendingChallenges.map((c) => (
         <div
@@ -43,7 +45,7 @@ function ChallengeOverlay() {
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: "0.6875rem",
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: 1.5,
@@ -56,7 +58,7 @@ function ChallengeOverlay() {
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: "0.875rem",
               fontWeight: 600,
               color: "var(--color-text-primary)",
               marginBottom: 14,
@@ -68,34 +70,38 @@ function ChallengeOverlay() {
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={() => acceptChallenge(c.challengeId)}
+              aria-label={`Accept challenge from ${c.fromName || c.fromAddress.slice(0, 12)}`}
               style={{
                 flex: 1,
-                padding: "8px 16px",
+                padding: "12px 16px",
                 borderRadius: 6,
                 border: "none",
                 background: "var(--color-gold-primary)",
                 color: "var(--color-accent-fg)",
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
+                minHeight: 44,
               }}
             >
               Accept
             </button>
             <button
               onClick={() => declineChallenge(c.challengeId)}
+              aria-label={`Decline challenge from ${c.fromName || c.fromAddress.slice(0, 12)}`}
               style={{
                 flex: 1,
-                padding: "8px 16px",
+                padding: "12px 16px",
                 borderRadius: 6,
                 border: "1px solid var(--color-bg-subtle)",
                 background: "transparent",
                 color: "var(--color-text-secondary)",
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
+                minHeight: 44,
               }}
             >
               Decline

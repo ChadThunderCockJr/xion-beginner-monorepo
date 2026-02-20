@@ -23,8 +23,8 @@ const C = {
     muted: "var(--color-text-muted)",
     faint: "var(--color-text-faint)",
   },
-  // Analysis-page gold accent (fixed, works on light & dark backgrounds)
-  gold: { primary: "#D0A848", light: "#F0C868", subtle: "#988040", faint: "rgba(208,168,72,0.12)", text: "#1A1408" },
+  // Analysis-page gold accent (uses CSS vars for theme-aware contrast)
+  gold: { primary: "var(--color-analysis-gold)", light: "var(--color-analysis-gold-light)", subtle: "var(--color-analysis-gold-subtle)", faint: "var(--color-analysis-gold-faint)", text: "var(--color-analysis-gold-text)" },
   // Checker/piece colors (fixed, theme-independent)
   piece: { white: "#DCD8D0", black: "#6E1A30" },
   success: "var(--color-success)",
@@ -55,7 +55,7 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
       <h3 style={{
-        fontSize: 13, fontWeight: W.bold, margin: 0,
+        fontSize: "0.8125rem", fontWeight: W.bold, margin: 0,
         textTransform: "uppercase", letterSpacing: "0.04em", color: C.text.muted, fontFamily: F.body,
       }}>{title}</h3>
       {right}
@@ -71,9 +71,9 @@ function StatBox({ label, value, sub, highlight }: { label: string; value: strin
       background: highlight ? C.bg.deep : "transparent",
       border: highlight ? `1px solid ${C.bg.subtle}` : "none",
     }}>
-      <div style={{ fontSize: 24, fontWeight: W.bold, color: C.text.primary, letterSpacing: "-0.02em" }}>{value}</div>
-      <div style={{ fontSize: 10, color: C.text.muted, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: W.semibold }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: C.text.secondary, marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: "1.5rem", fontWeight: W.bold, color: C.text.primary, letterSpacing: "-0.02em" }}>{value}</div>
+      <div style={{ fontSize: "0.625rem", color: C.text.muted, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: W.semibold }}>{label}</div>
+      {sub && <div style={{ fontSize: "0.6875rem", color: C.text.secondary, marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }
@@ -262,7 +262,7 @@ function BoardWireframe({ board, pip1, pip2, dice, arrows, arrowColor }: {
 
       {/* Point numbers */}
       <div style={{
-        display: "flex", fontSize: 8, color: C.text.muted, fontFamily: F.mono,
+        display: "flex", fontSize: "0.5rem", color: C.text.muted, fontFamily: F.mono,
         fontWeight: W.semibold, padding: "2px 0 0",
       }}>
         <div style={{ display: "flex", width: half, justifyContent: "space-around" }}>
@@ -279,8 +279,8 @@ function BoardWireframe({ board, pip1, pip2, dice, arrows, arrowColor }: {
         position: "absolute", top: "50%", right: -48, transform: "translateY(-50%)",
         display: "flex", flexDirection: "column", gap: 12, alignItems: "center",
       }}>
-        <span style={{ fontSize: 15, fontWeight: W.bold, color: C.text.primary }}>{pip1}</span>
-        <span style={{ fontSize: 15, fontWeight: W.bold, color: C.text.muted }}>{pip2}</span>
+        <span style={{ fontSize: "0.9375rem", fontWeight: W.bold, color: C.text.primary }}>{pip1}</span>
+        <span style={{ fontSize: "0.9375rem", fontWeight: W.bold, color: C.text.muted }}>{pip2}</span>
       </div>
 
       {/* Dice */}
@@ -294,7 +294,7 @@ function BoardWireframe({ board, pip1, pip2, dice, arrows, arrowColor }: {
               width: 26, height: 26, borderRadius: R.button,
               background: C.gold.primary, border: `1.5px solid ${C.gold.text}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: W.bold, color: C.gold.text,
+              fontSize: "0.8125rem", fontWeight: W.bold, color: C.gold.text,
             }}>{d}</div>
           ))}
         </div>
@@ -327,7 +327,7 @@ function CandidateMoveRow({ notation, equityDiff, isPlayed, isBest, isSelected, 
           flexShrink: 0,
         }} />
         <span style={{
-          fontSize: 13, fontWeight: isPlayed || isBest || isSelected ? W.bold : W.medium,
+          fontSize: "0.8125rem", fontWeight: isPlayed || isBest || isSelected ? W.bold : W.medium,
           fontFamily: F.mono, letterSpacing: "-0.01em",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>{notation}</span>
@@ -335,14 +335,14 @@ function CandidateMoveRow({ notation, equityDiff, isPlayed, isBest, isSelected, 
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {isPlayed && (
           <span style={{
-            fontSize: 9, fontWeight: W.bold, padding: "2px 6px", borderRadius: 3,
+            fontSize: "0.5625rem", fontWeight: W.bold, padding: "2px 6px", borderRadius: 3,
             background: isPlayed && isBest ? C.gold.text : "rgba(4,6,4,0.3)",
             color: isPlayed && isBest ? C.gold.primary : C.gold.text,
             textTransform: "uppercase", letterSpacing: "0.04em", whiteSpace: "nowrap",
           }}>Played</span>
         )}
         <span style={{
-          fontSize: 12, fontWeight: W.semibold, fontFamily: F.mono,
+          fontSize: "0.75rem", fontWeight: W.semibold, fontFamily: F.mono,
           color: isPlayed ? "rgba(4,6,4,0.7)" : isBest ? C.text.primary : C.text.secondary,
         }}>
           {isBest && !isPlayed ? equityDiff : `(${equityDiff})`}
@@ -358,13 +358,13 @@ function WinningChances({ whiteWin, blackWin }: { whiteWin: number; blackWin: nu
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.piece.white, border: "1px solid var(--color-border-subtle)", flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: W.bold, minWidth: 48 }}>{whiteWin}%</span>
-        <span style={{ fontSize: 11, color: C.text.muted }}>White</span>
+        <span style={{ fontSize: "0.875rem", fontWeight: W.bold, minWidth: 48 }}>{whiteWin}%</span>
+        <span style={{ fontSize: "0.6875rem", color: C.text.muted }}>White</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.piece.black, flexShrink: 0 }} />
-        <span style={{ fontSize: 14, fontWeight: W.bold, minWidth: 48 }}>{blackWin}%</span>
-        <span style={{ fontSize: 11, color: C.text.muted }}>Black</span>
+        <span style={{ fontSize: "0.875rem", fontWeight: W.bold, minWidth: 48 }}>{blackWin}%</span>
+        <span style={{ fontSize: "0.6875rem", color: C.text.muted }}>Black</span>
       </div>
       <div style={{ height: 6, borderRadius: 3, background: C.bg.elevated, overflow: "hidden", marginTop: 2 }}>
         <div style={{ height: "100%", width: `${whiteWin}%`, background: C.gold.primary, borderRadius: 3 }} />
@@ -387,7 +387,7 @@ function MoveRow({ moveNum, dice, move, equity, error, isBlunder, isSelected, on
       border: isSelected ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
       cursor: "pointer", transition: "background 0.1s",
     }}>
-      <span style={{ width: 28, fontSize: 12, fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>{moveNum}</span>
+      <span style={{ width: 28, fontSize: "0.75rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>{moveNum}</span>
       {player && (
         <div style={{
           width: 12, height: 12, borderRadius: "50%",
@@ -402,20 +402,20 @@ function MoveRow({ moveNum, dice, move, equity, error, isBlunder, isSelected, on
             width: 18, height: 18, borderRadius: 3,
             background: C.bg.elevated, border: `1px solid ${C.bg.subtle}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: W.bold, color: C.text.primary,
+            fontSize: "0.625rem", fontWeight: W.bold, color: C.text.primary,
           }}>{d}</div>
         ))}
       </div>
-      <span style={{ flex: 1, fontSize: 13, fontWeight: W.medium, color: C.text.primary, fontFamily: F.mono }}>{move}</span>
+      <span style={{ flex: 1, fontSize: "0.8125rem", fontWeight: W.medium, color: C.text.primary, fontFamily: F.mono }}>{move}</span>
       <span style={{
-        fontSize: 12, fontWeight: W.semibold, width: 50, textAlign: "right",
+        fontSize: "0.75rem", fontWeight: W.semibold, width: 50, textAlign: "right",
         color: equity >= 0 ? C.text.primary : C.text.muted,
       }}>
         {equity >= 0 ? "+" : ""}{equity.toFixed(3)}
       </span>
       {error && (
         <span style={{
-          fontSize: 10, fontWeight: W.bold, padding: "2px 6px", borderRadius: 3,
+          fontSize: "0.625rem", fontWeight: W.bold, padding: "2px 6px", borderRadius: 3,
           background: isBlunder ? C.error : C.bg.elevated,
           color: isBlunder ? C.text.primary : C.text.secondary,
           minWidth: 50, textAlign: "center",
@@ -443,7 +443,7 @@ export interface PostGameAnalysisProps {
   opponentName: string;
   cubeValue?: number;
   turnHistory?: TurnRecordProp[];
-  onRematch: () => void;
+  onRematch?: () => void;
   onBackToLobby: () => void;
   onBack: () => void;
 }
@@ -650,20 +650,28 @@ export function PostGameAnalysis({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <button onClick={onBack} style={{
             background: "none", border: "none", color: C.text.secondary,
-            cursor: "pointer", fontSize: 13, fontWeight: W.medium,
+            cursor: "pointer", fontSize: "0.8125rem", fontWeight: W.medium,
             display: "flex", alignItems: "center", gap: 4, fontFamily: F.body, padding: 0,
           }}>&larr; Back</button>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={onBackToLobby} style={{
               padding: "6px 14px", borderRadius: R.button,
               border: `1px solid ${C.bg.subtle}`, background: "transparent",
-              fontSize: 12, fontWeight: W.semibold, color: C.text.secondary, cursor: "pointer", fontFamily: F.body,
+              fontSize: "0.75rem", fontWeight: W.semibold, color: C.text.secondary, cursor: "pointer", fontFamily: F.body,
             }}>Home</button>
-            <button onClick={onRematch} style={{
-              padding: "6px 14px", borderRadius: R.button, border: "none",
-              background: `linear-gradient(135deg, ${C.gold.primary}, ${C.gold.light})`, color: C.gold.text,
-              fontSize: 12, fontWeight: W.bold, cursor: "pointer", fontFamily: F.body,
-            }}>Rematch</button>
+            {onRematch && (
+              <button onClick={onRematch} style={{
+                padding: "12px 32px",
+                borderRadius: 8,
+                border: "none",
+                background: "var(--color-gold-primary)",
+                color: "var(--color-text-on-gold, #fff)",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}>Rematch</button>
+            )}
           </div>
         </div>
 
@@ -673,10 +681,10 @@ export function PostGameAnalysis({
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Avatar name="Y" size={32} />
-            <span style={{ fontSize: 13, fontWeight: W.bold }}>You</span>
+            <span style={{ fontSize: "0.8125rem", fontWeight: W.bold }}>You</span>
           </div>
           <div style={{
-            fontSize: 14, fontWeight: W.bold, fontFamily: F.display,
+            fontSize: "0.875rem", fontWeight: W.bold, fontFamily: F.display,
             color: iWon ? C.gold.primary : C.error,
             padding: "2px 10px", borderRadius: 4,
             background: iWon ? C.gold.faint : "rgba(204,68,68,0.1)",
@@ -684,7 +692,7 @@ export function PostGameAnalysis({
             {iWon ? "Victory" : "Defeat"} &middot; {resultLabel}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: W.bold }}>{opponentName}</span>
+            <span style={{ fontSize: "0.8125rem", fontWeight: W.bold }}>{opponentName}</span>
             <Avatar name={opponentName[0] || "O"} size={32} />
           </div>
         </div>
@@ -722,22 +730,22 @@ export function PostGameAnalysis({
                 <SectionHeader title="Performance Rating" />
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>You</div>
-                    <div style={{ fontSize: 32, fontWeight: W.bold, color: C.text.primary }}>{mySummary.performanceRating}</div>
-                    <div style={{ fontSize: 12, color: C.text.secondary, marginTop: 4 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>You</div>
+                    <div style={{ fontSize: "2rem", fontWeight: W.bold, color: C.text.primary }}>{mySummary.performanceRating}</div>
+                    <div style={{ fontSize: "0.75rem", color: C.text.secondary, marginTop: 4 }}>
                       {mySummary.performanceRating >= 80 ? "Expert" : mySummary.performanceRating >= 50 ? "Advanced" : mySummary.performanceRating >= 30 ? "Intermediate" : "Beginner"}
                     </div>
-                    <div style={{ fontSize: 11, color: C.text.muted, marginTop: 8 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.text.muted, marginTop: 8 }}>
                       {mySummary.blunders} blunder{mySummary.blunders !== 1 ? "s" : ""} · {mySummary.mistakes} mistake{mySummary.mistakes !== 1 ? "s" : ""} · {mySummary.inaccuracies} inaccurac{mySummary.inaccuracies !== 1 ? "ies" : "y"}
                     </div>
                   </div>
                   <div style={{ flex: 1, padding: 16, borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>{opponentName}</div>
-                    <div style={{ fontSize: 32, fontWeight: W.bold, color: C.text.muted }}>{oppSummary.performanceRating}</div>
-                    <div style={{ fontSize: 12, color: C.text.secondary, marginTop: 4 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>{opponentName}</div>
+                    <div style={{ fontSize: "2rem", fontWeight: W.bold, color: C.text.muted }}>{oppSummary.performanceRating}</div>
+                    <div style={{ fontSize: "0.75rem", color: C.text.secondary, marginTop: 4 }}>
                       {oppSummary.performanceRating >= 80 ? "Expert" : oppSummary.performanceRating >= 50 ? "Advanced" : oppSummary.performanceRating >= 30 ? "Intermediate" : "Beginner"}
                     </div>
-                    <div style={{ fontSize: 11, color: C.text.muted, marginTop: 8 }}>
+                    <div style={{ fontSize: "0.6875rem", color: C.text.muted, marginTop: 8 }}>
                       {oppSummary.blunders} blunder{oppSummary.blunders !== 1 ? "s" : ""} · {oppSummary.mistakes} mistake{oppSummary.mistakes !== 1 ? "s" : ""} · {oppSummary.inaccuracies} inaccurac{oppSummary.inaccuracies !== 1 ? "ies" : "y"}
                     </div>
                   </div>
@@ -758,12 +766,12 @@ export function PostGameAnalysis({
               <SectionHeader title="Dice Statistics" />
               <div style={{ display: "flex", gap: 16 }}>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>Your avg roll</div>
-                  <div style={{ fontSize: 24, fontWeight: W.bold }}>{computeAvgRoll(myMoves) > 0 ? computeAvgRoll(myMoves).toFixed(1) : "\u2014"}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>Your avg roll</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: W.bold }}>{computeAvgRoll(myMoves) > 0 ? computeAvgRoll(myMoves).toFixed(1) : "\u2014"}</div>
                 </div>
                 <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: 11, color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>Their avg roll</div>
-                  <div style={{ fontSize: 24, fontWeight: W.bold }}>{computeAvgRoll(oppMoves) > 0 ? computeAvgRoll(oppMoves).toFixed(1) : "\u2014"}</div>
+                  <div style={{ fontSize: "0.6875rem", color: C.text.muted, textTransform: "uppercase", fontWeight: W.semibold, marginBottom: 8 }}>Their avg roll</div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: W.bold }}>{computeAvgRoll(oppMoves) > 0 ? computeAvgRoll(oppMoves).toFixed(1) : "\u2014"}</div>
                 </div>
               </div>
             </Card>
@@ -785,7 +793,7 @@ export function PostGameAnalysis({
                   borderTopColor: "transparent", borderRadius: "50%",
                   animation: "spin 0.8s linear infinite",
                 }} />
-                <span style={{ fontSize: 12, fontWeight: W.semibold, color: C.gold.primary }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: W.semibold, color: C.gold.primary }}>
                   Analyzing with GNU Backgammon engine... ({analysisProgress.current}/{analysisProgress.total})
                 </span>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -795,7 +803,7 @@ export function PostGameAnalysis({
             {/* Equity Graph */}
             <Card>
               <SectionHeader title="Equity Graph" right={
-                <span style={{ fontSize: 11, color: C.text.muted }}>! = blunder or mistake</span>
+                <span style={{ fontSize: "0.6875rem", color: C.text.muted }}>! = blunder or mistake</span>
               } />
               <EquityGraph
                 equityHistory={equityHistory}
@@ -821,7 +829,7 @@ export function PostGameAnalysis({
                         flex: 1, padding: "8px 0",
                         background: analysisMode === mode ? C.gold.primary : C.bg.surface,
                         color: analysisMode === mode ? C.gold.text : C.text.muted,
-                        border: "none", fontSize: 12, fontWeight: W.bold,
+                        border: "none", fontSize: "0.75rem", fontWeight: W.bold,
                         cursor: "pointer", textTransform: "capitalize", fontFamily: F.body,
                       }}>{mode === "checker" ? "Checker" : "Log"}</button>
                     ))}
@@ -843,7 +851,7 @@ export function PostGameAnalysis({
                     </div>
                   )}
                   {analysisMode === "checker" && !selectedTurnAnalysis && (
-                    <div style={{ fontSize: 12, color: C.text.muted, padding: "16px 0", textAlign: "center" }}>
+                    <div style={{ fontSize: "0.75rem", color: C.text.muted, padding: "16px 0", textAlign: "center" }}>
                       Select a move to see candidates
                     </div>
                   )}
@@ -858,20 +866,20 @@ export function PostGameAnalysis({
                           background: selectedMove === m.moveNum ? C.bg.deep : "transparent",
                           border: selectedMove === m.moveNum ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
                         }}>
-                          <span style={{ fontSize: 10, fontWeight: W.semibold, color: C.text.muted, width: 18 }}>{m.moveNum}</span>
+                          <span style={{ fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, width: 18 }}>{m.moveNum}</span>
                           <div style={{ display: "flex", gap: 2 }}>
                             {m.dice.map((d, i) => (
                               <span key={i} style={{
                                 width: 15, height: 15, borderRadius: 3, background: C.bg.elevated,
                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 9, fontWeight: W.bold,
+                                fontSize: "0.5625rem", fontWeight: W.bold,
                               }}>{d}</span>
                             ))}
                           </div>
-                          <span style={{ flex: 1, fontSize: 11, fontFamily: F.mono, fontWeight: W.medium }}>{m.move}</span>
+                          <span style={{ flex: 1, fontSize: "0.6875rem", fontFamily: F.mono, fontWeight: W.medium }}>{m.move}</span>
                           {m.error && (
                             <span style={{
-                              fontSize: 8, fontWeight: W.bold, padding: "1px 4px", borderRadius: 2,
+                              fontSize: "0.5rem", fontWeight: W.bold, padding: "1px 4px", borderRadius: 2,
                               background: m.isBlunder ? C.error : C.bg.elevated,
                               color: m.isBlunder ? C.text.primary : C.text.secondary,
                             }}>{m.error[0]}</span>
@@ -885,7 +893,7 @@ export function PostGameAnalysis({
                   {selectedTurnAnalysis && (
                     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.bg.elevated}` }}>
                       <div style={{
-                        fontSize: 11, fontWeight: W.bold, color: C.text.secondary,
+                        fontSize: "0.6875rem", fontWeight: W.bold, color: C.text.secondary,
                         textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 10,
                       }}>Winning Chances</div>
                       <WinningChances
@@ -901,7 +909,7 @@ export function PostGameAnalysis({
                             { label: "BG", val: selectedTurnAnalysis.probability.winBG },
                           ].map(({ label, val }) => (
                             <div key={label} style={{
-                              fontSize: 10, color: C.text.muted, fontFamily: F.mono,
+                              fontSize: "0.625rem", color: C.text.muted, fontFamily: F.mono,
                               padding: "2px 6px", borderRadius: 3, background: C.bg.elevated,
                             }}>
                               {label}: {(val * 100).toFixed(1)}%
@@ -925,15 +933,15 @@ export function PostGameAnalysis({
                           width: 28, height: 28, borderRadius: R.button,
                           border: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 14, color: C.text.muted,
+                          fontSize: "0.875rem", color: C.text.muted,
                         }}>&larr;</button>
                         <button onClick={() => selectMove(Math.min(totalTurns, selectedMove + 1))} style={{
                           width: 28, height: 28, borderRadius: R.button,
                           border: `1px solid ${C.bg.subtle}`, background: C.bg.surface,
                           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 14, color: C.text.muted,
+                          fontSize: "0.875rem", color: C.text.muted,
                         }}>&rarr;</button>
-                        <span style={{ fontSize: 11, color: C.text.muted, marginLeft: 8 }}>{selectedMove} / {totalTurns}</span>
+                        <span style={{ fontSize: "0.6875rem", color: C.text.muted, marginLeft: 8 }}>{selectedMove} / {totalTurns}</span>
                       </div>
                     }
                   />
@@ -962,24 +970,24 @@ export function PostGameAnalysis({
                         border: selectedMove === m.moveNum ? `1px solid ${C.bg.subtle}` : "1px solid transparent",
                         transition: "background 0.1s",
                       }}>
-                        <span style={{ fontSize: 10, fontWeight: W.semibold, color: C.text.muted, width: 18, textAlign: "center" }}>{m.moveNum}</span>
+                        <span style={{ fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, width: 18, textAlign: "center" }}>{m.moveNum}</span>
                         <div style={{ display: "flex", gap: 2 }}>
                           {m.dice.map((d, i) => (
                             <div key={i} style={{
                               width: 15, height: 15, borderRadius: 3,
                               background: C.bg.elevated, border: `1px solid ${C.bg.subtle}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 9, fontWeight: W.bold, color: C.text.primary,
+                              fontSize: "0.5625rem", fontWeight: W.bold, color: C.text.primary,
                             }}>{d}</div>
                           ))}
                         </div>
                         <span style={{
-                          flex: 1, fontSize: 11, fontWeight: W.medium, fontFamily: F.mono, color: C.text.primary,
+                          flex: 1, fontSize: "0.6875rem", fontWeight: W.medium, fontFamily: F.mono, color: C.text.primary,
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>{m.move}</span>
                         {m.error && (
                           <span style={{
-                            fontSize: 8, fontWeight: W.bold, padding: "2px 4px", borderRadius: R.button,
+                            fontSize: "0.5rem", fontWeight: W.bold, padding: "2px 4px", borderRadius: R.button,
                             background: m.isBlunder ? C.error : C.bg.elevated,
                             color: m.isBlunder ? C.text.primary : C.text.secondary,
                           }}>{m.error[0]}</span>
@@ -1000,19 +1008,19 @@ export function PostGameAnalysis({
                     padding: "10px 14px", borderRadius: 8, background: C.bg.deep, border: `1px solid ${C.bg.subtle}`,
                   }}>
                     <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.text.muted, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: W.semibold, fontFamily: F.mono }}>{bottomBarPlayed}</span>
-                    <span style={{ fontSize: 11, color: C.text.muted, marginLeft: "auto", fontFamily: F.mono }}>
+                    <span style={{ fontSize: "0.8125rem", fontWeight: W.semibold, fontFamily: F.mono }}>{bottomBarPlayed}</span>
+                    <span style={{ fontSize: "0.6875rem", color: C.text.muted, marginLeft: "auto", fontFamily: F.mono }}>
                       ({selectedTurnAnalysis.equityAfter.toFixed(3)})
                     </span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: W.bold, color: C.text.muted }}>vs</span>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: W.bold, color: C.text.muted }}>vs</span>
                   <div style={{
                     flex: 1, display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 14px", borderRadius: 8, background: C.bg.deep, border: `1.5px solid ${C.gold.primary}`,
                   }}>
                     <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.gold.primary, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: W.bold, fontFamily: F.mono }}>{bottomBarBest}</span>
-                    <span style={{ fontSize: 10, fontWeight: W.semibold, color: C.text.muted, marginLeft: "auto", textTransform: "uppercase" }}>Best move</span>
+                    <span style={{ fontSize: "0.8125rem", fontWeight: W.bold, fontFamily: F.mono }}>{bottomBarBest}</span>
+                    <span style={{ fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, marginLeft: "auto", textTransform: "uppercase" }}>Best move</span>
                   </div>
                 </div>
               </Card>
@@ -1025,18 +1033,18 @@ export function PostGameAnalysis({
           <div style={{ maxWidth: 700, margin: "0 auto" }}>
             <Card>
               <SectionHeader title="Full Move List" right={
-                <span style={{ fontSize: 11, color: C.text.muted }}>{totalTurns} moves</span>
+                <span style={{ fontSize: "0.6875rem", color: C.text.muted }}>{totalTurns} moves</span>
               } />
               <div style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "6px 12px", borderBottom: `1px solid ${C.bg.elevated}`, marginBottom: 4,
               }}>
-                <span style={{ width: 28, fontSize: 10, fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>#</span>
+                <span style={{ width: 28, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>#</span>
                 {hasRealData && <span style={{ width: 12 }} />}
-                <span style={{ width: 44, fontSize: 10, fontWeight: W.semibold, color: C.text.muted }}>Dice</span>
-                <span style={{ flex: 1, fontSize: 10, fontWeight: W.semibold, color: C.text.muted }}>Move</span>
-                <span style={{ width: 50, fontSize: 10, fontWeight: W.semibold, color: C.text.muted, textAlign: "right" }}>Equity</span>
-                <span style={{ width: 50, fontSize: 10, fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>Error</span>
+                <span style={{ width: 44, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted }}>Dice</span>
+                <span style={{ flex: 1, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted }}>Move</span>
+                <span style={{ width: 50, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "right" }}>Equity</span>
+                <span style={{ width: 50, fontSize: "0.625rem", fontWeight: W.semibold, color: C.text.muted, textAlign: "center" }}>Error</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {displayMoves.map(m => (

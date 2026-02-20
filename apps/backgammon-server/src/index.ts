@@ -9,11 +9,35 @@ import { SocialManager } from "./social-manager.js";
 import { getRedis } from "./redis.js";
 import * as socialStore from "./social-store.js";
 import type { ClientMessage, PlayerConnection, ServerMessage } from "./types.js";
+import { logger } from "./logger.js";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
+const wsRateLimits = new Map<WebSocket, { count: number; resetAt: number }>();
+
+function checkRateLimit(ws: WebSocket): boolean {
+  const now = Date.now();
+  let entry = wsRateLimits.get(ws);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + 1000 };
+    wsRateLimits.set(ws, entry);
+  }
+  entry.count++;
+  if (entry.count > 30) {
+    send(ws, { type: "error", message: "Rate limit exceeded" });
+    ws.close(1008, "Rate limit exceeded");
+    return false;
+  }
+  return true;
+}
+
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+  credentials: true,
+  methods: ["GET"],
+  allowedHeaders: ["Content-Type"],
+}));
 app.use(express.json());
 
 // Helper: resolve address to display name
@@ -27,8 +51,22 @@ async function getDisplayName(address: string): Promise<string> {
 }
 
 // Health check
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", uptime: process.uptime() });
+app.get("/health", async (_req, res) => {
+  const health: Record<string, unknown> = { status: "ok", uptime: process.uptime() };
+  try {
+    const { getRedis: getR } = await import("./redis.js");
+    const r = getR();
+    if (r) {
+      await r.ping();
+      health.redis = "ok";
+    } else {
+      health.redis = "unavailable";
+    }
+  } catch {
+    health.redis = "error";
+    health.status = "degraded";
+  }
+  res.status(health.status === "ok" ? 200 : 503).json(health);
 });
 
 // Profile REST endpoint
@@ -92,7 +130,7 @@ app.get("/api/game/:gameId/history", async (req, res) => {
 });
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server, path: "/ws" });
+const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 16 * 1024 }); // 16KB max
 
 // Initialize Redis
 getRedis();
@@ -112,13 +150,16 @@ function send(ws: WebSocket, msg: ServerMessage): void {
 }
 
 wss.on("connection", (ws: WebSocket) => {
-  console.log("New WebSocket connection");
+  logger.info("WebSocket connected");
 
   ws.on("message", (data: Buffer) => {
+    if (!checkRateLimit(ws)) return;
+
     let msg: ClientMessage;
     try {
       msg = JSON.parse(data.toString());
     } catch {
+      logger.warn("Invalid JSON received from client");
       send(ws, { type: "error", message: "Invalid JSON" });
       return;
     }
@@ -127,6 +168,7 @@ wss.on("connection", (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
+    wsRateLimits.delete(ws);
     const conn = connections.get(ws);
     if (conn) {
       // Handle disconnect from active game — start grace period
@@ -151,11 +193,26 @@ wss.on("connection", (ws: WebSocket) => {
 });
 
 async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
+  // Refresh online heartbeat for every message from an authenticated connection
+  const authedConn = connections.get(ws);
+  if (authedConn) {
+    socialStore.refreshOnlineHeartbeat(authedConn.address);
+  }
+
   switch (msg.type) {
     case "auth": {
+      // Enforce 1 connection per address
+      for (const [existingWs, existingConn] of connections) {
+        if (existingConn.address === msg.address && existingWs !== ws) {
+          send(existingWs, { type: "error", message: "Authenticated from another session" });
+          existingWs.close(1000, "Replaced by new connection");
+          connections.delete(existingWs);
+        }
+      }
       // For MVP, trust the address (production would verify signature)
       const ratingInfo = await socialStore.getRating(msg.address);
       connections.set(ws, { address: msg.address, rating: ratingInfo.rating });
+      logger.info("Player authenticated", { address: msg.address });
       send(ws, { type: "auth_ok", address: msg.address });
 
       // Social: ensure profile, send it, mark online, notify friends
@@ -227,6 +284,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       };
       const result = gameManager.joinGame(game.id, player);
       if (result) {
+        logger.info("Game created", { gameId: game.id, address: conn.address });
         send(ws, { type: "game_created", game_id: game.id, color: result.color });
       }
       break;
@@ -372,7 +430,14 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const result = gameManager.applyMove(msg.game_id, conn.address, msg.from, msg.to);
+      const from = Number(msg.from);
+      const to = Number(msg.to);
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 25 || to < 0 || to > 25) {
+        send(ws, { type: "error", message: "Invalid move coordinates" });
+        return;
+      }
+
+      const result = gameManager.applyMove(msg.game_id, conn.address, from, to);
       if (!result) { send(ws, { type: "error", message: "Invalid move", code: "INVALID_MOVE" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
@@ -424,6 +489,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
 
       // Check if game is over
       if (result.gameState.gameOver) {
+        logger.info("Game over", { gameId: msg.game_id, winner: result.gameState.winner!, resultType: result.gameState.resultType! });
         gameManager.broadcastToGame(game, {
           type: "game_over",
           game_id: msg.game_id,
@@ -479,6 +545,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       if (!result) { send(ws, { type: "error", message: "Cannot resign", code: "CANNOT_RESIGN" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
+      logger.info("Game over", { gameId: msg.game_id, winner: result.winner, reason: "resignation" });
       gameManager.broadcastToGame(game, {
         type: "game_over",
         game_id: msg.game_id,
@@ -534,8 +601,17 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
   }
 }
 
+// Periodically clean up stale online players whose heartbeat keys have expired
+setInterval(async () => {
+  try {
+    await socialStore.cleanupStaleOnlinePlayers();
+  } catch { /* ignore */ }
+}, 60_000); // Every minute
+
 server.listen(PORT, () => {
-  console.log(`Backgammon server running on port ${PORT}`);
-  console.log(`WebSocket endpoint: ws://localhost:${PORT}/ws`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+  logger.info("Server started", { port: PORT, ws: `/ws`, health: `/health` });
+
+  gameManager.restoreGames().then((count) => {
+    if (count > 0) console.log(`Restored ${count} active games from Redis`);
+  });
 });

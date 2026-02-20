@@ -8,7 +8,7 @@ export function SectionLabel({ children, className }: SectionLabelProps) {
     <div
       className={className}
       style={{
-        fontSize: 11,
+        fontSize: "0.6875rem",
         fontWeight: 700,
         color: "var(--color-text-secondary)",
         textTransform: "uppercase",

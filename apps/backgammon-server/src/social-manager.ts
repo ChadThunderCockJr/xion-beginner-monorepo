@@ -78,7 +78,7 @@ export class SocialManager {
   }
 
   private async handleSearchPlayers(ws: WebSocket, _address: string, query: string): Promise<void> {
-    if (query.length < 2) {
+    if (query.length < 2 || query.length > 50) {
       this.send(ws, { type: "search_results", results: [] });
       return;
     }
@@ -87,8 +87,19 @@ export class SocialManager {
   }
 
   private async handleSetProfile(ws: WebSocket, address: string, displayName: string): Promise<void> {
-    await store.setProfile(address, displayName);
-    this.send(ws, { type: "profile_updated", address, display_name: displayName });
+    // Validate display name
+    if (typeof displayName !== "string" || displayName.length < 1 || displayName.length > 30) {
+      this.send(ws, { type: "error", message: "Display name must be 1-30 characters" });
+      return;
+    }
+    // Strip control characters
+    const sanitized = displayName.replace(/[\x00-\x1F\x7F]/g, "").trim();
+    if (sanitized.length < 1) {
+      this.send(ws, { type: "error", message: "Display name cannot be empty" });
+      return;
+    }
+    await store.setProfile(address, sanitized);
+    this.send(ws, { type: "profile_updated", address, display_name: sanitized });
   }
 
   private async handleGetFriends(ws: WebSocket, address: string): Promise<void> {

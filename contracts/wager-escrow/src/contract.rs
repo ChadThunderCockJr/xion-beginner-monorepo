@@ -171,7 +171,7 @@ fn execute_deposit(
         .find(|c| c.denom == config.usdc_denom)
         .ok_or(ContractError::NoPayment {})?;
 
-    if payment.amount.u128() < escrow.wager_amount {
+    if payment.amount.u128() != escrow.wager_amount {
         return Err(ContractError::InvalidPayment {
             expected: escrow.wager_amount,
             received: payment.amount.u128(),
@@ -206,8 +206,15 @@ fn execute_settle(
     info: MessageInfo,
     game_id: String,
     winner: String,
-    _multiplier: u32,
+    multiplier: u32, // Reserved for future use with higher deposit schemes
 ) -> Result<Response, ContractError> {
+    // Validate multiplier: 1 = normal, 2 = gammon, 3 = backgammon
+    if multiplier == 0 || multiplier > 3 {
+        return Err(ContractError::Std(cosmwasm_std::StdError::generic_err(
+            "multiplier must be 1, 2, or 3",
+        )));
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     // Only admin or game contract can settle
@@ -499,4 +506,110 @@ fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
 #[entry_point]
 pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::new().add_attribute("action", "migrate"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage};
+    use cosmwasm_std::{coins, OwnedDeps};
+
+    fn addr(name: &str) -> String {
+        MockApi::default().addr_make(name).to_string()
+    }
+
+    fn setup() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
+        let mut deps = mock_dependencies();
+        let msg = InstantiateMsg {
+            usdc_denom: "uusdc".to_string(),
+            rake_bps: 500, // 5%
+            rake_recipient: addr("treasury"),
+            min_wager: 1_000_000, // 1 USDC
+            max_wager: 1_000_000_000, // 1000 USDC
+            timeout_seconds: 300,
+            game_contract: None,
+        };
+        let info = mock_info(&addr("admin"), &[]);
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        deps
+    }
+
+    #[test]
+    fn test_create_escrow() {
+        let mut deps = setup();
+        let msg = ExecuteMsg::CreateEscrow {
+            game_id: "game1".to_string(),
+            player_a: addr("player_a"),
+            player_b: addr("player_b"),
+            wager_amount: 5_000_000u128,
+        };
+        let info = mock_info(&addr("admin"), &[]);
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        assert_eq!(res.attributes.len(), 3);
+    }
+
+    #[test]
+    fn test_deposit_exact_amount() {
+        let mut deps = setup();
+        let create_msg = ExecuteMsg::CreateEscrow {
+            game_id: "game1".to_string(),
+            player_a: addr("player_a"),
+            player_b: addr("player_b"),
+            wager_amount: 5_000_000u128,
+        };
+        execute(deps.as_mut(), mock_env(), mock_info(&addr("admin"), &[]), create_msg).unwrap();
+
+        let deposit_msg = ExecuteMsg::Deposit { game_id: "game1".to_string() };
+        let info = mock_info(&addr("player_a"), &coins(5_000_000, "uusdc"));
+        let res = execute(deps.as_mut(), mock_env(), info, deposit_msg);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_deposit_wrong_amount_fails() {
+        let mut deps = setup();
+        let create_msg = ExecuteMsg::CreateEscrow {
+            game_id: "game1".to_string(),
+            player_a: addr("player_a"),
+            player_b: addr("player_b"),
+            wager_amount: 5_000_000u128,
+        };
+        execute(deps.as_mut(), mock_env(), mock_info(&addr("admin"), &[]), create_msg).unwrap();
+
+        let deposit_msg = ExecuteMsg::Deposit { game_id: "game1".to_string() };
+        let info = mock_info(&addr("player_a"), &coins(10_000_000, "uusdc"));
+        let res = execute(deps.as_mut(), mock_env(), info, deposit_msg);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_non_player_deposit_fails() {
+        let mut deps = setup();
+        let create_msg = ExecuteMsg::CreateEscrow {
+            game_id: "game1".to_string(),
+            player_a: addr("player_a"),
+            player_b: addr("player_b"),
+            wager_amount: 5_000_000u128,
+        };
+        execute(deps.as_mut(), mock_env(), mock_info(&addr("admin"), &[]), create_msg).unwrap();
+
+        let deposit_msg = ExecuteMsg::Deposit { game_id: "game1".to_string() };
+        let info = mock_info(&addr("random_person"), &coins(5_000_000, "uusdc"));
+        let res = execute(deps.as_mut(), mock_env(), info, deposit_msg);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_unauthorized_create_fails() {
+        let mut deps = setup();
+        let msg = ExecuteMsg::CreateEscrow {
+            game_id: "game1".to_string(),
+            player_a: addr("player_a"),
+            player_b: addr("player_b"),
+            wager_amount: 5_000_000u128,
+        };
+        let info = mock_info(&addr("not_admin"), &[]);
+        let res = execute(deps.as_mut(), mock_env(), info, msg);
+        assert!(res.is_err());
+    }
 }

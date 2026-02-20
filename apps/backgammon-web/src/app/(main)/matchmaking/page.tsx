@@ -60,7 +60,7 @@ function Timer({ seconds }: { seconds: number }) {
     <span
       style={{
         fontFamily: "var(--font-mono)",
-        fontSize: 32,
+        fontSize: "2rem",
         fontWeight: 700,
         color: "var(--color-gold-primary)",
         letterSpacing: "0.04em",
@@ -175,7 +175,7 @@ export default function MatchmakingPage() {
       >
         <h2
           style={{
-            fontSize: 22,
+            fontSize: "1.375rem",
             fontWeight: 700,
             fontFamily: "var(--font-display)",
             color: "var(--color-danger)",
@@ -183,7 +183,7 @@ export default function MatchmakingPage() {
         >
           Connection Error
         </h2>
-        <p style={{ fontSize: 14, color: "var(--color-text-secondary)", textAlign: "center" }}>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-secondary)", textAlign: "center" }}>
           {error || "Unable to connect to game server. Please try again."}
         </p>
         <button
@@ -194,7 +194,7 @@ export default function MatchmakingPage() {
             border: "1.5px solid var(--color-bg-subtle)",
             background: "var(--color-bg-surface)",
             color: "var(--color-text-secondary)",
-            fontSize: 14,
+            fontSize: "0.875rem",
             fontWeight: 600,
             cursor: "pointer",
             fontFamily: "var(--font-body)",
@@ -238,7 +238,7 @@ export default function MatchmakingPage() {
             border: "none",
             color: "var(--color-text-secondary)",
             cursor: "pointer",
-            fontSize: 14,
+            fontSize: "0.875rem",
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
@@ -251,13 +251,13 @@ export default function MatchmakingPage() {
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {!connected && (
-            <span style={{ fontSize: 11, color: "var(--color-danger)", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.6875rem", color: "var(--color-danger)", fontWeight: 600 }}>
               Reconnecting...
             </span>
           )}
           <span
             style={{
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontWeight: 600,
               color: "var(--color-text-muted)",
               fontFamily: "var(--font-body)",
@@ -322,7 +322,7 @@ export default function MatchmakingPage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                     fontFamily: "var(--font-body)",
@@ -362,7 +362,7 @@ export default function MatchmakingPage() {
                 <div key={i} style={{ textAlign: "center", minWidth: 60 }}>
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: "0.6875rem",
                       color: "var(--color-text-muted)",
                       textTransform: "uppercase",
                       letterSpacing: "0.04em",
@@ -375,7 +375,7 @@ export default function MatchmakingPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 600,
                       color: "var(--color-text-primary)",
                       fontFamily: "var(--font-body)",
@@ -391,7 +391,7 @@ export default function MatchmakingPage() {
             {elapsed > 5 && (
               <p
                 style={{
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-muted)",
                   fontStyle: "italic",
                   fontFamily: "var(--font-body)",
@@ -410,7 +410,7 @@ export default function MatchmakingPage() {
                 border: "1.5px solid var(--color-bg-subtle)",
                 background: "var(--color-bg-surface)",
                 color: "var(--color-text-secondary)",
-                fontSize: 14,
+                fontSize: "0.875rem",
                 fontWeight: 600,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
@@ -437,7 +437,7 @@ export default function MatchmakingPage() {
                 <div style={{ marginTop: 12 }}>
                   <div
                     style={{
-                      fontSize: 16,
+                      fontSize: "1rem",
                       fontWeight: 700,
                       fontFamily: "var(--font-body)",
                       color: "var(--color-text-primary)",
@@ -447,7 +447,7 @@ export default function MatchmakingPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 13,
+                      fontSize: "0.8125rem",
                       color: "var(--color-text-muted)",
                       fontFamily: "var(--font-mono)",
                     }}
@@ -460,7 +460,7 @@ export default function MatchmakingPage() {
               {/* VS */}
               <div
                 style={{
-                  fontSize: 24,
+                  fontSize: "1.5rem",
                   fontWeight: 800,
                   color: "var(--color-gold-dark)",
                   letterSpacing: "0.1em",
@@ -476,7 +476,7 @@ export default function MatchmakingPage() {
                 <div style={{ marginTop: 12 }}>
                   <div
                     style={{
-                      fontSize: 16,
+                      fontSize: "1rem",
                       fontWeight: 700,
                       fontFamily: "var(--font-body)",
                       color: "var(--color-text-primary)",
@@ -486,7 +486,7 @@ export default function MatchmakingPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 13,
+                      fontSize: "0.8125rem",
                       color: "var(--color-text-muted)",
                       fontFamily: "var(--font-mono)",
                     }}
@@ -512,7 +512,7 @@ export default function MatchmakingPage() {
               </h2>
               <p
                 style={{
-                  fontSize: 14,
+                  fontSize: "0.875rem",
                   color: "var(--color-text-secondary)",
                   margin: 0,
                   fontFamily: "var(--font-body)",
@@ -540,7 +540,7 @@ export default function MatchmakingPage() {
                 <div style={{ marginTop: 10 }}>
                   <div
                     style={{
-                      fontSize: 15,
+                      fontSize: "0.9375rem",
                       fontWeight: 700,
                       fontFamily: "var(--font-body)",
                       color: "var(--color-text-primary)",
@@ -561,7 +561,7 @@ export default function MatchmakingPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 36,
+                  fontSize: "2.25rem",
                   fontWeight: 800,
                   color: "var(--color-gold-primary)",
                   fontFamily: "var(--font-mono)",
@@ -576,7 +576,7 @@ export default function MatchmakingPage() {
                 <div style={{ marginTop: 10 }}>
                   <div
                     style={{
-                      fontSize: 15,
+                      fontSize: "0.9375rem",
                       fontWeight: 700,
                       fontFamily: "var(--font-body)",
                       color: "var(--color-text-primary)",
@@ -590,7 +590,7 @@ export default function MatchmakingPage() {
 
             <p
               style={{
-                fontSize: 15,
+                fontSize: "0.9375rem",
                 color: "var(--color-text-secondary)",
                 fontWeight: 500,
                 fontFamily: "var(--font-body)",

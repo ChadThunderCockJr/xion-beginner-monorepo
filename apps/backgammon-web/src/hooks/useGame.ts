@@ -23,6 +23,7 @@ interface GameContext {
   undoCount: number;
   turnStartedAt: number | null;
   lastOpponentMove: { from: number; to: number } | null;
+  lastReaction: { emoji: string; from: string } | null;
   pendingConfirmation: boolean;
   forcedMoveNotice: boolean;
   disconnectCountdown: number | null;
@@ -60,7 +61,9 @@ type GameAction =
   | { type: "CLEAR_LAST_MOVE" }
   | { type: "FORCED_MOVE_NOTICE"; on: boolean }
   | { type: "OPPONENT_DISCONNECTING"; countdown: number }
-  | { type: "DISCONNECT_COUNTDOWN"; countdown: number };
+  | { type: "DISCONNECT_COUNTDOWN"; countdown: number }
+  | { type: "REACTION_RECEIVED"; emoji: string; from: string }
+  | { type: "CLEAR_REACTION" };
 
 const initialGameContext: GameContext = {
   gameId: null,
@@ -76,6 +79,7 @@ const initialGameContext: GameContext = {
   undoCount: 0,
   turnStartedAt: null,
   lastOpponentMove: null,
+  lastReaction: null,
   pendingConfirmation: false,
   forcedMoveNotice: false,
   disconnectCountdown: null,
@@ -191,6 +195,10 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
       return initialGameContext;
     case "CLEAR_LAST_MOVE":
       return { ...state, lastOpponentMove: null };
+    case "REACTION_RECEIVED":
+      return { ...state, lastReaction: { emoji: action.emoji, from: action.from } };
+    case "CLEAR_REACTION":
+      return { ...state, lastReaction: null };
     default:
       return state;
   }
@@ -326,6 +334,15 @@ export function useGame(wsUrl: string, address: string | null) {
       on("error", (msg) =>
         dispatch({ type: "ERROR", message: msg.message as string })
       ),
+      // TODO: Server does not relay "reaction" messages yet. Once the server
+      // broadcasts incoming reactions to the opponent, this handler will display them.
+      on("reaction", (msg) =>
+        dispatch({
+          type: "REACTION_RECEIVED",
+          emoji: msg.emoji as string,
+          from: msg.from as string,
+        })
+      ),
     ];
     return () => unsubs.forEach((u) => u());
   }, [on]);
@@ -337,6 +354,14 @@ export function useGame(wsUrl: string, address: string | null) {
       return () => clearTimeout(timer);
     }
   }, [state.lastOpponentMove]);
+
+  // Clear incoming reaction after 3 seconds
+  useEffect(() => {
+    if (state.lastReaction) {
+      const timer = setTimeout(() => dispatch({ type: "CLEAR_REACTION" }), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.lastReaction]);
 
   // Ref to current state for timeout callbacks
   const stateRef = useRef(state);
@@ -396,6 +421,16 @@ export function useGame(wsUrl: string, address: string | null) {
     if (state.gameId) sendMessage({ type: "resign", game_id: state.gameId });
   }, [sendMessage, state.gameId]);
 
+  // TODO: Server needs to relay reaction messages to the opponent
+  const sendReaction = useCallback(
+    (emoji: string) => {
+      if (state.gameId) {
+        sendMessage({ type: "reaction", game_id: state.gameId, emoji });
+      }
+    },
+    [sendMessage, state.gameId],
+  );
+
   const reset = useCallback(() => dispatch({ type: "RESET" }), []);
 
   return {
@@ -411,6 +446,7 @@ export function useGame(wsUrl: string, address: string | null) {
     endTurn,
     undoMove,
     resign,
+    sendReaction,
     reset,
   };
 }

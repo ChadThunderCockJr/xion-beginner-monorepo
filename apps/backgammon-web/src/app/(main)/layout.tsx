@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout";
 import { useAuth } from "@/hooks/useAuth";
 import { SocialProvider, useSocialContext } from "@/contexts/SocialContext";
+import { FocusTrap } from "@/components/ui/FocusTrap";
 
 export default function MainLayout({
   children,
@@ -94,23 +95,27 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
             backdropFilter: "blur(4px)",
           }}
         >
-          <div
-            className="p-6 sm:p-8"
-            style={{
-              background: "var(--color-bg-surface)",
-              border: "1px solid var(--color-bg-subtle)",
-              borderRadius: 16,
-              maxWidth: 400,
-              width: "90%",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
-            }}
-          >
+          <FocusTrap>
             <div
+              className="p-6 sm:p-8"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="username-dialog-title"
               style={{
-                textAlign: "center",
-                marginBottom: 8,
+                background: "var(--color-bg-surface)",
+                border: "1px solid var(--color-bg-subtle)",
+                borderRadius: 16,
+                maxWidth: 400,
+                width: "90%",
+                boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
               }}
             >
+              <div
+                style={{
+                  textAlign: "center",
+                  marginBottom: 8,
+                }}
+              >
               <div
                 style={{
                   width: 48,
@@ -130,9 +135,10 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <h2
+              id="username-dialog-title"
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 24,
+                fontSize: "1.5rem",
                 fontWeight: 700,
                 color: "var(--color-text-primary)",
                 margin: "0 0 8px",
@@ -143,7 +149,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
             </h2>
             <p
               style={{
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 color: "var(--color-text-muted)",
                 textAlign: "center",
                 margin: "0 0 24px",
@@ -169,7 +175,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
                   ? "2px solid var(--color-danger)"
                   : "2px solid var(--color-bg-subtle)",
                 background: "var(--color-bg-base)",
-                fontSize: 16,
+                fontSize: "1rem",
                 fontWeight: 600,
                 color: "var(--color-text-primary)",
                 fontFamily: "var(--font-body)",
@@ -189,7 +195,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
             {usernameError && (
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-danger)",
                   marginTop: 8,
                   textAlign: "center",
@@ -216,7 +222,7 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
                   input.trim().length >= 3
                     ? "var(--color-accent-fg)"
                     : "var(--color-text-faint)",
-                fontSize: 15,
+                fontSize: "0.9375rem",
                 fontWeight: 700,
                 cursor: input.trim().length >= 3 ? "pointer" : "not-allowed",
                 fontFamily: "var(--font-body)",
@@ -226,7 +232,8 @@ function UsernameGate({ children }: { children: React.ReactNode }) {
             >
               Continue
             </button>
-          </div>
+            </div>
+          </FocusTrap>
         </div>
       )}
     </>

@@ -22,6 +22,8 @@ export interface BoardProps {
   pipCounts?: [number, number];
   /** Active die index — front die is always used for moves */
   activeDieIndex?: 0 | 1;
+  /** Whether to display point numbers (1-24) on the board */
+  showPointNumbers?: boolean;
 }
 
 // ─── Design constants ────────────────────────────────────────────
@@ -36,8 +38,8 @@ const BAR_W = 56;
 const BEAROFF_W = 54;
 const DIE_SIZE = 56;
 
-const DARK_FELT = "#1A2818";
-const LIGHT_FELT = "#243020";
+const DARK_FELT = "var(--color-board-felt-dark)";
+const LIGHT_FELT = "var(--color-board-felt-light)";
 
 // Intrinsic board size (used for scale-to-fit)
 const QUAD_W = 6 * POINT_W + 5 * POINT_GAP; // 418
@@ -76,13 +78,13 @@ function Checker({
         width: CHECKER_SIZE,
         height: CHECKER_SIZE,
         borderRadius: "50%",
-        background: isW ? "#DCD8D0" : "#6E1A30",
+        background: isW ? "var(--color-checker-white)" : "var(--color-checker-black)",
         border: `${isW ? "2px" : "2.5px"} solid ${
           highlighted
             ? "var(--color-gold-primary)"
             : isW
-              ? "#A8A098"
-              : "var(--color-burgundy-deep)"
+              ? "var(--color-checker-white-border)"
+              : "var(--color-checker-black-border)"
         }`,
         boxShadow: highlighted
           ? "0 0 12px rgba(88,20,40,0.5), 0 1px 3px rgba(0,0,0,0.3)"
@@ -154,9 +156,9 @@ function Die({ value, used = false, player }: { value: number; used?: boolean; p
   const dots = DICE_DOTS[value] || [];
   const r = DIE_SIZE * 0.08;
   const isBlack = player === "black";
-  const faceFill = isBlack ? "#6E1A30" : "#DCD8D0";
-  const faceStroke = isBlack ? "#8A2840" : "#B8B4AC";
-  const dotFill = isBlack ? "#DCD8D0" : "#2A2018";
+  const faceFill = isBlack ? "var(--color-die-black-face)" : "var(--color-die-white-face)";
+  const faceStroke = isBlack ? "var(--color-die-black-stroke)" : "var(--color-die-white-stroke)";
+  const dotFill = isBlack ? "var(--color-die-black-dot)" : "var(--color-die-white-dot)";
   return (
     <svg
       width={DIE_SIZE}
@@ -223,6 +225,7 @@ export function Board({
   centerControls,
   pipCounts,
   activeDieIndex,
+  showPointNumbers: showPointNumbersProp = true,
 }: BoardProps) {
   const flipped = myColor === "black";
   const repeatDestRef = useRef<number | null>(null);
@@ -642,7 +645,7 @@ export function Board({
                 bottom: -6,
                 background: "rgba(100,220,120,0.95)",
                 color: "#1a1a1a",
-                fontSize: 11,
+                fontSize: "0.6875rem",
                 fontWeight: 800,
                 borderRadius: 8,
                 padding: "1px 6px",
@@ -774,10 +777,18 @@ export function Board({
 
   function renderPointNumbers(numbers: number[]) {
     return (
-      <div className="flex items-center" style={{ padding: "0 6px", height: 20 }}>
+      <div
+        className="flex items-center"
+        style={{
+          padding: "0 6px",
+          height: 20,
+          opacity: showPointNumbersProp ? 0.5 : 0,
+          transition: "opacity 200ms ease",
+        }}
+      >
         <div className="flex flex-1" style={{ gap: POINT_GAP }}>
           {numbers.slice(0, 6).map((n) => (
-            <div key={n} className="text-center text-[10px] font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W }}>
+            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.625rem" }}>
               {n}
             </div>
           ))}
@@ -785,7 +796,7 @@ export function Board({
         <div style={{ width: BAR_W + 8 }} />
         <div className="flex flex-1" style={{ gap: POINT_GAP }}>
           {numbers.slice(6).map((n) => (
-            <div key={n} className="text-center text-[10px] font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W }}>
+            <div key={n} className="text-center font-semibold text-[var(--color-text-muted)]" style={{ width: POINT_W, fontSize: "0.625rem" }}>
               {n}
             </div>
           ))}
@@ -828,6 +839,8 @@ export function Board({
     <div
       ref={containerRef}
       data-board-root
+      role="application"
+      aria-label="Backgammon board"
       className="w-full h-full flex items-center justify-center overflow-hidden"
       style={{ touchAction: dragState || holdPoint !== null ? "none" : "auto" }}
       onPointerDown={handlePointerDown}
@@ -847,6 +860,7 @@ export function Board({
       <div
         ref={boardInnerRef}
         className="flex flex-col"
+        aria-label="Playing field"
         style={{
           background: "var(--color-bg-base)",
           borderRadius: "12px 0 0 12px",
@@ -923,6 +937,7 @@ export function Board({
       {/* Bear-off Tray */}
       <div
         className="flex flex-col"
+        aria-label="Bear-off tray"
         style={{
           width: BEAROFF_W,
           background: "var(--color-bg-base)",
@@ -947,8 +962,8 @@ export function Board({
               key={i}
               style={{
                 width: 36, height: 8, borderRadius: 4,
-                background: bearTopColor === "white" ? "var(--color-text-primary)" : "#6E1A30",
-                border: `1px solid ${bearTopColor === "white" ? "var(--color-text-secondary)" : "var(--color-burgundy-deep)"}`,
+                background: bearTopColor === "white" ? "var(--color-checker-white)" : "var(--color-checker-black)",
+                border: `1px solid ${bearTopColor === "white" ? "var(--color-checker-white-border)" : "var(--color-checker-black-border)"}`,
               }}
             />
           ))}
@@ -989,8 +1004,8 @@ export function Board({
               key={i}
               style={{
                 width: 36, height: 8, borderRadius: 4,
-                background: bearBotColor === "white" ? "var(--color-text-primary)" : "#6E1A30",
-                border: `1px solid ${bearBotColor === "white" ? "var(--color-text-secondary)" : "var(--color-burgundy-deep)"}`,
+                background: bearBotColor === "white" ? "var(--color-checker-white)" : "var(--color-checker-black)",
+                border: `1px solid ${bearBotColor === "white" ? "var(--color-checker-white-border)" : "var(--color-checker-black-border)"}`,
               }}
             />
           ))}

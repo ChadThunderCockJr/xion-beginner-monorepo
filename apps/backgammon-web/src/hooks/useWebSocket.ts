@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type ServerMessage = Record<string, unknown> & { type: string };
 
+const BACKOFF_INITIAL_MS = 1000;
+const BACKOFF_MAX_MS = 30000;
+const BACKOFF_JITTER = 0.25;
+const MAX_RETRIES = 50;
+
 export function useWebSocket(url: string) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
@@ -9,6 +14,7 @@ export function useWebSocket(url: string) {
   const handlersRef = useRef<Map<string, Set<(msg: ServerMessage) => void>>>(
     new Map()
   );
+  const retryCountRef = useRef(0);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -16,11 +22,21 @@ export function useWebSocket(url: string) {
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
+    ws.onopen = () => {
+      retryCountRef.current = 0;
+      setConnected(true);
+    };
     ws.onclose = () => {
       setConnected(false);
-      // Reconnect after 2s
-      setTimeout(connect, 2000);
+      if (retryCountRef.current >= MAX_RETRIES) return;
+      const base = Math.min(
+        BACKOFF_INITIAL_MS * Math.pow(2, retryCountRef.current),
+        BACKOFF_MAX_MS,
+      );
+      const jitter = base * BACKOFF_JITTER * (Math.random() * 2 - 1);
+      const delay = Math.max(0, base + jitter);
+      retryCountRef.current += 1;
+      setTimeout(connect, delay);
     };
     ws.onmessage = (event) => {
       try {

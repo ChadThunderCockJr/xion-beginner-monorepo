@@ -1,6 +1,9 @@
 /**
  * Design token values for use in SVG inline styles or dynamic calculations.
  * The CSS @theme tokens in globals.css are canonical; this is a convenience reference.
+ *
+ * For board colors, prefer using CSS variables directly (e.g. var(--color-board-felt-light))
+ * so they respond to theme changes. The board tokens below are fallback values only.
  */
 export const tokens = {
   bg: {
@@ -37,5 +40,16 @@ export const tokens = {
     subtle: "rgba(255, 255, 255, 0.06)",
     default: "rgba(255, 255, 255, 0.10)",
     strong: "rgba(255, 255, 255, 0.16)",
+  },
+  /** Board colors — use CSS variables (var(--color-board-*)) in components for theme support */
+  board: {
+    feltLight: "var(--color-board-felt-light)",
+    feltDark: "var(--color-board-felt-dark)",
+    border: "var(--color-board-border)",
+    bar: "var(--color-board-bar)",
+    checkerWhite: "var(--color-checker-white)",
+    checkerBlack: "var(--color-checker-black)",
+    pointLight: "var(--color-board-point-light)",
+    pointDark: "var(--color-board-point-dark)",
   },
 } as const;

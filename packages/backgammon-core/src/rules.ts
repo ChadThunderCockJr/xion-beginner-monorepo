@@ -1,6 +1,7 @@
 import {
   BoardState,
   GameState,
+  MoveRecord,
   Player,
   ResultType,
   TOTAL_CHECKERS,
@@ -94,6 +95,30 @@ export function makeMove(
     if (maxMoves === 0) shouldEndTurn = true;
   }
 
+  // Update moveHistory: append to the current turn's record, or create a new one
+  const updatedHistory = [...state.moveHistory];
+  const currentMove = { from, to, die: matchedDie };
+  const lastRecord = updatedHistory[updatedHistory.length - 1];
+  if (
+    lastRecord &&
+    lastRecord.turnNumber === state.turnNumber &&
+    lastRecord.player === player
+  ) {
+    // Append to existing turn record
+    updatedHistory[updatedHistory.length - 1] = {
+      ...lastRecord,
+      moves: [...lastRecord.moves, currentMove],
+    };
+  } else {
+    // Create a new turn record
+    updatedHistory.push({
+      turnNumber: state.turnNumber,
+      player,
+      dice: state.dice!,
+      moves: [currentMove],
+    });
+  }
+
   const newState: GameState = {
     ...state,
     board: newBoard,
@@ -108,6 +133,7 @@ export function makeMove(
     gameOver: gameOverResult.over,
     winner: gameOverResult.winner,
     resultType: gameOverResult.resultType,
+    moveHistory: updatedHistory,
   };
 
   return newState;

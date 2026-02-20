@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@xion-beginner/ui";
@@ -10,9 +10,11 @@ import {
   PillGroup,
   SegmentToggle,
   SectionLabel,
+  FocusTrap,
 } from "@/components/ui";
 import { useGame } from "@/hooks/useGame";
 import { useAuth } from "@/hooks/useAuth";
+import { useBalance } from "@/hooks/useBalance";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { WS_URL } from "@/lib/ws-config";
 
@@ -154,7 +156,7 @@ function MatchSummary({
         <div key={i} style={{ textAlign: "center", minWidth: 64 }}>
           <div
             style={{
-              fontSize: 9,
+              fontSize: "0.5625rem",
               color: "var(--color-text-muted)",
               textTransform: "uppercase",
               letterSpacing: "0.06em",
@@ -166,7 +168,7 @@ function MatchSummary({
           </div>
           <div
             style={{
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontWeight: 600,
               color: "var(--color-text-primary)",
             }}
@@ -227,14 +229,14 @@ function FriendRow({
       <div style={{ flex: 1 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: "0.8125rem",
             fontWeight: 600,
             color: "var(--color-text-primary)",
           }}
         >
           {name}
         </div>
-        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{rating}</div>
+        <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>{rating}</div>
       </div>
       {selected && (
         <div
@@ -264,6 +266,309 @@ function FriendRow({
   );
 }
 
+/* ── Session Time Reminder Toast ── */
+
+function SessionToast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 24,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 20px",
+        borderRadius: "var(--radius-card)",
+        background: "var(--color-bg-surface)",
+        border: "1px solid var(--color-bg-subtle)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        maxWidth: 420,
+        animation: "slideUp 0.3s ease",
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--color-gold-primary)" strokeWidth="1.5">
+        <circle cx="8" cy="8" r="6.5" />
+        <path d="M8 5v3.5l2.5 1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span style={{ fontSize: "0.8125rem", color: "var(--color-text-secondary)", flex: 1, lineHeight: 1.4 }}>
+        {message}
+      </span>
+      <button
+        onClick={onDismiss}
+        style={{
+          background: "none",
+          border: "none",
+          color: "var(--color-text-muted)",
+          cursor: "pointer",
+          fontSize: "1rem",
+          padding: "0 4px",
+          lineHeight: 1,
+        }}
+      >
+        x
+      </button>
+      <style>{`@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
+    </div>
+  );
+}
+
+/* ── Wager Confirmation Modal ── */
+
+function WagerConfirmModal({
+  stakePerPoint,
+  matchLength,
+  cubeEnabled,
+  maxCube,
+  maxExposure,
+  onConfirm,
+  onCancel,
+}: {
+  stakePerPoint: number;
+  matchLength: number;
+  cubeEnabled: boolean;
+  maxCube: number;
+  maxExposure: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const isHighExposure = maxExposure >= 100;
+  const [confirmEnabled, setConfirmEnabled] = useState(!isHighExposure);
+  const [delayRemaining, setDelayRemaining] = useState(isHighExposure ? 2 : 0);
+
+  // For high exposure ($100+), add a 2-second pause before confirm becomes active
+  useEffect(() => {
+    if (!isHighExposure) return;
+    const timer = setInterval(() => {
+      setDelayRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setConfirmEnabled(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isHighExposure]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onCancel}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.65)",
+          zIndex: 100,
+          animation: "fadeIn 0.15s ease",
+        }}
+      />
+
+      {/* Modal */}
+      <FocusTrap>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="wager-confirm-title"
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 101,
+            width: "90%",
+            maxWidth: 440,
+            background: "var(--color-bg-surface)",
+            border: "1px solid var(--color-bg-subtle)",
+            borderRadius: "var(--radius-card, 12px)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+            overflow: "hidden",
+            animation: "modalIn 0.2s ease",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "20px 24px 16px",
+              borderBottom: "1px solid var(--color-bg-subtle)",
+            }}
+          >
+            <h3
+              id="wager-confirm-title"
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: 700,
+                margin: 0,
+                color: "var(--color-text-primary)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Confirm Wager
+          </h3>
+          <p
+            style={{
+              fontSize: "0.8125rem",
+              color: "var(--color-text-muted)",
+              margin: "6px 0 0",
+            }}
+          >
+            Review your match settings before creating.
+          </p>
+        </div>
+
+        {/* Details */}
+        <div style={{ padding: "16px 24px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                Wager per Point
+              </div>
+              <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-text-primary)", fontFamily: "var(--font-mono)" }}>
+                ${stakePerPoint % 1 === 0 ? stakePerPoint : stakePerPoint.toFixed(2)} USDC
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                Match Length
+              </div>
+              <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-text-primary)", fontFamily: "var(--font-mono)" }}>
+                {matchLength === 0 ? "Money Game" : `${matchLength} pts`}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                Doubling Cube
+              </div>
+              <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--color-text-primary)", fontFamily: "var(--font-mono)" }}>
+                {cubeEnabled ? `On (max ${maxCube}x)` : "Off"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.625rem", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
+                Max Exposure
+              </div>
+              <div style={{ fontSize: "1rem", fontWeight: 700, color: isHighExposure ? "var(--color-danger)" : "var(--color-text-primary)", fontFamily: "var(--font-mono)" }}>
+                ${maxExposure % 1 === 0 ? maxExposure : maxExposure.toFixed(2)} USDC
+              </div>
+            </div>
+          </div>
+
+          {/* High exposure warning with delay */}
+          {isHighExposure && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                borderRadius: 8,
+                background: "rgba(248, 113, 113, 0.08)",
+                border: "1px solid rgba(248, 113, 113, 0.2)",
+                marginBottom: 16,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--color-danger)" strokeWidth="1.5">
+                <path d="M8 1.5L1.5 13h13L8 1.5z" strokeLinejoin="round" />
+                <path d="M8 6v3" strokeLinecap="round" />
+                <circle cx="8" cy="11" r="0.5" fill="var(--color-danger)" />
+              </svg>
+              <span style={{ fontSize: "0.75rem", color: "var(--color-danger)", fontWeight: 600, flex: 1, lineHeight: 1.4 }}>
+                {!confirmEnabled
+                  ? `Please review your wager carefully (${delayRemaining}s)`
+                  : "High exposure wager. Please confirm you are comfortable with this amount."}
+              </span>
+            </div>
+          )}
+
+          {/* Escrow note */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 12px",
+              borderRadius: 6,
+              background: "var(--color-bg-base)",
+              border: "1px solid var(--color-bg-subtle)",
+              marginBottom: 16,
+            }}
+          >
+            <ShieldIcon size={12} />
+            <span style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)", lineHeight: 1.4 }}>
+              Funds are held in on-chain escrow and released to the winner automatically.
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            padding: "0 24px 20px",
+          }}
+        >
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: "12px 20px",
+              borderRadius: "var(--radius-card, 12px)",
+              border: "1.5px solid var(--color-bg-subtle)",
+              background: "var(--color-bg-surface)",
+              color: "var(--color-text-secondary)",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "var(--font-body)",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!confirmEnabled}
+            style={{
+              flex: 1,
+              padding: "12px 20px",
+              borderRadius: "var(--radius-card, 12px)",
+              border: "none",
+              background: "var(--color-gold-primary)",
+              color: "var(--color-accent-fg, var(--color-bg-deepest))",
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              cursor: confirmEnabled ? "pointer" : "not-allowed",
+              fontFamily: "var(--font-body)",
+              boxShadow: "var(--shadow-gold)",
+              opacity: confirmEnabled ? 1 : 0.4,
+              transition: "opacity 0.2s ease",
+            }}
+          >
+            Confirm & Create Match
+          </button>
+        </div>
+        </div>
+      </FocusTrap>
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalIn { from { opacity: 0; transform: translate(-50%, -48%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+      `}</style>
+    </>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN — CREATE MATCH PAGE
    ═══════════════════════════════════════════════════════════════════ */
@@ -286,7 +591,12 @@ export default function CreateMatchPage() {
   const [wantCreate, setWantCreate] = useState(false);
   const createdRef = useRef(false);
 
+  const [showWagerConfirm, setShowWagerConfirm] = useState(false);
+  const [sessionToast, setSessionToast] = useState(false);
+  const sessionToastDismissed = useRef(false);
+
   const { address, isConnected } = useAuth();
+  const { balance, isLoading: balanceLoading } = useBalance();
   const social = useSocialContext();
 
   const {
@@ -346,7 +656,30 @@ export default function CreateMatchPage() {
     }
   }, [screen, countdown, gameId, router]);
 
+  // Session time reminder: after 10 minutes, show a gentle reminder toast
+  useEffect(() => {
+    if (sessionToastDismissed.current) return;
+    const timer = setTimeout(() => {
+      if (!sessionToastDismissed.current) {
+        setSessionToast(true);
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleCreateMatch = () => {
+    // For wager matches, show confirmation modal first
+    if (stakePerPoint > 0) {
+      setShowWagerConfirm(true);
+      return;
+    }
+    // Free matches skip confirmation
+    setWantCreate(true);
+    setScreen("codeGen");
+  };
+
+  const handleConfirmWager = () => {
+    setShowWagerConfirm(false);
     setWantCreate(true);
     setScreen("codeGen");
   };
@@ -410,7 +743,7 @@ export default function CreateMatchPage() {
             border: "none",
             color: "var(--color-text-secondary)",
             cursor: "pointer",
-            fontSize: 14,
+            fontSize: "0.875rem",
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
@@ -443,14 +776,14 @@ export default function CreateMatchPage() {
         >
           <span
             style={{
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontWeight: 600,
               fontFamily: "var(--font-mono)",
             }}
           >
-            $--
+            {balanceLoading || balance === null ? "$--" : `$${balance}`}
           </span>
-          <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>USDC</span>
+          <span style={{ fontSize: "0.625rem", color: "var(--color-text-muted)" }}>USDC</span>
         </div>
       </header>
 
@@ -494,7 +827,7 @@ export default function CreateMatchPage() {
                       }}
                     >
                       <SearchIcon />
-                      <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
                         Search friends...
                       </span>
                     </div>
@@ -526,7 +859,7 @@ export default function CreateMatchPage() {
                         <div
                           style={{
                             padding: "16px 12px",
-                            fontSize: 12,
+                            fontSize: "0.75rem",
                             color: "var(--color-text-muted)",
                             textAlign: "center",
                           }}
@@ -546,7 +879,7 @@ export default function CreateMatchPage() {
                       borderRadius: "var(--radius-card)",
                       background: "var(--color-bg-base)",
                       border: "1px solid var(--color-bg-subtle)",
-                      fontSize: 12,
+                      fontSize: "0.75rem",
                       color: "var(--color-text-secondary)",
                       lineHeight: 1.6,
                     }}
@@ -561,7 +894,7 @@ export default function CreateMatchPage() {
               <Card style={{ paddingBottom: 36 }}>
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: "0.8125rem",
                     fontWeight: 700,
                     color: "var(--color-text-primary)",
                     marginBottom: 18,
@@ -576,7 +909,7 @@ export default function CreateMatchPage() {
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      fontSize: 10,
+                      fontSize: "0.625rem",
                       color: "var(--color-text-muted)",
                       fontWeight: 500,
                       background: "var(--color-bg-elevated)",
@@ -641,7 +974,7 @@ export default function CreateMatchPage() {
                             stakePerPoint === amt && !customStake
                               ? "var(--color-accent-fg, var(--color-bg-deepest))"
                               : "var(--color-text-secondary)",
-                          fontSize: 12,
+                          fontSize: "0.75rem",
                           fontWeight: 600,
                           cursor: "pointer",
                           fontFamily: "var(--font-body)",
@@ -671,7 +1004,7 @@ export default function CreateMatchPage() {
                     >
                       <span
                         style={{
-                          fontSize: 12,
+                          fontSize: "0.75rem",
                           color: "var(--color-text-muted)",
                           fontWeight: 600,
                         }}
@@ -693,7 +1026,7 @@ export default function CreateMatchPage() {
                           border: "none",
                           outline: "none",
                           background: "transparent",
-                          fontSize: 12,
+                          fontSize: "0.75rem",
                           fontWeight: 600,
                           color: "var(--color-text-primary)",
                           fontFamily: "var(--font-body)",
@@ -704,7 +1037,7 @@ export default function CreateMatchPage() {
                   {stakePerPoint > 0 && (
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: "0.6875rem",
                         color: "var(--color-text-muted)",
                         lineHeight: 1.5,
                         marginBottom: 6,
@@ -718,6 +1051,32 @@ export default function CreateMatchPage() {
                       3&times;
                     </div>
                   )}
+                  <div style={{ marginTop: stakePerPoint > 0 ? 4 : 8 }}>
+                    <a
+                      href="https://www.ncpgambling.org/help-treatment/national-helpline-1-800-522-4700/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: "0.625rem",
+                        color: "var(--color-text-faint)",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontFamily: "var(--font-body)",
+                        transition: "color 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-faint)"; }}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="8" cy="8" r="6.5" />
+                        <path d="M8 7v4" strokeLinecap="round" />
+                        <circle cx="8" cy="5" r="0.5" fill="currentColor" />
+                      </svg>
+                      Play responsibly
+                    </a>
+                  </div>
                 </div>
 
                 {/* Doubling Cube */}
@@ -763,7 +1122,7 @@ export default function CreateMatchPage() {
                                 i > 0
                                   ? "1px solid var(--color-bg-subtle)"
                                   : "none",
-                              fontSize: 12,
+                              fontSize: "0.75rem",
                               fontWeight: 700,
                               cursor: "pointer",
                               fontFamily: "var(--font-body)",
@@ -779,7 +1138,7 @@ export default function CreateMatchPage() {
                         <div style={{ flex: 1 }}>
                           <div
                             style={{
-                              fontSize: 10,
+                              fontSize: "0.625rem",
                               color: "var(--color-text-muted)",
                               fontWeight: 600,
                               textTransform: "uppercase",
@@ -816,7 +1175,7 @@ export default function CreateMatchPage() {
                                     maxCube === val
                                       ? "var(--color-accent-fg, var(--color-bg-deepest))"
                                       : "var(--color-text-secondary)",
-                                  fontSize: 11,
+                                  fontSize: "0.6875rem",
                                   fontWeight: 600,
                                   cursor: "pointer",
                                   fontFamily: "var(--font-mono)",
@@ -855,7 +1214,7 @@ export default function CreateMatchPage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 11,
+                            fontSize: "0.6875rem",
                             fontWeight: 700,
                             color: "var(--color-text-primary)",
                             fontFamily: "var(--font-mono)",
@@ -865,7 +1224,7 @@ export default function CreateMatchPage() {
                         </div>
                         <div
                           style={{
-                            fontSize: 11,
+                            fontSize: "0.6875rem",
                             color: "var(--color-text-secondary)",
                             lineHeight: 1.4,
                           }}
@@ -896,7 +1255,7 @@ export default function CreateMatchPage() {
                       <div>
                         <div
                           style={{
-                            fontSize: 10,
+                            fontSize: "0.625rem",
                             color: "var(--color-text-muted)",
                             fontWeight: 600,
                             textTransform: "uppercase",
@@ -908,7 +1267,7 @@ export default function CreateMatchPage() {
                         </div>
                         <div
                           style={{
-                            fontSize: 18,
+                            fontSize: "1.125rem",
                             fontWeight: 700,
                             color: "var(--color-text-primary)",
                             fontFamily: "var(--font-mono)",
@@ -919,7 +1278,7 @@ export default function CreateMatchPage() {
                         </div>
                         <div
                           style={{
-                            fontSize: 10,
+                            fontSize: "0.625rem",
                             color: "var(--color-text-muted)",
                             marginTop: 2,
                           }}
@@ -954,16 +1313,16 @@ export default function CreateMatchPage() {
                       <WalletIcon />
                       <span
                         style={{
-                          fontSize: 12,
+                          fontSize: "0.75rem",
                           fontWeight: 600,
                           color: "var(--color-text-primary)",
                         }}
                       >
-                        $--
+                        {balanceLoading || balance === null ? "$--" : `$${balance}`}
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: "0.6875rem",
                           color: "var(--color-text-muted)",
                         }}
                       >
@@ -976,7 +1335,7 @@ export default function CreateMatchPage() {
                           display: "flex",
                           alignItems: "center",
                           gap: 4,
-                          fontSize: 10,
+                          fontSize: "0.625rem",
                           color: "var(--color-text-secondary)",
                           fontWeight: 600,
                         }}
@@ -987,17 +1346,16 @@ export default function CreateMatchPage() {
                     )}
                   </div>
 
-                  {false && (
+                  {maxExposure > 100 && (
                     <div
                       style={{
                         marginTop: 6,
-                        fontSize: 11,
+                        fontSize: "0.6875rem",
                         color: "var(--color-danger)",
                         fontWeight: 600,
                       }}
                     >
-                      Max exposure exceeds balance — lower stake or cube limit, or
-                      deposit more USDC
+                      High exposure: your maximum loss could be ${maxExposure.toFixed(2)}
                     </div>
                   )}
                 </div>
@@ -1031,7 +1389,7 @@ export default function CreateMatchPage() {
                     border: "none",
                     background: "var(--color-gold-primary)",
                     color: "var(--color-accent-fg, var(--color-bg-deepest))",
-                    fontSize: 15,
+                    fontSize: "0.9375rem",
                     fontWeight: 700,
                     cursor: "pointer",
                     fontFamily: "var(--font-body)",
@@ -1070,7 +1428,7 @@ export default function CreateMatchPage() {
               <div style={{ textAlign: "center" }}>
                 <h2
                   style={{
-                    fontSize: 22,
+                    fontSize: "1.375rem",
                     fontWeight: 700,
                     margin: "0 0 6px",
                     letterSpacing: "-0.02em",
@@ -1082,7 +1440,7 @@ export default function CreateMatchPage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                   }}
@@ -1098,7 +1456,7 @@ export default function CreateMatchPage() {
                 {!connected && (
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: "0.6875rem",
                       color: "var(--color-danger)",
                       fontWeight: 600,
                       marginBottom: 8,
@@ -1112,7 +1470,7 @@ export default function CreateMatchPage() {
                 {error && (
                   <div
                     style={{
-                      fontSize: 12,
+                      fontSize: "0.75rem",
                       color: "var(--color-danger)",
                       fontWeight: 600,
                       marginBottom: 12,
@@ -1129,7 +1487,7 @@ export default function CreateMatchPage() {
                 {/* Match code */}
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: "1.75rem",
                     fontWeight: 700,
                     letterSpacing: "0.06em",
                     fontFamily: "var(--font-mono)",
@@ -1158,7 +1516,7 @@ export default function CreateMatchPage() {
                       border: "none",
                       background: "var(--color-gold-primary)",
                       color: "var(--color-accent-fg, var(--color-bg-deepest))",
-                      fontSize: 12,
+                      fontSize: "0.75rem",
                       fontWeight: 700,
                       cursor: "pointer",
                       fontFamily: "var(--font-body)",
@@ -1178,7 +1536,7 @@ export default function CreateMatchPage() {
                       border: "1.5px solid var(--color-bg-subtle)",
                       background: "var(--color-bg-surface)",
                       color: "var(--color-text-secondary)",
-                      fontSize: 12,
+                      fontSize: "0.75rem",
                       fontWeight: 600,
                       cursor: "pointer",
                       fontFamily: "var(--font-body)",
@@ -1197,7 +1555,7 @@ export default function CreateMatchPage() {
                     borderRadius: "var(--radius-button)",
                     background: "var(--color-bg-base)",
                     border: "1px solid var(--color-bg-subtle)",
-                    fontSize: 12,
+                    fontSize: "0.75rem",
                     fontFamily: "var(--font-mono)",
                     color: "var(--color-text-muted)",
                     marginBottom: 20,
@@ -1236,7 +1594,7 @@ export default function CreateMatchPage() {
                     <rect x="14" y="14" width="4" height="4" rx="0.5" />
                     <path d="M21 14h-3v3M18 21h3v-4" strokeLinecap="round" />
                   </svg>
-                  <span style={{ fontSize: 10, color: "var(--color-text-muted)" }}>
+                  <span style={{ fontSize: "0.625rem", color: "var(--color-text-muted)" }}>
                     [QR Code]
                   </span>
                 </div>
@@ -1266,7 +1624,7 @@ export default function CreateMatchPage() {
                   <PulsingDot />
                   <span
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 500,
                       color: "var(--color-text-secondary)",
                     }}
@@ -1288,7 +1646,7 @@ export default function CreateMatchPage() {
                     border: "1.5px solid var(--color-bg-subtle)",
                     background: "var(--color-bg-surface)",
                     color: "var(--color-text-secondary)",
-                    fontSize: 13,
+                    fontSize: "0.8125rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "var(--font-body)",
@@ -1332,7 +1690,7 @@ export default function CreateMatchPage() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 24,
+                      fontSize: "1.5rem",
                       fontWeight: 700,
                       color: "var(--color-text-secondary)",
                     }}
@@ -1341,7 +1699,7 @@ export default function CreateMatchPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 700,
                       marginTop: 8,
                       color: "var(--color-text-primary)",
@@ -1352,7 +1710,7 @@ export default function CreateMatchPage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 18,
+                    fontSize: "1.125rem",
                     fontWeight: 700,
                     color: "var(--color-gold-dark)",
                     padding: "0 8px",
@@ -1371,7 +1729,7 @@ export default function CreateMatchPage() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: 24,
+                      fontSize: "1.5rem",
                       fontWeight: 700,
                       color: "var(--color-text-secondary)",
                     }}
@@ -1380,7 +1738,7 @@ export default function CreateMatchPage() {
                   </div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: "0.875rem",
                       fontWeight: 700,
                       marginTop: 8,
                       color: "var(--color-text-primary)",
@@ -1394,7 +1752,7 @@ export default function CreateMatchPage() {
               <div style={{ textAlign: "center" }}>
                 <h2
                   style={{
-                    fontSize: 24,
+                    fontSize: "1.5rem",
                     fontWeight: 700,
                     margin: "0 0 6px",
                     letterSpacing: "-0.02em",
@@ -1406,7 +1764,7 @@ export default function CreateMatchPage() {
                 </h2>
                 <p
                   style={{
-                    fontSize: 14,
+                    fontSize: "0.875rem",
                     color: "var(--color-text-secondary)",
                     margin: 0,
                   }}
@@ -1418,7 +1776,7 @@ export default function CreateMatchPage() {
               {/* Countdown */}
               <div
                 style={{
-                  fontSize: 64,
+                  fontSize: "4rem",
                   fontWeight: 700,
                   color: "var(--color-gold-primary)",
                   fontFamily: "var(--font-mono)",
@@ -1452,7 +1810,7 @@ export default function CreateMatchPage() {
                   <ShieldIcon size={14} />
                   <span
                     style={{
-                      fontSize: 12,
+                      fontSize: "0.75rem",
                       color: "var(--color-text-secondary)",
                     }}
                   >
@@ -1466,6 +1824,30 @@ export default function CreateMatchPage() {
           )}
         </div>
       </main>
+
+      {/* Wager Confirmation Modal */}
+      {showWagerConfirm && (
+        <WagerConfirmModal
+          stakePerPoint={stakePerPoint}
+          matchLength={matchLengthNum}
+          cubeEnabled={cubeEnabled}
+          maxCube={maxCube}
+          maxExposure={maxExposure}
+          onConfirm={handleConfirmWager}
+          onCancel={() => setShowWagerConfirm(false)}
+        />
+      )}
+
+      {/* Session Time Reminder Toast */}
+      {sessionToast && (
+        <SessionToast
+          message="You've been setting up matches for a while. Take a break if needed."
+          onDismiss={() => {
+            setSessionToast(false);
+            sessionToastDismissed.current = true;
+          }}
+        />
+      )}
     </div>
   );
 }

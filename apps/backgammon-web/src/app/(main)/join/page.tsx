@@ -71,7 +71,7 @@ export default function JoinPage() {
             border: "none",
             color: "var(--color-text-secondary)",
             cursor: "pointer",
-            fontSize: 14,
+            fontSize: "0.875rem",
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
@@ -83,7 +83,7 @@ export default function JoinPage() {
         </button>
         <span
           style={{
-            fontSize: 17,
+            fontSize: "1.0625rem",
             fontWeight: 700,
             color: "var(--color-text-primary)",
             fontFamily: "var(--font-display)",
@@ -104,7 +104,7 @@ export default function JoinPage() {
         >
           <span
             style={{
-              fontSize: 13,
+              fontSize: "0.8125rem",
               fontWeight: 600,
               color: "var(--color-gold-primary)",
             }}
@@ -113,7 +113,7 @@ export default function JoinPage() {
           </span>
           <span
             style={{
-              fontSize: 10,
+              fontSize: "0.625rem",
               color: "var(--color-text-muted)",
             }}
           >
@@ -159,7 +159,7 @@ export default function JoinPage() {
               </h2>
               <p
                 style={{
-                  fontSize: 14,
+                  fontSize: "0.875rem",
                   color: "var(--color-text-secondary)",
                   margin: 0,
                 }}
@@ -173,7 +173,7 @@ export default function JoinPage() {
               {/* Code input label */}
               <div
                 style={{
-                  fontSize: 10,
+                  fontSize: "0.625rem",
                   fontWeight: 700,
                   color: "var(--color-text-muted)",
                   textTransform: "uppercase",
@@ -199,7 +199,7 @@ export default function JoinPage() {
                   borderRadius: 6,
                   border: `2px solid ${code.length > 0 ? "var(--color-gold-primary)" : "var(--color-bg-subtle)"}`,
                   background: "var(--color-bg-base)",
-                  fontSize: 20,
+                  fontSize: "1.25rem",
                   fontWeight: 700,
                   letterSpacing: "0.04em",
                   color: "var(--color-text-primary)",
@@ -229,7 +229,7 @@ export default function JoinPage() {
                 />
                 <span
                   style={{
-                    fontSize: 11,
+                    fontSize: "0.6875rem",
                     color: "var(--color-text-muted)",
                   }}
                 >
@@ -254,7 +254,7 @@ export default function JoinPage() {
                   borderRadius: 6,
                   border: "1.5px solid var(--color-bg-subtle)",
                   background: "var(--color-bg-base)",
-                  fontSize: 12,
+                  fontSize: "0.75rem",
                   color: "var(--color-text-secondary)",
                   outline: "none",
                   fontFamily: "var(--font-mono)",
@@ -274,7 +274,7 @@ export default function JoinPage() {
                 background:
                   "linear-gradient(135deg, var(--color-gold-primary) 0%, var(--color-gold-light) 100%)",
                 color: "var(--color-accent-fg)",
-                fontSize: 15,
+                fontSize: "0.9375rem",
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "var(--font-body)",
@@ -293,7 +293,7 @@ export default function JoinPage() {
               style={{
                 background: "none",
                 border: "none",
-                fontSize: 13,
+                fontSize: "0.8125rem",
                 color: "var(--color-text-secondary)",
                 fontWeight: 600,
                 cursor: "pointer",

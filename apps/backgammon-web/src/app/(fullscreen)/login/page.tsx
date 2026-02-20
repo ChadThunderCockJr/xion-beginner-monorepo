@@ -30,7 +30,7 @@ function GammonButton({
         width: "100%",
         padding: "14px 20px",
         borderRadius: 10,
-        fontSize: 15,
+        fontSize: "0.9375rem",
         fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.2s ease",
@@ -319,7 +319,7 @@ export default function LoginPage() {
           </h2>
           <p
             style={{
-              fontSize: 15,
+              fontSize: "0.9375rem",
               color: "var(--color-text-secondary)",
               lineHeight: 1.6,
               margin: 0,
@@ -348,7 +348,7 @@ export default function LoginPage() {
                     padding: "6px 14px",
                     borderRadius: 20,
                     border: "1px solid var(--color-gold-dark)",
-                    fontSize: 12,
+                    fontSize: "0.75rem",
                     color: "var(--color-text-primary)",
                     fontWeight: 500,
                     fontFamily: "var(--font-body)",
@@ -402,7 +402,7 @@ export default function LoginPage() {
             </h1>
             <p
               style={{
-                fontSize: 15,
+                fontSize: "0.9375rem",
                 color: "var(--color-text-secondary)",
                 margin: "10px 0 0",
                 lineHeight: 1.5,
@@ -447,7 +447,7 @@ export default function LoginPage() {
           {/* Footer */}
           <p
             style={{
-              fontSize: 11,
+              fontSize: "0.6875rem",
               color: "var(--color-text-faint)",
               textAlign: "center",
               lineHeight: 1.6,

@@ -63,13 +63,15 @@ export class Matchmaker {
   }
 
   private findMatch(entry: MatchmakingEntry): MatchmakingEntry | null {
+    const candidates: MatchmakingEntry[] = [];
     for (const candidate of this.queue) {
       if (candidate.address === entry.address) continue;
       if (candidate.wagerAmount !== entry.wagerAmount) continue;
       if (Math.abs(candidate.rating - entry.rating) <= this.ratingRange) {
-        return candidate;
+        candidates.push(candidate);
       }
     }
-    return null;
+    if (candidates.length === 0) return null;
+    return candidates[Math.floor(Math.random() * candidates.length)];
   }
 }

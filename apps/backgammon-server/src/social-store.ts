@@ -259,6 +259,29 @@ export async function markOnline(address: string): Promise<void> {
     const r = getRedis();
     if (!r) return;
     await r.sadd("online_players", address);
+    await r.set(`online_heartbeat:${address}`, "1", "EX", 300); // 5 min TTL
+  } catch { /* ignore */ }
+}
+
+export async function refreshOnlineHeartbeat(address: string): Promise<void> {
+  try {
+    const r = getRedis();
+    if (!r) return;
+    await r.set(`online_heartbeat:${address}`, "1", "EX", 300);
+  } catch { /* ignore */ }
+}
+
+export async function cleanupStaleOnlinePlayers(): Promise<void> {
+  try {
+    const r = getRedis();
+    if (!r) return;
+    const members = await r.smembers("online_players");
+    for (const addr of members) {
+      const alive = await r.exists(`online_heartbeat:${addr}`);
+      if (!alive) {
+        await r.srem("online_players", addr);
+      }
+    }
   } catch { /* ignore */ }
 }
 
@@ -267,6 +290,7 @@ export async function markOffline(address: string): Promise<void> {
     const r = getRedis();
     if (!r) return;
     await r.srem("online_players", address);
+    await r.del(`online_heartbeat:${address}`);
   } catch { /* ignore */ }
 }
 
@@ -642,7 +666,7 @@ export async function getOnlineCount(): Promise<number> {
 
 // ── Game History ───────────────────────────────────────────────
 
-const GAME_HISTORY_TTL = 30 * 24 * 60 * 60; // 30 days
+const GAME_HISTORY_TTL = 365 * 24 * 60 * 60; // 1 year
 
 export async function saveGameHistory(gameId: string, moveHistory: MoveRecord[]): Promise<void> {
   try {
