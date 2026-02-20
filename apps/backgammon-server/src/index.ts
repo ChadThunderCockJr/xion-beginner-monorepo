@@ -149,8 +149,13 @@ function send(ws: WebSocket, msg: ServerMessage): void {
   }
 }
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", async (ws: WebSocket) => {
   logger.info("WebSocket connected");
+
+  // Send auth challenge nonce
+  const { generateNonce } = await import("./auth.js");
+  const nonce = generateNonce();
+  send(ws, { type: "auth_challenge" as const, nonce });
 
   ws.on("message", (data: Buffer) => {
     if (!checkRateLimit(ws)) return;
@@ -209,7 +214,22 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           connections.delete(existingWs);
         }
       }
-      // For MVP, trust the address (production would verify signature)
+
+      // Verify wallet signature (skip in dev mode)
+      const { verifySignature, isAuthSkipped } = await import("./auth.js");
+      if (!isAuthSkipped()) {
+        if (!msg.signature || !msg.pubkey || !msg.nonce) {
+          send(ws, { type: "error", message: "Missing signature, pubkey, or nonce" });
+          return;
+        }
+        const valid = await verifySignature(msg.address, msg.nonce, msg.signature, msg.pubkey);
+        if (!valid) {
+          send(ws, { type: "error", message: "Invalid signature" });
+          ws.close(1008, "Authentication failed");
+          return;
+        }
+      }
+
       const ratingInfo = await socialStore.getRating(msg.address);
       connections.set(ws, { address: msg.address, rating: ratingInfo.rating });
       logger.info("Player authenticated", { address: msg.address });
@@ -384,7 +404,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const result = gameManager.rollDice(msg.game_id, conn.address);
+      const result = await gameManager.rollDiceLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot roll dice", code: "CANNOT_ROLL" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
@@ -437,7 +457,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
         return;
       }
 
-      const result = gameManager.applyMove(msg.game_id, conn.address, from, to);
+      const result = await gameManager.applyMoveLocked(msg.game_id, conn.address, from, to);
       if (!result) { send(ws, { type: "error", message: "Invalid move", code: "INVALID_MOVE" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
@@ -507,7 +527,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const result = gameManager.handleEndTurn(msg.game_id, conn.address);
+      const result = await gameManager.handleEndTurnLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot end turn", code: "CANNOT_END_TURN" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
@@ -524,7 +544,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const result = gameManager.handleUndo(msg.game_id, conn.address);
+      const result = await gameManager.handleUndoLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot undo", code: "CANNOT_UNDO" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
@@ -541,20 +561,122 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const result = gameManager.handleResignation(msg.game_id, conn.address);
+      const resignType = msg.resign_type || "normal";
+      const result = gameManager.handleResignationTyped(msg.game_id, conn.address, resignType);
       if (!result) { send(ws, { type: "error", message: "Cannot resign", code: "CANNOT_RESIGN" }); return; }
 
       const game = gameManager.getGame(msg.game_id)!;
-      logger.info("Game over", { gameId: msg.game_id, winner: result.winner, reason: "resignation" });
+      if (result.offered) {
+        // Gammon/backgammon resignation offered — opponent must accept/reject
+        const playerColor = gameManager.getPlayerColor(game, conn.address)!;
+        gameManager.broadcastToGame(game, {
+          type: "resign_offered",
+          game_id: msg.game_id,
+          player: playerColor,
+          resign_type: resignType,
+        });
+      } else {
+        // Normal resignation — immediate game over
+        logger.info("Game over", { gameId: msg.game_id, winner: result.winner!, reason: "resignation" });
+        gameManager.broadcastToGame(game, {
+          type: "game_over",
+          game_id: msg.game_id,
+          winner: result.winner!,
+          result_type: "normal",
+          game_state: game.gameState,
+        });
+        socialManager.recordMatchResult(game, result.winner!, "normal");
+        socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+      }
+      break;
+    }
+
+    case "accept_resign": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const result = gameManager.handleAcceptResignation(msg.game_id, conn.address);
+      if (!result) { send(ws, { type: "error", message: "Cannot accept resignation" }); return; }
+
+      const game = gameManager.getGame(msg.game_id)!;
+      logger.info("Game over", { gameId: msg.game_id, winner: result.winner, reason: "resignation accepted" });
       gameManager.broadcastToGame(game, {
         type: "game_over",
         game_id: msg.game_id,
         winner: result.winner,
-        result_type: "normal",
+        result_type: result.resultType,
         game_state: game.gameState,
       });
-      socialManager.recordMatchResult(game, result.winner, "normal");
+      socialManager.recordMatchResult(game, result.winner, result.resultType);
       socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+      break;
+    }
+
+    case "reject_resign": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const rejected = gameManager.handleRejectResignation(msg.game_id, conn.address);
+      if (!rejected) { send(ws, { type: "error", message: "Cannot reject resignation" }); return; }
+
+      const game = gameManager.getGame(msg.game_id)!;
+      gameManager.broadcastToGame(game, { type: "resign_rejected", game_id: msg.game_id });
+      break;
+    }
+
+    case "offer_double": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const result = gameManager.handleOfferDouble(msg.game_id, conn.address);
+      if (!result) { send(ws, { type: "error", message: "Cannot double", code: "CANNOT_DOUBLE" }); return; }
+
+      const game = gameManager.getGame(msg.game_id)!;
+      gameManager.broadcastToGame(game, {
+        type: "double_offered",
+        game_id: msg.game_id,
+        player: result.player,
+        cube_value: result.cubeValue,
+      });
+      break;
+    }
+
+    case "accept_double": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const result = gameManager.handleAcceptDouble(msg.game_id, conn.address);
+      if (!result) { send(ws, { type: "error", message: "Cannot accept double", code: "CANNOT_ACCEPT" }); return; }
+
+      const game = gameManager.getGame(msg.game_id)!;
+      gameManager.broadcastToGame(game, {
+        type: "double_accepted",
+        game_id: msg.game_id,
+        cube_value: result.cubeValue,
+        cube_owner: result.cubeOwner,
+      });
+      break;
+    }
+
+    case "reject_double": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const result = gameManager.handleRejectDouble(msg.game_id, conn.address);
+      if (!result) { send(ws, { type: "error", message: "Cannot reject double", code: "CANNOT_REJECT" }); return; }
+
+      const game = gameManager.getGame(msg.game_id)!;
+      gameManager.broadcastToGame(game, {
+        type: "double_rejected",
+        game_id: msg.game_id,
+        winner: result.winner,
+      });
+      socialManager.recordMatchResult(game, result.winner, "normal");
+      break;
+    }
+
+    case "submit_client_seed": {
+      // Handled by commit-reveal dice protocol — currently using player address as seed
       break;
     }
 

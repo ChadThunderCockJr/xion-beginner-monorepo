@@ -21,6 +21,8 @@ export function createGameState(): GameState {
     resultType: null,
     turnNumber: 0,
     moveHistory: [],
+    cubeValue: 1,
+    cubeOwner: null,
   };
 }
 
@@ -30,6 +32,13 @@ export function setDice(
   die1: number,
   die2: number
 ): GameState {
+  if (
+    die1 < 1 || die1 > 6 || die2 < 1 || die2 > 6 ||
+    !Number.isInteger(die1) || !Number.isInteger(die2)
+  ) {
+    throw new Error(`Invalid die values: ${die1}, ${die2}`);
+  }
+
   const dice: [number, number] = [die1, die2];
   const movesRemaining =
     die1 === die2
@@ -212,4 +221,74 @@ export function checkGameOver(board: BoardState): {
   }
 
   return { over: false, winner: null, resultType: null };
+}
+
+/** Check if a player can offer a double */
+export function canDouble(state: GameState, player: Player): boolean {
+  if (state.gameOver) return false;
+  if (state.dice !== null) return false; // can only double before rolling
+  if (state.currentPlayer !== player) return false;
+  if (state.cubeValue >= 64) return false;
+  // Can double if cube is centered or owned by this player
+  return state.cubeOwner === null || state.cubeOwner === player;
+}
+
+/** Offer a double — returns state with pending double */
+export function offerDouble(state: GameState, player: Player): GameState | null {
+  if (!canDouble(state, player)) return null;
+  return { ...state };
+}
+
+/** Accept a double — cube value doubles, ownership transfers to acceptor */
+export function acceptDouble(state: GameState, acceptingPlayer: Player): GameState {
+  return {
+    ...state,
+    cubeValue: state.cubeValue * 2,
+    cubeOwner: acceptingPlayer,
+  };
+}
+
+/** Reject a double — game ends, doubling player wins */
+export function rejectDouble(state: GameState, rejectingPlayer: Player): { state: GameState; winner: Player } {
+  const winner: Player = rejectingPlayer === "white" ? "black" : "white";
+  return {
+    state: {
+      ...state,
+      gameOver: true,
+      winner,
+      resultType: "normal",
+    },
+    winner,
+  };
+}
+
+/** Handle the opening roll where each player rolls one die.
+ *  Returns null if tie (re-roll needed), otherwise sets currentPlayer and dice. */
+export function setOpeningRoll(
+  state: GameState,
+  whiteDie: number,
+  blackDie: number,
+): GameState | null {
+  if (whiteDie < 1 || whiteDie > 6 || blackDie < 1 || blackDie > 6 ||
+      !Number.isInteger(whiteDie) || !Number.isInteger(blackDie)) {
+    throw new Error(`Invalid opening roll values: ${whiteDie}, ${blackDie}`);
+  }
+
+  // Tie — re-roll needed
+  if (whiteDie === blackDie) return null;
+
+  const firstPlayer: Player = whiteDie > blackDie ? "white" : "black";
+  const dice: [number, number] = whiteDie > blackDie
+    ? [whiteDie, blackDie]
+    : [blackDie, whiteDie];
+
+  const movesRemaining = [dice[0], dice[1]];
+
+  return {
+    ...state,
+    currentPlayer: firstPlayer,
+    dice,
+    movesRemaining,
+    turnNumber: state.turnNumber + 1,
+  };
 }

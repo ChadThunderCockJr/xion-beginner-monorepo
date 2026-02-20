@@ -1,4 +1,5 @@
 import { randomInt } from "node:crypto";
+import { GameDiceHistory } from "./dice.js";
 import {
   createGameState,
   setDice,
@@ -6,15 +7,35 @@ import {
   endTurn,
   hasLegalMoves,
   getLegalFirstMoves,
+  canDouble,
+  acceptDouble,
+  rejectDouble,
   type GameState,
   type Player,
   type Move,
+  type ResultType,
 } from "@xion-beginner/backgammon-core";
+import { getEscrowClient, getSettlementMultiplier } from "./escrow.js";
 import type { ServerGame, PlayerConnection, ServerMessage } from "./types.js";
 
 export class GameManager {
   private games = new Map<string, ServerGame>();
   private playerGames = new Map<string, string>(); // address -> gameId
+  private diceHistories = new Map<string, GameDiceHistory>();
+  private gameLocks = new Map<string, Promise<void>>();
+
+  private async withGameLock<T>(gameId: string, fn: () => T | Promise<T>): Promise<T> {
+    const prev = this.gameLocks.get(gameId) ?? Promise.resolve();
+    let resolve: () => void;
+    const next = new Promise<void>(r => { resolve = r; });
+    this.gameLocks.set(gameId, next);
+    await prev;
+    try {
+      return await fn();
+    } finally {
+      resolve!();
+    }
+  }
 
   private async persistGame(game: ServerGame): Promise<void> {
     try {
@@ -79,6 +100,10 @@ export class GameManager {
             disconnectTimer: null,
             disconnectedPlayer: null,
             disconnectedAt: null,
+            escrowStatus: "none",
+            pendingResignation: null,
+            moveTimes: [],
+            stallingWarned: false,
           };
           this.games.set(game.id, game);
 
@@ -128,7 +153,12 @@ export class GameManager {
       disconnectTimer: null,
       disconnectedPlayer: null,
       disconnectedAt: null,
+      escrowStatus: "none",
+      pendingResignation: null,
+      moveTimes: [],
+      stallingWarned: false,
     };
+    this.diceHistories.set(id, new GameDiceHistory());
     this.games.set(id, game);
     return game;
   }
@@ -158,6 +188,10 @@ export class GameManager {
     return null;
   }
 
+  async rollDiceLocked(gameId: string, playerAddress: string): Promise<{ dice: [number, number]; gameState: GameState; legalMoves: Move[] } | null> {
+    return this.withGameLock(gameId, () => this.rollDice(gameId, playerAddress));
+  }
+
   rollDice(gameId: string, playerAddress: string): { dice: [number, number]; gameState: GameState; legalMoves: Move[] } | null {
     const game = this.games.get(gameId);
     if (!game || game.status !== "playing") return null;
@@ -167,9 +201,31 @@ export class GameManager {
     const playerColor = this.getPlayerColor(game, playerAddress);
     if (!playerColor || playerColor !== game.gameState.currentPlayer) return null;
 
-    const die1 = randomInt(1, 7);
-    const die2 = randomInt(1, 7);
     game.turnMoveStack = [];
+
+    // Commit-reveal dice: create commit, use player address as client seed
+    const diceHistory = this.diceHistories.get(gameId);
+    const turnNumber = game.gameState.turnNumber + 1; // setDice increments turnNumber
+    let die1: number;
+    let die2: number;
+
+    if (diceHistory) {
+      const { commitHash } = diceHistory.createTurnCommit(turnNumber);
+      // Use player address as client seed for simplicity
+      // (full protocol would have player submit their own seed)
+      const revealed = diceHistory.revealDice(turnNumber, playerAddress);
+      if (revealed) {
+        die1 = revealed.dice[0];
+        die2 = revealed.dice[1];
+      } else {
+        die1 = randomInt(1, 7);
+        die2 = randomInt(1, 7);
+      }
+    } else {
+      die1 = randomInt(1, 7);
+      die2 = randomInt(1, 7);
+    }
+
     game.gameState = setDice(game.gameState, die1, die2);
 
     const legalMoves = getLegalFirstMoves(
@@ -184,6 +240,10 @@ export class GameManager {
     void this.persistGame(game);
 
     return { dice: [die1, die2], gameState: game.gameState, legalMoves };
+  }
+
+  async applyMoveLocked(gameId: string, playerAddress: string, from: number, to: number): Promise<{ move: Move; playerColor: Player; gameState: GameState; legalMoves: Move[]; turnAutoEnded: boolean } | null> {
+    return this.withGameLock(gameId, () => this.applyMove(gameId, playerAddress, from, to));
   }
 
   applyMove(gameId: string, playerAddress: string, from: number, to: number): { move: Move; playerColor: Player; gameState: GameState; legalMoves: Move[]; turnAutoEnded: boolean } | null {
@@ -233,6 +293,10 @@ export class GameManager {
     return { move, playerColor: playerColor!, gameState: game.gameState, legalMoves, turnAutoEnded };
   }
 
+  async handleEndTurnLocked(gameId: string, playerAddress: string): Promise<GameState | null> {
+    return this.withGameLock(gameId, () => this.handleEndTurn(gameId, playerAddress));
+  }
+
   handleEndTurn(gameId: string, playerAddress: string): GameState | null {
     const game = this.games.get(gameId);
     if (!game || game.status !== "playing") return null;
@@ -259,6 +323,10 @@ export class GameManager {
     void this.persistGame(game);
 
     return game.gameState;
+  }
+
+  async handleUndoLocked(gameId: string, playerAddress: string): Promise<{ gameState: GameState; legalMoves: Move[] } | null> {
+    return this.withGameLock(gameId, () => this.handleUndo(gameId, playerAddress));
   }
 
   handleUndo(gameId: string, playerAddress: string): { gameState: GameState; legalMoves: Move[] } | null {
@@ -341,8 +409,159 @@ export class GameManager {
       if (game.playerWhite) this.playerGames.delete(game.playerWhite.address);
       if (game.playerBlack) this.playerGames.delete(game.playerBlack.address);
       this.games.delete(gameId);
+      this.diceHistories.delete(gameId);
+      this.gameLocks.delete(gameId);
       void this.deletePersistedGame(gameId);
     }
+  }
+
+  // ── Doubling Cube ─────────────────────────────────────────────
+
+  handleOfferDouble(gameId: string, playerAddress: string): { player: Player; cubeValue: number } | null {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+    if (!canDouble(game.gameState, playerColor)) return null;
+    return { player: playerColor, cubeValue: game.gameState.cubeValue * 2 };
+  }
+
+  handleAcceptDouble(gameId: string, playerAddress: string): { cubeValue: number; cubeOwner: Player } | null {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+    game.gameState = acceptDouble(game.gameState, playerColor);
+    void this.persistGame(game);
+    return { cubeValue: game.gameState.cubeValue, cubeOwner: game.gameState.cubeOwner! };
+  }
+
+  handleRejectDouble(gameId: string, playerAddress: string): { winner: Player } | null {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+    const result = rejectDouble(game.gameState, playerColor);
+    game.gameState = result.state;
+    game.status = "finished";
+    this.clearTurnTimer(game);
+    void this.deletePersistedGame(gameId);
+    return { winner: result.winner };
+  }
+
+  // ── Typed Resignation ─────────────────────────────────────────
+
+  handleResignationTyped(
+    gameId: string,
+    playerAddress: string,
+    resignType: "normal" | "gammon" | "backgammon" = "normal",
+  ): { offered: boolean; winner?: Player; loser?: Player; resignType: string } | null {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+
+    // If resign type is not "normal", offer it for opponent to accept/reject
+    if (resignType !== "normal") {
+      game.pendingResignation = { player: playerAddress, resignType };
+      return { offered: true, resignType };
+    }
+
+    // Normal resignation — immediate
+    const winner: Player = playerColor === "white" ? "black" : "white";
+    game.status = "finished";
+    game.gameState = { ...game.gameState, gameOver: true, winner, resultType: "normal" };
+    this.clearTurnTimer(game);
+    void this.deletePersistedGame(gameId);
+    return { offered: false, winner, loser: playerColor, resignType: "normal" };
+  }
+
+  handleAcceptResignation(gameId: string, playerAddress: string): { winner: Player; resultType: ResultType } | null {
+    const game = this.games.get(gameId);
+    if (!game || !game.pendingResignation) return null;
+    const resigningColor = this.getPlayerColor(game, game.pendingResignation.player);
+    const acceptingColor = this.getPlayerColor(game, playerAddress);
+    if (!resigningColor || !acceptingColor || resigningColor === acceptingColor) return null;
+
+    const winner = acceptingColor;
+    const resultType = game.pendingResignation.resignType as ResultType;
+    game.status = "finished";
+    game.gameState = { ...game.gameState, gameOver: true, winner, resultType };
+    game.pendingResignation = null;
+    this.clearTurnTimer(game);
+    void this.deletePersistedGame(gameId);
+    return { winner, resultType };
+  }
+
+  handleRejectResignation(gameId: string, playerAddress: string): boolean {
+    const game = this.games.get(gameId);
+    if (!game || !game.pendingResignation) return false;
+    const resigningColor = this.getPlayerColor(game, game.pendingResignation.player);
+    const rejectingColor = this.getPlayerColor(game, playerAddress);
+    if (!resigningColor || !rejectingColor || resigningColor === rejectingColor) return false;
+    game.pendingResignation = null;
+    return true;
+  }
+
+  // ── Escrow Integration ────────────────────────────────────────
+
+  async createEscrowForGame(gameId: string, playerA: string, playerB: string, wagerAmount: number): Promise<boolean> {
+    const escrow = getEscrowClient();
+    if (!escrow) return false;
+    const game = this.games.get(gameId);
+    if (!game) return false;
+
+    const [balA, balB] = await Promise.all([
+      escrow.queryBalance(playerA),
+      escrow.queryBalance(playerB),
+    ]);
+    if (parseInt(balA) < wagerAmount || parseInt(balB) < wagerAmount) return false;
+
+    const created = await escrow.createEscrow(gameId, playerA, playerB, String(wagerAmount));
+    if (created) {
+      game.escrowStatus = "pending_deposits";
+      void this.persistGame(game);
+    }
+    return created;
+  }
+
+  async settleEscrow(gameId: string, winner: string, resultType: ResultType): Promise<boolean> {
+    const escrow = getEscrowClient();
+    if (!escrow) return false;
+    const game = this.games.get(gameId);
+    if (!game || game.escrowStatus !== "active") return false;
+
+    const multiplier = getSettlementMultiplier(resultType, game.gameState.cubeValue);
+    const settled = await escrow.settle(gameId, winner, multiplier);
+    if (settled) game.escrowStatus = "settled";
+    return settled;
+  }
+
+  // ── Stalling Detection ────────────────────────────────────────
+
+  checkStalling(game: ServerGame, playerAddress: string): { warn: boolean; penalize: boolean } {
+    if (game.moveTimes.length < 3) return { warn: false, penalize: false };
+
+    const recent = game.moveTimes.slice(-3);
+    const avgTime = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const turnLimit = game.turnTimeLimit * 1000;
+
+    if (avgTime > turnLimit * 0.8) {
+      if (game.stallingWarned) return { warn: false, penalize: true };
+      return { warn: true, penalize: false };
+    }
+    return { warn: false, penalize: false };
+  }
+
+  getDiceHistory(gameId: string): Array<{
+    turnNumber: number;
+    serverSeed: string;
+    clientSeed: string;
+    commitHash: string;
+    dice: [number, number];
+  }> {
+    const history = this.diceHistories.get(gameId);
+    return history ? history.getHistory() : [];
   }
 
   getPlayerColor(game: ServerGame, address: string): Player | null {

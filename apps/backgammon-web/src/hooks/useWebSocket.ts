@@ -15,6 +15,7 @@ export function useWebSocket(url: string) {
     new Map()
   );
   const retryCountRef = useRef(0);
+  const pendingNonceRef = useRef<string | null>(null);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -42,6 +43,10 @@ export function useWebSocket(url: string) {
       try {
         const msg = JSON.parse(event.data) as ServerMessage;
         setLastMessage(msg);
+        // Capture auth challenge nonce
+        if (msg.type === "auth_challenge") {
+          pendingNonceRef.current = (msg as any).nonce ?? null;
+        }
         const handlers = handlersRef.current.get(msg.type);
         if (handlers) {
           handlers.forEach((h) => h(msg));
@@ -89,5 +94,7 @@ export function useWebSocket(url: string) {
     };
   }, []);
 
-  return { connect, disconnect, sendMessage, connected, lastMessage, on };
+  const getPendingNonce = useCallback(() => pendingNonceRef.current, []);
+
+  return { connect, disconnect, sendMessage, connected, lastMessage, on, getPendingNonce };
 }

@@ -34,6 +34,21 @@ importers:
 
   apps/backgammon-server:
     dependencies:
+      '@cosmjs/amino':
+        specifier: ^0.38.1
+        version: 0.38.1
+      '@cosmjs/cosmwasm-stargate':
+        specifier: ^0.38.1
+        version: 0.38.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+      '@cosmjs/crypto':
+        specifier: ^0.38.1
+        version: 0.38.1
+      '@cosmjs/proto-signing':
+        specifier: ^0.38.1
+        version: 0.38.1
+      '@cosmjs/stargate':
+        specifier: ^0.38.1
+        version: 0.38.1(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@xion-beginner/backgammon-core':
         specifier: workspace:*
         version: link:../../packages/backgammon-core

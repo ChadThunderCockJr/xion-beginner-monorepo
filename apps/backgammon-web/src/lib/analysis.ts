@@ -591,3 +591,79 @@ function buildHeuristicTurnAnalysis(
     boardBefore: board,
   };
 }
+
+/* ── Cube Decision Analysis ── */
+
+export type CubeDecision = "double" | "no_double" | "take" | "drop";
+
+export interface CubeAnalysis {
+  turnNumber: number;
+  player: Player;
+  action: "offered" | "accepted" | "rejected";
+  correctAction: CubeDecision;
+  isCorrect: boolean;
+  equityLoss: number;
+  details: string;
+}
+
+/**
+ * Analyze a cube decision based on equity.
+ * - Doubling is correct when equity > 0.6 from doubler's perspective
+ * - Taking is correct when equity < 0.75 from receiver's perspective (i.e., > 0.25 chance)
+ */
+export function analyzeCubeDecision(
+  board: BoardState,
+  player: Player,
+  action: "offered" | "accepted" | "rejected",
+  cubeValue: number,
+): CubeAnalysis {
+  const playerEq = normalize(evaluateBoard(board, player, GM_WEIGHTS));
+  const opponentEq = -playerEq; // from opponent's perspective
+
+  let correctAction: CubeDecision;
+  let isCorrect: boolean;
+  let equityLoss = 0;
+  let details: string;
+
+  if (action === "offered") {
+    // Was doubling correct?
+    // Double is correct when player's normalized equity > 0.6
+    const shouldDouble = playerEq > 0.6;
+    correctAction = shouldDouble ? "double" : "no_double";
+    isCorrect = shouldDouble;
+    equityLoss = shouldDouble ? 0 : Math.max(0, 0.6 - playerEq) * cubeValue * 0.1;
+    details = shouldDouble
+      ? `Correct double (equity: ${playerEq.toFixed(3)})`
+      : `Premature double (equity: ${playerEq.toFixed(3)}, need > 0.60)`;
+  } else if (action === "accepted") {
+    // Was taking correct?
+    // Take is correct when opponent's equity > 0.25 (i.e., player equity < 0.75)
+    const shouldTake = playerEq < 0.75;
+    correctAction = shouldTake ? "take" : "drop";
+    isCorrect = shouldTake;
+    equityLoss = shouldTake ? 0 : Math.max(0, playerEq - 0.75) * cubeValue * 0.1;
+    details = shouldTake
+      ? `Correct take (opponent equity: ${opponentEq.toFixed(3)})`
+      : `Should have dropped (opponent equity: ${opponentEq.toFixed(3)}, too low)`;
+  } else {
+    // Was dropping correct?
+    // Drop is correct when opponent's equity < 0.25 (i.e., player equity > 0.75)
+    const shouldDrop = playerEq > 0.75;
+    correctAction = shouldDrop ? "drop" : "take";
+    isCorrect = shouldDrop;
+    equityLoss = shouldDrop ? 0 : Math.max(0, 0.75 - playerEq) * cubeValue * 0.1;
+    details = shouldDrop
+      ? `Correct drop (opponent equity: ${opponentEq.toFixed(3)})`
+      : `Should have taken (opponent equity: ${opponentEq.toFixed(3)}, enough to play)`;
+  }
+
+  return {
+    turnNumber: 0, // set by caller
+    player,
+    action,
+    correctAction,
+    isCorrect,
+    equityLoss,
+    details,
+  };
+}

@@ -24,6 +24,8 @@ export interface GameState {
   resultType: ResultType | null;
   turnNumber: number;
   moveHistory: MoveRecord[];
+  cubeValue: number;        // 1, 2, 4, 8, 16, 32, 64
+  cubeOwner: Player | null; // null = centered (either can double)
 }
 
 export type ResultType = "normal" | "gammon" | "backgammon";
@@ -42,3 +44,12 @@ export const BEAR_OFF_WHITE = 25; // white bears off "past" point 24
 export const BEAR_OFF_BLACK = 0; // black bears off "past" point 1
 export const TOTAL_CHECKERS = 15;
 export const NUM_POINTS = 24;
+
+export interface MatchState {
+  matchLength: number;        // target points (e.g., 5, 7, 11)
+  whiteScore: number;
+  blackScore: number;
+  gameNumber: number;
+  isCrawford: boolean;        // Crawford game: no doubling allowed
+  crawfordGamePlayed: boolean; // after Crawford, free doubling resumes
+}

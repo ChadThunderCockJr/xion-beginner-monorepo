@@ -432,6 +432,13 @@ export async function getRating(address: string): Promise<RatingInfo> {
   } catch { return { rating: 1500, ratingChange: 0 }; }
 }
 
+/** Get K-factor based on number of games played */
+function getKFactor(totalGames: number): number {
+  if (totalGames < 20) return 40;   // Provisional
+  if (totalGames < 100) return 20;  // Intermediate
+  return 10;                         // Established
+}
+
 export async function updateRatings(
   winnerAddr: string,
   loserAddr: string,
@@ -441,19 +448,29 @@ export async function updateRatings(
     const r = getRedis();
     if (!r) return;
 
-    const winnerData = await r.hgetall(`rating:${winnerAddr}`);
-    const loserData = await r.hgetall(`rating:${loserAddr}`);
+    const [winnerData, loserData, winnerStats, loserStats] = await Promise.all([
+      r.hgetall(`rating:${winnerAddr}`),
+      r.hgetall(`rating:${loserAddr}`),
+      getStats(winnerAddr),
+      getStats(loserAddr),
+    ]);
     const winnerRating = winnerData.rating ? parseInt(winnerData.rating) : 1500;
     const loserRating = loserData.rating ? parseInt(loserData.rating) : 1500;
 
-    const K = 32;
+    // Variable K-factor based on game count
+    const winnerK = getKFactor(winnerStats.totalGames);
+    const loserK = getKFactor(loserStats.totalGames);
+
+    // Result multiplier for gammon/backgammon
     const multiplier = resultType === "backgammon" ? 2 : resultType === "gammon" ? 1.5 : 1;
 
+    // Expected scores
     const expectedWinner = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
     const expectedLoser = 1 - expectedWinner;
 
-    const winnerChange = Math.round(K * multiplier * (1 - expectedWinner));
-    const loserChange = Math.round(K * multiplier * (0 - expectedLoser));
+    // Rating changes (each player uses their own K-factor)
+    const winnerChange = Math.round(winnerK * multiplier * (1 - expectedWinner));
+    const loserChange = Math.round(loserK * multiplier * (0 - expectedLoser));
 
     const newWinnerRating = Math.max(100, winnerRating + winnerChange);
     const newLoserRating = Math.max(100, loserRating + loserChange);

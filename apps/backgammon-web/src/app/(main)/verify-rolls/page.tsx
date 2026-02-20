@@ -327,9 +327,11 @@ export default function VerifyRollsPage() {
             </h2>
           </div>
           <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", margin: 0, lineHeight: 1.6 }}>
-            All dice rolls use <code style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--color-text-secondary)" }}>node:crypto</code> CSPRNG
-            (cryptographically secure pseudorandom number generator). Every roll is logged and can be audited.
-            Expand any match below to inspect the full roll history and dice distribution.
+            All dice rolls use a <strong>commit-reveal protocol</strong> for provable fairness.
+            The server commits to a seed hash before each roll, then combines it with a client seed
+            to derive the dice deterministically. You can verify any roll by checking that the commit hash
+            matches the server seed and that the dice values were correctly derived.
+            Expand any match below to inspect the full roll history, dice distribution, and cryptographic proofs.
           </p>
         </Card>
 

@@ -46,7 +46,22 @@ export {
   endTurn,
   hasLegalMoves,
   checkGameOver,
+  canDouble,
+  offerDouble,
+  acceptDouble,
+  rejectDouble,
+  setOpeningRoll,
 } from "./rules";
 
 // Notation
 export { formatMove, formatTurn, formatGame } from "./notation";
+
+// Match scoring
+export type { MatchState } from "./types";
+export {
+  createMatch,
+  scoreGame,
+  isMatchOver,
+  isCrawfordGame,
+  pointsToWin,
+} from "./match";
