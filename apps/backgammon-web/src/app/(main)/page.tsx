@@ -750,27 +750,57 @@ export default function DashboardPage() {
             >
               Quick Match
             </h3>
-            <button
-              onClick={() => setRated((r) => !r)}
-              aria-label={rated ? "Switch to casual mode" : "Switch to rated mode"}
-              role="switch"
-              aria-checked={rated}
+            <div
+              role="radiogroup"
+              aria-label="Game mode"
               style={{
-                fontSize: "0.6875rem",
-                color: rated ? "var(--color-burgundy-light)" : "var(--color-text-muted)",
-                background: rated ? "var(--color-burgundy-faint)" : "var(--color-bg-subtle)",
-                padding: "6px 12px",
+                display: "flex",
+                background: "var(--color-bg-surface)",
                 borderRadius: 20,
-                fontWeight: 600,
-                fontFamily: "var(--font-body)",
-                border: "none",
+                border: "1px solid var(--color-border-subtle)",
+                padding: 2,
                 cursor: "pointer",
-                transition: "all 0.15s ease",
-                minHeight: 44,
               }}
             >
-              {rated ? "Rated" : "Casual"}
-            </button>
+              <button
+                role="radio"
+                aria-checked={rated}
+                onClick={() => setRated(true)}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 18,
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-body)",
+                  background: rated ? "var(--color-gold-primary)" : "transparent",
+                  color: rated ? "var(--color-accent-fg)" : "var(--color-text-muted)",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                Rated
+              </button>
+              <button
+                role="radio"
+                aria-checked={!rated}
+                onClick={() => setRated(false)}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 18,
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-body)",
+                  background: !rated ? "var(--color-gold-primary)" : "transparent",
+                  color: !rated ? "var(--color-accent-fg)" : "var(--color-text-muted)",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                Casual
+              </button>
+            </div>
           </div>
           <p
             style={{

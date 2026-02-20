@@ -531,9 +531,9 @@ function CenterControls({
               style={{
                 padding: "8px 18px",
                 borderRadius: 5,
-                border: "1.5px solid var(--color-gold-dark)",
+                border: "1.5px solid var(--color-gold-primary)",
                 background: "var(--color-bg-elevated)",
-                color: "var(--color-gold-primary)",
+                color: "var(--color-text-primary)",
                 fontSize: "0.8125rem",
                 fontWeight: 700,
               }}

@@ -215,6 +215,7 @@ export function Sidebar() {
           }}
         />
         <span
+          className="font-brand"
           style={{
             color: "var(--color-text-primary)",
             fontSize: "1.3125rem",

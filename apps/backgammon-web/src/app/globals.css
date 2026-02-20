@@ -189,7 +189,7 @@ html.lux {
   --color-gold-primary: #C5973E;
   --color-gold-light: #D4A843;
   --color-gold-dark: #A07828;
-  --color-gold-muted: rgba(197, 151, 62, 0.15);
+  --color-gold-muted: rgba(197, 151, 62, 0.25);
   --color-accent-fg: #2A0A16;
   --color-text-on-gold: #2A0A16;
 
@@ -213,8 +213,8 @@ html.lux {
   --color-border-default: #7A1830;
   --color-border-strong: #882040;
 
-  /* ─── Font override — calligraphic script ─── */
-  --font-display: var(--font-pinyon), "Pinyon Script", "Cormorant Garamond", cursive;
+  /* ─── Font — Cormorant for headings (Pinyon Script reserved for .font-brand) ─── */
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
 
   /* ─── Shadows — gold glow ─── */
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
@@ -277,8 +277,9 @@ body {
   overflow-x: hidden;
 }
 
-html.lux body {
-  --font-display: var(--font-pinyon), "Pinyon Script", cursive;
+/* Pinyon Script only for the brand logo in lux theme */
+html.lux .font-brand {
+  font-family: var(--font-pinyon), "Pinyon Script", cursive;
 }
 
 /* ─── Animations ─── */
@@ -381,7 +382,7 @@ html.lux body {
   font-size: 15px;
   padding: 14px 20px;
   border-radius: var(--radius-button);
-  border: 1px solid var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
   cursor: pointer;
   transition: all 150ms ease;
 }

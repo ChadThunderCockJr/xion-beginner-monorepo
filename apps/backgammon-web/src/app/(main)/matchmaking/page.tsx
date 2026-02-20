@@ -191,7 +191,7 @@ export default function MatchmakingPage() {
           style={{
             padding: "12px 32px",
             borderRadius: 8,
-            border: "1.5px solid var(--color-bg-subtle)",
+            border: "1.5px solid var(--color-border-default)",
             background: "var(--color-bg-surface)",
             color: "var(--color-text-secondary)",
             fontSize: "0.875rem",
@@ -407,7 +407,7 @@ export default function MatchmakingPage() {
               style={{
                 padding: "12px 32px",
                 borderRadius: 8,
-                border: "1.5px solid var(--color-bg-subtle)",
+                border: "1.5px solid var(--color-border-default)",
                 background: "var(--color-bg-surface)",
                 color: "var(--color-text-secondary)",
                 fontSize: "0.875rem",
