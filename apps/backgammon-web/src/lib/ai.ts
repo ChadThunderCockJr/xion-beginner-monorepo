@@ -35,24 +35,24 @@ export const WEIGHTS: Record<AIDifficulty, EvalWeights> = {
     backCheckerPenalty: 0,
   },
   club: {
-    pipCount: 1.0,
-    blotPenalty: -3.0,
-    hitBonus: 4.0,
-    homePoints: 3.0,
-    primeLength: 4.0,
-    anchor: 2.0,
-    bearOffProgress: 2.0,
-    backCheckerPenalty: -1.5,
-  },
-  expert: {
     pipCount: 1.5,
     blotPenalty: -5.0,
     hitBonus: 5.0,
-    homePoints: 5.0,
-    primeLength: 7.0,
-    anchor: 4.0,
+    homePoints: 4.0,
+    primeLength: 6.0,
+    anchor: 3.0,
     bearOffProgress: 3.0,
-    backCheckerPenalty: -3.0,
+    backCheckerPenalty: -2.5,
+  },
+  expert: {
+    pipCount: 2.0,
+    blotPenalty: -6.0,
+    hitBonus: 6.0,
+    homePoints: 6.0,
+    primeLength: 8.0,
+    anchor: 5.0,
+    bearOffProgress: 4.0,
+    backCheckerPenalty: -4.0,
   },
   gm: {
     pipCount: 2.0,
@@ -302,20 +302,20 @@ function evaluateBoardGM(board: BoardState, aiColor: Player): number {
     // Shot vulnerability — THE key feature
     for (let i = 1; i <= 24; i++) {
       if (getCheckerCount(board, i, aiColor) === 1) {
-        score += -8.0 * countShots(board, i, opponent);
+        score += -12.0 * countShots(board, i, opponent);
       }
     }
 
     // Bar penalties
-    score += getBarCount(board, aiColor) * -15.0;
-    score += getBarCount(board, opponent) * 6.0;
+    score += getBarCount(board, aiColor) * -20.0;
+    score += getBarCount(board, opponent) * 10.0;
 
     // Home board points made
     const homeStart = aiColor === "white" ? 1 : 19;
     const homeEnd = aiColor === "white" ? 6 : 24;
     for (let i = homeStart; i <= homeEnd; i++) {
       if (getCheckerCount(board, i, aiColor) >= 2) {
-        score += 5.0;
+        score += 6.0;
       }
     }
 
@@ -323,9 +323,9 @@ function evaluateBoardGM(board: BoardState, aiColor: Player): number {
     const fivePt = aiColor === "white" ? 5 : 20;
     const barPt = aiColor === "white" ? 7 : 18;
     const fourPt = aiColor === "white" ? 4 : 21;
-    if (getCheckerCount(board, fivePt, aiColor) >= 2) score += 8.0;
-    if (getCheckerCount(board, barPt, aiColor) >= 2) score += 6.0;
-    if (getCheckerCount(board, fourPt, aiColor) >= 2) score += 4.0;
+    if (getCheckerCount(board, fivePt, aiColor) >= 2) score += 12.0;
+    if (getCheckerCount(board, barPt, aiColor) >= 2) score += 8.0;
+    if (getCheckerCount(board, fourPt, aiColor) >= 2) score += 6.0;
 
     // Prime length — scan for longest run of consecutive made points
     let maxPrime = 0;
@@ -339,7 +339,7 @@ function evaluateBoardGM(board: BoardState, aiColor: Player): number {
       }
     }
     if (maxPrime >= 3) {
-      score += (maxPrime - 2) * (maxPrime - 2) * 6.0;
+      score += (maxPrime - 2) * (maxPrime - 2) * 8.0;
     }
 
     // Trapped checkers behind opponent's prime
@@ -376,13 +376,13 @@ function evaluateBoardGM(board: BoardState, aiColor: Player): number {
         }
         trapped += getBarCount(board, aiColor);
       }
-      score += -5.0 * trapped * opBestLen;
+      score += -8.0 * trapped * opBestLen;
     }
 
     // Stack penalty (4+ checkers on a single point)
     for (let i = 1; i <= 24; i++) {
       const c = getCheckerCount(board, i, aiColor);
-      if (c > 3) score += -2.5 * (c - 3);
+      if (c > 3) score += -3.5 * (c - 3);
     }
 
     // Anchors in opponent's home board
@@ -390,18 +390,18 @@ function evaluateBoardGM(board: BoardState, aiColor: Player): number {
     const opHomeEnd = opponent === "white" ? 6 : 24;
     for (let i = opHomeStart; i <= opHomeEnd; i++) {
       if (getCheckerCount(board, i, aiColor) >= 2) {
-        score += 5.0;
+        score += 7.0;
       }
     }
 
     // Back checker penalty (AI checkers in opponent's home quadrant)
     if (aiColor === "white") {
       for (let i = 19; i <= 24; i++) {
-        score += getCheckerCount(board, i, aiColor) * -3.0;
+        score += getCheckerCount(board, i, aiColor) * -4.0;
       }
     } else {
       for (let i = 1; i <= 6; i++) {
-        score += getCheckerCount(board, i, aiColor) * -3.0;
+        score += getCheckerCount(board, i, aiColor) * -4.0;
       }
     }
   } else {
@@ -471,20 +471,17 @@ export async function selectAIMove(
           return nonEmpty[Math.floor(Math.random() * nonEmpty.length)].moves;
         }
 
-        // Club/expert: weighted random from top candidates using equity
-        let candidates: typeof nonEmpty;
+        // Expert: deterministic — always pick the best move
         if (difficulty === "expert") {
-          candidates = nonEmpty.slice(0, Math.min(3, nonEmpty.length));
-        } else {
-          // club: top 50%
-          candidates = nonEmpty.slice(0, Math.max(1, Math.ceil(nonEmpty.length / 2)));
+          return nonEmpty[0].moves;
         }
 
-        // Weighted random: use equity differences (gnubg returns best-first)
+        // Club: weighted random from top 5 using equity
+        const candidates = nonEmpty.slice(0, Math.min(5, nonEmpty.length));
+
         const bestEq = candidates[0].evaluation?.eq ?? 0;
         const adjusted = candidates.map((c) => {
           const eq = c.evaluation?.eq ?? 0;
-          // Weight = inverse of equity loss + small baseline so worst isn't zero
           return { moves: c.moves, weight: Math.max(0.1, 1 - Math.abs(bestEq - eq)) };
         });
         const totalWeight = adjusted.reduce((sum, c) => sum + c.weight, 0);
@@ -522,12 +519,17 @@ function selectHeuristicMove(
     return nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
   }
 
-  // ── GM path: rich evaluation + 1-ply look-ahead ──
+  // ── GM path: rich evaluation + 1-ply look-ahead (top 8) ──
   if (difficulty === "gm") {
-    return selectGMMove(board, aiColor, nonEmpty);
+    return selectMinimaxMove(board, aiColor, nonEmpty, 8, 0.2);
   }
 
-  // ── Club / Expert path ──
+  // ── Expert path: 1-ply minimax with fewer candidates (top 3) ──
+  if (difficulty === "expert") {
+    return selectMinimaxMove(board, aiColor, nonEmpty, 3, 0.3);
+  }
+
+  // ── Club path: static heuristic, weighted random from top 3 ──
   const weights = WEIGHTS[difficulty];
 
   // Score each sequence by simulating all moves
@@ -542,14 +544,8 @@ function selectHeuristicMove(
   // Sort descending by score
   scored.sort((a, b) => b.score - a.score);
 
-  // Weighted random selection from top candidates
-  let candidates: typeof scored;
-  if (difficulty === "expert") {
-    candidates = scored.slice(0, Math.min(3, scored.length));
-  } else {
-    // club: top 50%
-    candidates = scored.slice(0, Math.max(1, Math.ceil(scored.length / 2)));
-  }
+  // Club: weighted random from top 3
+  const candidates = scored.slice(0, Math.min(3, scored.length));
 
   // Weighted random: higher scores are more likely
   const minScore = candidates[candidates.length - 1].score;
@@ -576,12 +572,15 @@ for (let d1 = 1; d1 <= 6; d1++) {
 }
 
 /**
- * GM move selection: static GM eval → pick top 5 → 1-ply minimax re-score.
+ * Minimax move selection: static GM eval → pick top N → 1-ply minimax re-score.
+ * Used by GM (topN=8, staticWeight=0.2) and Expert (topN=3, staticWeight=0.3).
  */
-function selectGMMove(
+function selectMinimaxMove(
   board: BoardState,
   aiColor: Player,
-  candidates: Move[][]
+  candidates: Move[][],
+  topN: number,
+  staticWeight: number
 ): Move[] {
   const opponent: Player = aiColor === "white" ? "black" : "white";
 
@@ -596,8 +595,8 @@ function selectGMMove(
 
   scored.sort((a, b) => b.staticScore - a.staticScore);
 
-  // 1-ply look-ahead on top 5
-  const top = scored.slice(0, Math.min(5, scored.length));
+  // 1-ply look-ahead on top N
+  const top = scored.slice(0, Math.min(topN, scored.length));
 
   let bestSeq = top[0].seq;
   let bestFinal = -Infinity;
@@ -629,7 +628,7 @@ function selectGMMove(
     }
 
     const onePly = weightedSum / 36;
-    const finalScore = 0.3 * staticScore + 0.7 * onePly;
+    const finalScore = staticWeight * staticScore + (1 - staticWeight) * onePly;
 
     if (finalScore > bestFinal) {
       bestFinal = finalScore;
