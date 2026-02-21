@@ -39,7 +39,7 @@ export interface MatchmakingEntry {
 
 // Client -> Server messages
 export type ClientMessage =
-  | { type: "auth"; address: string; signature?: string; pubkey?: string; nonce?: string }
+  | { type: "auth"; address: string; signature?: string; pubkey?: string; nonce?: string; signer_address?: string }
   | { type: "create_game"; wager_amount: number }
   | { type: "join_game"; game_id: string }
   | { type: "join_queue"; wager_amount: number }

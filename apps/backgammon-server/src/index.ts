@@ -222,7 +222,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           send(ws, { type: "error", message: "Missing signature, pubkey, or nonce" });
           return;
         }
-        const valid = await verifySignature(msg.address, msg.nonce, msg.signature, msg.pubkey);
+        const valid = await verifySignature(msg.address, msg.nonce, msg.signature, msg.pubkey, msg.signer_address);
         if (!valid) {
           send(ws, { type: "error", message: "Invalid signature" });
           ws.close(1008, "Authentication failed");

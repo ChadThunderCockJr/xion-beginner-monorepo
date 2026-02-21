@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { GameState, Player, Move } from "@xion-beginner/backgammon-core";
+import { useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { useWebSocket } from "./useWebSocket";
 import {
   playDiceRoll,
@@ -207,10 +208,15 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
 export function useGame(wsUrl: string, address: string | null) {
   const { connect, sendMessage, connected, on } = useWebSocket(wsUrl);
   const [state, dispatch] = useReducer(gameReducer, initialGameContext);
+  const { signArb, client: abstraxionClient } = useAbstraxionSigningClient();
   const addressRef = useRef(address);
   addressRef.current = address;
   const myColorRef = useRef(state.myColor);
   myColorRef.current = state.myColor;
+
+  // Track auth_challenge nonce from server
+  const [authNonce, setAuthNonce] = useState<string | null>(null);
+  const authSentRef = useRef(false);
 
   // Connect when address is available
   useEffect(() => {
@@ -219,12 +225,56 @@ export function useGame(wsUrl: string, address: string | null) {
     }
   }, [address, connect]);
 
-  // Authenticate once connected
+  // Listen for auth_challenge from server
   useEffect(() => {
-    if (connected && address) {
-      sendMessage({ type: "auth", address });
+    const unsub = on("auth_challenge", (msg) => {
+      setAuthNonce(msg.nonce as string);
+      authSentRef.current = false;
+    });
+    return unsub;
+  }, [on]);
+
+  // Authenticate with wallet signature once nonce + signing are available
+  useEffect(() => {
+    if (!connected || !address || !authNonce || authSentRef.current) return;
+
+    if (signArb && abstraxionClient) {
+      let cancelled = false;
+      (async () => {
+        try {
+          // Get session key account data from the Abstraxion signing client
+          const accountData = await abstraxionClient.getGranteeAccountData();
+          if (!accountData) throw new Error("No grantee account data available");
+          // Sign the nonce with the session key
+          const signature = await signArb(accountData.address, authNonce);
+          const pubkey = btoa(String.fromCharCode(...accountData.pubkey));
+          if (!cancelled) {
+            sendMessage({
+              type: "auth",
+              address,
+              signature,
+              pubkey,
+              nonce: authNonce,
+              signer_address: accountData.address,
+            });
+            authSentRef.current = true;
+          }
+        } catch (err) {
+          console.error("[useGame] Wallet signing failed, sending unsigned auth:", err);
+          if (!cancelled) {
+            sendMessage({ type: "auth", address });
+            authSentRef.current = true;
+          }
+        }
+      })();
+      return () => { cancelled = true; };
     }
-  }, [connected, address, sendMessage]);
+
+    // signArb not available — send unsigned auth as fallback
+    // (server with SKIP_AUTH_VERIFICATION=true will accept it)
+    sendMessage({ type: "auth", address });
+    authSentRef.current = true;
+  }, [connected, address, authNonce, signArb, abstraxionClient, sendMessage]);
 
   // Reset queue state on disconnect (server queue is lost on restart)
   useEffect(() => {
