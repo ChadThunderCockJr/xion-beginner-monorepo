@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { GameState, Player, Move } from "@xion-beginner/backgammon-core";
+import { canDouble as checkCanDouble } from "@xion-beginner/backgammon-core";
 import { useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { useWebSocket } from "./useWebSocket";
 import {
@@ -28,6 +29,8 @@ interface GameContext {
   pendingConfirmation: boolean;
   forcedMoveNotice: boolean;
   disconnectCountdown: number | null;
+  doubleOffered: boolean;
+  doubleOfferedBy: Player | null;
 }
 
 type GameAction =
@@ -41,7 +44,13 @@ type GameAction =
       whiteName?: string;
       blackName?: string;
       gameState: GameState;
+      legalMoves: Move[];
       myAddress: string;
+    }
+  | {
+      type: "GAME_SYNC";
+      gameState: GameState;
+      legalMoves: Move[];
     }
   | { type: "DICE_ROLLED"; gameState: GameState; legalMoves: Move[]; player: Player; needsConfirmation?: boolean }
   | { type: "MOVE_MADE"; gameState: GameState; legalMoves: Move[]; player: Player; move: Move; needsConfirmation?: boolean }
@@ -64,7 +73,10 @@ type GameAction =
   | { type: "OPPONENT_DISCONNECTING"; countdown: number }
   | { type: "DISCONNECT_COUNTDOWN"; countdown: number }
   | { type: "REACTION_RECEIVED"; emoji: string; from: string }
-  | { type: "CLEAR_REACTION" };
+  | { type: "CLEAR_REACTION" }
+  | { type: "DOUBLE_OFFERED"; player: Player; cubeValue: number }
+  | { type: "DOUBLE_ACCEPTED"; cubeValue: number; cubeOwner: Player }
+  | { type: "DOUBLE_REJECTED"; winner: Player };
 
 const initialGameContext: GameContext = {
   gameId: null,
@@ -84,6 +96,8 @@ const initialGameContext: GameContext = {
   pendingConfirmation: false,
   forcedMoveNotice: false,
   disconnectCountdown: null,
+  doubleOffered: false,
+  doubleOfferedBy: null,
 };
 
 function gameReducer(state: GameContext, action: GameAction): GameContext {
@@ -119,11 +133,24 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         opponent,
         gameState: action.gameState,
         status: "playing",
-        legalMoves: [],
+        legalMoves: action.legalMoves,
         error: null,
         undoCount: 0,
-        turnStartedAt: null,
+        turnStartedAt: action.gameState.dice ? Date.now() : null,
         lastOpponentMove: null,
+        doubleOffered: false,
+        doubleOfferedBy: null,
+      };
+    }
+    case "GAME_SYNC": {
+      // Reconnection: update game state but preserve timer and undo state
+      const hasDice = action.gameState.dice !== null;
+      return {
+        ...state,
+        gameState: action.gameState,
+        legalMoves: action.legalMoves,
+        // Preserve turnStartedAt if we already have one; otherwise set if dice active
+        turnStartedAt: state.turnStartedAt ?? (hasDice ? Date.now() : null),
       };
     }
     case "DICE_ROLLED":
@@ -135,6 +162,8 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         turnStartedAt: Date.now(),
         lastOpponentMove: null,
         pendingConfirmation: action.needsConfirmation ? true : false,
+        doubleOffered: false,
+        doubleOfferedBy: null,
       };
     case "MOVE_MADE": {
       const iMadeIt = state.myColor !== null && action.player === state.myColor;
@@ -164,6 +193,8 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         undoCount: 0,
         turnStartedAt: Date.now(),
         pendingConfirmation: false,
+        doubleOffered: false,
+        doubleOfferedBy: null,
       };
     case "GAME_OVER":
       return {
@@ -175,6 +206,27 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         legalMoves: [],
         undoCount: 0,
         turnStartedAt: null,
+        doubleOffered: false,
+        doubleOfferedBy: null,
+      };
+    case "DOUBLE_OFFERED":
+      return { ...state, doubleOffered: true, doubleOfferedBy: action.player };
+    case "DOUBLE_ACCEPTED":
+      return {
+        ...state,
+        gameState: state.gameState
+          ? { ...state.gameState, cubeValue: action.cubeValue, cubeOwner: action.cubeOwner }
+          : state.gameState,
+        doubleOffered: false,
+        doubleOfferedBy: null,
+      };
+    case "DOUBLE_REJECTED":
+      return {
+        ...state,
+        winner: action.winner,
+        status: "finished",
+        doubleOffered: false,
+        doubleOfferedBy: null,
       };
     case "OPPONENT_DISCONNECTED":
       return { ...state, opponentDisconnected: true };
@@ -213,6 +265,8 @@ export function useGame(wsUrl: string, address: string | null) {
   addressRef.current = address;
   const myColorRef = useRef(state.myColor);
   myColorRef.current = state.myColor;
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Track auth_challenge nonce from server
   const [authNonce, setAuthNonce] = useState<string | null>(null);
@@ -313,16 +367,29 @@ export function useGame(wsUrl: string, address: string | null) {
         })
       ),
       on("game_start", (msg) => {
+        const gameId = msg.game_id as string;
+        const gs = msg.game_state as GameState;
+        const legalMoves = (msg.legal_moves || []) as Move[];
+
         // Register this WebSocket as the game WebSocket for this player
-        sendMessage({ type: "rejoin_game", game_id: msg.game_id as string });
+        sendMessage({ type: "rejoin_game", game_id: gameId });
+
+        // If already playing the same game, this is a reconnection — sync state
+        // without resetting timer/undo/etc.
+        if (stateRef.current.status === "playing" && stateRef.current.gameId === gameId) {
+          dispatch({ type: "GAME_SYNC", gameState: gs, legalMoves });
+          return;
+        }
+
         dispatch({
           type: "GAME_START",
-          gameId: msg.game_id as string,
+          gameId,
           white: msg.white as string,
           black: msg.black as string,
           whiteName: msg.white_name as string | undefined,
           blackName: msg.black_name as string | undefined,
-          gameState: msg.game_state as GameState,
+          gameState: gs,
+          legalMoves,
           myAddress: addressRef.current || "",
         });
       }),
@@ -379,6 +446,26 @@ export function useGame(wsUrl: string, address: string | null) {
           gameState: msg.game_state as GameState,
         });
       }),
+      on("double_offered", (msg) =>
+        dispatch({
+          type: "DOUBLE_OFFERED",
+          player: msg.player as Player,
+          cubeValue: msg.cube_value as number,
+        })
+      ),
+      on("double_accepted", (msg) =>
+        dispatch({
+          type: "DOUBLE_ACCEPTED",
+          cubeValue: msg.cube_value as number,
+          cubeOwner: msg.cube_owner as Player,
+        })
+      ),
+      on("double_rejected", (msg) =>
+        dispatch({
+          type: "DOUBLE_REJECTED",
+          winner: msg.winner as Player,
+        })
+      ),
       on("opponent_disconnected", () =>
         dispatch({ type: "OPPONENT_DISCONNECTED" })
       ),
@@ -396,8 +483,6 @@ export function useGame(wsUrl: string, address: string | null) {
       on("error", (msg) =>
         dispatch({ type: "ERROR", message: msg.message as string })
       ),
-      // TODO: Server does not relay "reaction" messages yet. Once the server
-      // broadcasts incoming reactions to the opponent, this handler will display them.
       on("reaction", (msg) =>
         dispatch({
           type: "REACTION_RECEIVED",
@@ -407,7 +492,7 @@ export function useGame(wsUrl: string, address: string | null) {
       ),
     ];
     return () => unsubs.forEach((u) => u());
-  }, [on]);
+  }, [on, sendMessage]);
 
   // Clear last opponent move after 3 seconds
   useEffect(() => {
@@ -424,10 +509,6 @@ export function useGame(wsUrl: string, address: string | null) {
       return () => clearTimeout(timer);
     }
   }, [state.lastReaction]);
-
-  // Ref to current state for timeout callbacks
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   // No forced move auto-play — player always confirms manually
 
@@ -483,7 +564,21 @@ export function useGame(wsUrl: string, address: string | null) {
     if (state.gameId) sendMessage({ type: "resign", game_id: state.gameId });
   }, [sendMessage, state.gameId]);
 
-  // TODO: Server needs to relay reaction messages to the opponent
+  const offerDouble = useCallback(() => {
+    if (state.gameId)
+      sendMessage({ type: "offer_double", game_id: state.gameId });
+  }, [sendMessage, state.gameId]);
+
+  const acceptDouble = useCallback(() => {
+    if (state.gameId)
+      sendMessage({ type: "accept_double", game_id: state.gameId });
+  }, [sendMessage, state.gameId]);
+
+  const rejectDouble = useCallback(() => {
+    if (state.gameId)
+      sendMessage({ type: "reject_double", game_id: state.gameId });
+  }, [sendMessage, state.gameId]);
+
   const sendReaction = useCallback(
     (emoji: string) => {
       if (state.gameId) {
@@ -495,9 +590,15 @@ export function useGame(wsUrl: string, address: string | null) {
 
   const reset = useCallback(() => dispatch({ type: "RESET" }), []);
 
+  // Compute canDouble from game state
+  const myCanDouble = state.gameState && state.myColor
+    ? checkCanDouble(state.gameState, state.myColor)
+    : false;
+
   return {
     ...state,
     canUndo: state.undoCount > 0 || state.pendingConfirmation,
+    canDouble: myCanDouble,
     connected,
     authenticated,
     createGame,
@@ -509,6 +610,9 @@ export function useGame(wsUrl: string, address: string | null) {
     endTurn,
     undoMove,
     resign,
+    offerDouble,
+    acceptDouble,
+    rejectDouble,
     sendReaction,
     reset,
   };

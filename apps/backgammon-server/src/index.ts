@@ -10,6 +10,7 @@ import { getRedis } from "./redis.js";
 import * as socialStore from "./social-store.js";
 import type { ClientMessage, PlayerConnection, ServerMessage } from "./types.js";
 import { logger } from "./logger.js";
+import { getLegalFirstMoves } from "@xion-beginner/backgammon-core";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
@@ -248,6 +249,12 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
               getDisplayName(game.playerWhite?.address || ""),
               getDisplayName(game.playerBlack?.address || ""),
             ]);
+            // Include legal_moves so the client can resume mid-turn
+            const isMyTurn = game.gameState.currentPlayer === color;
+            const hasDice = game.gameState.dice !== null;
+            const legalMoves = (isMyTurn && hasDice && game.gameState.movesRemaining.length > 0)
+              ? getLegalFirstMoves(game.gameState.board, color, game.gameState.movesRemaining)
+              : [];
             send(ws, {
               type: "game_start",
               game_id: existingGameId,
@@ -256,6 +263,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
               white_name: wName,
               black_name: bName,
               game_state: game.gameState,
+              legal_moves: legalMoves,
             });
           }
         }

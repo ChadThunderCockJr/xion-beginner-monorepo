@@ -78,7 +78,7 @@ export type ServerMessage =
   | { type: "error"; message: string; code?: string }
   | { type: "game_created"; game_id: string; color: Player }
   | { type: "game_joined"; game_id: string; color: Player; opponent: string; opponent_name?: string }
-  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState }
+  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState; legal_moves?: Move[] }
   | { type: "queue_joined"; position: number }
   | { type: "queue_left" }
   | { type: "dice_rolled"; game_id: string; dice: [number, number]; player: Player; game_state: GameState; legal_moves: Move[]; needs_confirmation?: boolean }

@@ -28,6 +28,9 @@ export default function MatchPage() {
     resultType,
     connected,
     canUndo,
+    canDouble,
+    doubleOffered,
+    doubleOfferedBy,
     turnStartedAt,
     lastOpponentMove,
     lastReaction,
@@ -39,6 +42,9 @@ export default function MatchPage() {
     endTurn,
     undoMove,
     resign,
+    offerDouble,
+    acceptDouble,
+    rejectDouble,
     sendReaction,
     reset,
   } = useGame(WS_URL, address);
@@ -94,6 +100,14 @@ export default function MatchPage() {
       onResign={resign}
       onUndo={undoMove}
       canUndo={canUndo}
+      canDouble={canDouble}
+      onDouble={offerDouble}
+      doubleOffered={doubleOffered}
+      doubleOfferedBy={doubleOfferedBy}
+      onAcceptDouble={acceptDouble}
+      onRejectDouble={rejectDouble}
+      cubeValue={gameState.cubeValue}
+      cubeOwner={gameState.cubeOwner}
       turnStartedAt={turnStartedAt}
       lastOpponentMove={lastOpponentMove}
       pendingConfirmation={pendingConfirmation}
