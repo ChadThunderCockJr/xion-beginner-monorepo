@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGame } from "@/hooks/useGame";
-import { useSocial } from "@/hooks/useSocial";
+import { useSocialContext } from "@/contexts/SocialContext";
 import { GameScreen } from "@/components/GameScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { WS_URL } from "@/lib/ws-config";
@@ -43,7 +43,7 @@ export default function MatchPage() {
     reset,
   } = useGame(WS_URL, address);
 
-  const { blockUser, reportUser } = useSocial(WS_URL, address);
+  const { blockUser, reportUser } = useSocialContext();
 
   // Loading state: waiting for server to send game state
   if (!gameState || !myColor) {
