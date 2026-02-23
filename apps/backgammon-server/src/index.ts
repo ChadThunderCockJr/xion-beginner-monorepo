@@ -206,14 +206,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
 
   switch (msg.type) {
     case "auth": {
-      // Enforce 1 connection per address
-      for (const [existingWs, existingConn] of connections) {
-        if (existingConn.address === msg.address && existingWs !== ws) {
-          send(existingWs, { type: "error", message: "Authenticated from another session" });
-          existingWs.close(1000, "Replaced by new connection");
-          connections.delete(existingWs);
-        }
-      }
+      // Allow multiple connections per address (game + social use separate WebSockets)
 
       // Verify wallet signature (skip in dev mode)
       const { verifySignature, isAuthSkipped } = await import("./auth.js");
@@ -242,36 +235,15 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       socialStore.markOnline(msg.address);
       socialManager.broadcastPresence(msg.address, "online");
 
-      // Check for reconnection to existing game
+      // Notify this WebSocket about an existing active game (don't update
+      // the game's player WS here — that happens via rejoin_game to avoid
+      // the social WebSocket overwriting the game WebSocket).
       const existingGameId = gameManager.getPlayerGame(msg.address);
       if (existingGameId) {
         const game = gameManager.getGame(existingGameId);
         if (game && game.status === "playing") {
           const color = gameManager.getPlayerColor(game, msg.address);
           if (color) {
-            const player: PlayerConnection = {
-              ws,
-              address: msg.address,
-              rating: ratingInfo.rating,
-              connectedAt: Date.now(),
-            };
-            gameManager.handleReconnect(existingGameId, player);
-
-            // Cancel disconnect grace period if active
-            if (game.disconnectedPlayer === msg.address) {
-              gameManager.cancelDisconnectGracePeriod(game);
-            }
-
-            // Notify opponent
-            const opponent = color === "white" ? game.playerBlack : game.playerWhite;
-            if (opponent) {
-              gameManager.sendToPlayer(opponent, {
-                type: "opponent_reconnected",
-                game_id: existingGameId,
-              });
-            }
-
-            // Send current game state (with display names)
             const [wName, bName] = await Promise.all([
               getDisplayName(game.playerWhite?.address || ""),
               getDisplayName(game.playerBlack?.address || ""),
@@ -400,9 +372,40 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       break;
     }
 
+    case "rejoin_game": {
+      // Client sends this after receiving game_start to register its game WebSocket.
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      const game = gameManager.getGame(msg.game_id);
+      if (!game || game.status !== "playing") break;
+      const color = gameManager.getPlayerColor(game, conn.address);
+      if (!color) break;
+      const player: PlayerConnection = {
+        ws,
+        address: conn.address,
+        rating: conn.rating,
+        connectedAt: Date.now(),
+      };
+      gameManager.handleReconnect(msg.game_id, player);
+      // Cancel disconnect grace period if active
+      if (game.disconnectedPlayer === conn.address) {
+        gameManager.cancelDisconnectGracePeriod(game);
+      }
+      // Notify opponent
+      const opponent = color === "white" ? game.playerBlack : game.playerWhite;
+      if (opponent) {
+        gameManager.sendToPlayer(opponent, {
+          type: "opponent_reconnected",
+          game_id: msg.game_id,
+        });
+      }
+      break;
+    }
+
     case "roll_dice": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = await gameManager.rollDiceLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot roll dice", code: "CANNOT_ROLL" }); return; }
@@ -449,6 +452,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "move": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const from = Number(msg.from);
       const to = Number(msg.to);
@@ -526,6 +530,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "end_turn": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = await gameManager.handleEndTurnLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot end turn", code: "CANNOT_END_TURN" }); return; }
@@ -543,6 +548,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "undo_move": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = await gameManager.handleUndoLocked(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot undo", code: "CANNOT_UNDO" }); return; }
@@ -560,6 +566,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "resign": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const resignType = msg.resign_type || "normal";
       const result = gameManager.handleResignationTyped(msg.game_id, conn.address, resignType);
@@ -594,6 +601,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "accept_resign": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = gameManager.handleAcceptResignation(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot accept resignation" }); return; }
@@ -615,6 +623,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "reject_resign": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const rejected = gameManager.handleRejectResignation(msg.game_id, conn.address);
       if (!rejected) { send(ws, { type: "error", message: "Cannot reject resignation" }); return; }
@@ -627,6 +636,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "offer_double": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = gameManager.handleOfferDouble(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot double", code: "CANNOT_DOUBLE" }); return; }
@@ -644,6 +654,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "accept_double": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = gameManager.handleAcceptDouble(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot accept double", code: "CANNOT_ACCEPT" }); return; }
@@ -661,6 +672,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     case "reject_double": {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+      gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
       const result = gameManager.handleRejectDouble(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot reject double", code: "CANNOT_REJECT" }); return; }

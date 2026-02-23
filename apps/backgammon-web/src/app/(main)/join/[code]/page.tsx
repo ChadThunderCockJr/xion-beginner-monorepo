@@ -110,6 +110,7 @@ export default function JoinCodePage() {
 
   const {
     connected,
+    authenticated,
     status,
     gameId,
     opponent,
@@ -126,13 +127,13 @@ export default function JoinCodePage() {
   // Basic code validation
   const isValidCode = /^[a-zA-Z0-9-]{3,}$/.test(params.code);
 
-  // Join the game immediately once connected
+  // Join the game once authenticated (not just connected — auth must complete first)
   useEffect(() => {
-    if (connected && isValidCode && !joinedRef.current) {
+    if (authenticated && isValidCode && !joinedRef.current) {
       joinedRef.current = true;
       joinGame(params.code);
     }
-  }, [connected, isValidCode, params.code, joinGame]);
+  }, [authenticated, isValidCode, params.code, joinGame]);
 
   // Determine which screen to show
   const isError = !isValidCode || !!error;

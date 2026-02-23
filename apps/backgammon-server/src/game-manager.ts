@@ -402,6 +402,18 @@ export class GameManager {
     return false;
   }
 
+  /** Update a player's WebSocket to the one that sent a game message. */
+  updatePlayerWs(gameId: string, address: string, ws: import("ws").WebSocket): void {
+    const game = this.games.get(gameId);
+    if (!game) return;
+    if (game.playerWhite?.address === address && game.playerWhite.ws !== ws) {
+      game.playerWhite.ws = ws;
+    }
+    if (game.playerBlack?.address === address && game.playerBlack.ws !== ws) {
+      game.playerBlack.ws = ws;
+    }
+  }
+
   removeGame(gameId: string): void {
     const game = this.games.get(gameId);
     if (game) {

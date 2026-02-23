@@ -601,6 +601,7 @@ export default function CreateMatchPage() {
 
   const {
     connected,
+    authenticated,
     status,
     gameId,
     opponent,
@@ -629,13 +630,13 @@ export default function CreateMatchPage() {
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${gameId}`
     : "";
 
-  // Send create_game once connected (may need to wait for WS to connect)
+  // Send create_game once authenticated (not just connected — auth must complete first)
   useEffect(() => {
-    if (wantCreate && connected && !createdRef.current) {
+    if (wantCreate && authenticated && !createdRef.current) {
       createdRef.current = true;
       createGame(0); // wager=0 for MVP
     }
-  }, [wantCreate, connected, createGame]);
+  }, [wantCreate, authenticated, createGame]);
 
   // When status transitions to "playing" (opponent joined + game_start), show waiting/countdown
   useEffect(() => {

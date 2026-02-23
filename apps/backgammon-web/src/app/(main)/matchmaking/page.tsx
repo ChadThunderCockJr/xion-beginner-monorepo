@@ -87,6 +87,7 @@ export default function MatchmakingPage() {
   const { address, isConnected } = useAuth();
   const {
     connected,
+    authenticated,
     status,
     gameId,
     opponent,
@@ -96,13 +97,13 @@ export default function MatchmakingPage() {
     reset,
   } = useGame(WS_URL, address);
 
-  // Join queue once connected
+  // Join queue once authenticated (not just connected — auth must complete first)
   useEffect(() => {
-    if (connected && !joinedRef.current && (status === "idle" || status === "queued")) {
+    if (authenticated && !joinedRef.current && (status === "idle" || status === "queued")) {
       joinedRef.current = true;
       joinQueue(0);
     }
-  }, [connected, status, joinQueue]);
+  }, [authenticated, status, joinQueue]);
 
   // Reset join flag on disconnect so we re-join on reconnect
   useEffect(() => {

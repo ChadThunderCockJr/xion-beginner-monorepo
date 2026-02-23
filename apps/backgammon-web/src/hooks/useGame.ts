@@ -217,6 +217,7 @@ export function useGame(wsUrl: string, address: string | null) {
   // Track auth_challenge nonce from server
   const [authNonce, setAuthNonce] = useState<string | null>(null);
   const authSentRef = useRef(false);
+  const [authenticated, setAuthenticated] = useState(false);
 
   // Connect when address is available
   useEffect(() => {
@@ -231,6 +232,12 @@ export function useGame(wsUrl: string, address: string | null) {
       setAuthNonce(msg.nonce as string);
       authSentRef.current = false;
     });
+    return unsub;
+  }, [on]);
+
+  // Listen for auth_ok — marks authentication as complete
+  useEffect(() => {
+    const unsub = on("auth_ok", () => setAuthenticated(true));
     return unsub;
   }, [on]);
 
@@ -276,10 +283,13 @@ export function useGame(wsUrl: string, address: string | null) {
     authSentRef.current = true;
   }, [connected, address, authNonce, signArb, abstraxionClient, sendMessage]);
 
-  // Reset queue state on disconnect (server queue is lost on restart)
+  // Reset auth and queue state on disconnect
   useEffect(() => {
-    if (!connected && state.status === "queued") {
-      dispatch({ type: "QUEUE_LEFT" });
+    if (!connected) {
+      setAuthenticated(false);
+      if (state.status === "queued") {
+        dispatch({ type: "QUEUE_LEFT" });
+      }
     }
   }, [connected, state.status]);
 
@@ -302,7 +312,9 @@ export function useGame(wsUrl: string, address: string | null) {
           opponentName: msg.opponent_name as string | undefined,
         })
       ),
-      on("game_start", (msg) =>
+      on("game_start", (msg) => {
+        // Register this WebSocket as the game WebSocket for this player
+        sendMessage({ type: "rejoin_game", game_id: msg.game_id as string });
         dispatch({
           type: "GAME_START",
           gameId: msg.game_id as string,
@@ -312,8 +324,8 @@ export function useGame(wsUrl: string, address: string | null) {
           blackName: msg.black_name as string | undefined,
           gameState: msg.game_state as GameState,
           myAddress: addressRef.current || "",
-        })
-      ),
+        });
+      }),
       on("dice_rolled", (msg) => {
         playDiceRoll();
         dispatch({
@@ -487,6 +499,7 @@ export function useGame(wsUrl: string, address: string | null) {
     ...state,
     canUndo: state.undoCount > 0 || state.pendingConfirmation,
     connected,
+    authenticated,
     createGame,
     joinGame,
     joinQueue,
