@@ -1,4 +1,4 @@
-import type { GameState, Player, Move, ResultType } from "@xion-beginner/backgammon-core";
+import type { GameState, Player, Move, ResultType, MatchState } from "@xion-beginner/backgammon-core";
 
 export interface ServerGame {
   id: string;
@@ -34,6 +34,7 @@ export interface MatchmakingEntry {
   ws: import("ws").WebSocket;
   rating: number;
   wagerAmount: number;
+  matchLength: number;
   joinedAt: number;
 }
 
@@ -43,7 +44,7 @@ export type ClientMessage =
   | { type: "create_game"; wager_amount: number }
   | { type: "join_game"; game_id: string }
   | { type: "rejoin_game"; game_id: string }
-  | { type: "join_queue"; wager_amount: number }
+  | { type: "join_queue"; wager_amount: number; match_length?: number }
   | { type: "leave_queue" }
   | { type: "move"; game_id: string; from: number; to: number }
   | { type: "end_turn"; game_id: string }
@@ -78,14 +79,16 @@ export type ServerMessage =
   | { type: "error"; message: string; code?: string }
   | { type: "game_created"; game_id: string; color: Player }
   | { type: "game_joined"; game_id: string; color: Player; opponent: string; opponent_name?: string }
-  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState; legal_moves?: Move[] }
+  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState; legal_moves?: Move[]; match_state?: MatchState }
   | { type: "queue_joined"; position: number }
   | { type: "queue_left" }
   | { type: "dice_rolled"; game_id: string; dice: [number, number]; player: Player; game_state: GameState; legal_moves: Move[]; needs_confirmation?: boolean }
   | { type: "move_made"; game_id: string; move: Move; player: Player; game_state: GameState; legal_moves: Move[]; needs_confirmation?: boolean }
   | { type: "move_undone"; game_id: string; game_state: GameState; legal_moves: Move[] }
   | { type: "turn_ended"; game_id: string; next_player: Player; game_state: GameState }
-  | { type: "game_over"; game_id: string; winner: Player; result_type: ResultType; game_state: GameState }
+  | { type: "game_over"; game_id: string; winner: Player; result_type: ResultType; game_state: GameState; match_state?: MatchState; match_over?: boolean }
+  | { type: "match_score"; game_id: string; match_state: MatchState }
+  | { type: "next_game"; game_id: string; match_state: MatchState; game_state: GameState }
   | { type: "opponent_disconnected"; game_id: string }
   | { type: "opponent_reconnected"; game_id: string }
   | { type: "opponent_disconnecting"; game_id: string; grace_seconds: number }

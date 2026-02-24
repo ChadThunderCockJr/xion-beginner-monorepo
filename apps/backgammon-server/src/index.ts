@@ -5,12 +5,14 @@ import { WebSocketServer, WebSocket } from "ws";
 import cors from "cors";
 import { GameManager } from "./game-manager.js";
 import { Matchmaker } from "./matchmaking.js";
+import { MatchManager } from "./match-manager.js";
 import { SocialManager } from "./social-manager.js";
 import { getRedis } from "./redis.js";
 import * as socialStore from "./social-store.js";
 import type { ClientMessage, PlayerConnection, ServerMessage } from "./types.js";
 import { logger } from "./logger.js";
-import { getLegalFirstMoves } from "@xion-beginner/backgammon-core";
+import { getLegalFirstMoves, createGameState } from "@xion-beginner/backgammon-core";
+import type { Player, ResultType } from "@xion-beginner/backgammon-core";
 
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
@@ -138,6 +140,7 @@ getRedis();
 
 const gameManager = new GameManager();
 const matchmaker = new Matchmaker(gameManager);
+const matchManager = new MatchManager();
 
 // Track authenticated connections
 const connections = new Map<WebSocket, { address: string; rating: number }>();
@@ -148,6 +151,96 @@ function send(ws: WebSocket, msg: ServerMessage): void {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(msg));
   }
+}
+
+/** Handle game over: broadcast, score match, and start next game if match continues */
+async function handleGameOver(gameId: string, winner: Player, resultType: ResultType) {
+  const game = gameManager.getGame(gameId);
+  if (!game) return;
+
+  const cubeValue = game.gameState.cubeValue ?? 1;
+  const matchResult = matchManager.scoreGame(gameId, winner, resultType, cubeValue);
+
+  // Broadcast game_over with match state
+  gameManager.broadcastToGame(game, {
+    type: "game_over",
+    game_id: gameId,
+    winner,
+    result_type: resultType,
+    game_state: game.gameState,
+    ...(matchResult ? { match_state: matchResult.matchState, match_over: matchResult.matchOver } : {}),
+  });
+
+  socialManager.recordMatchResult(game, winner, resultType);
+  socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+
+  // If match continues, start next game after a delay
+  if (matchResult && !matchResult.matchOver) {
+    const matchId = matchManager.getMatchForGame(gameId)?.id;
+    if (!matchId) return;
+
+    setTimeout(async () => {
+      const match = matchManager.getMatch(matchId);
+      if (!match || match.status !== "playing") return;
+
+      // Create a new game for the match
+      const newGame = gameManager.createGame(match.wagerAmount);
+      matchManager.setCurrentGame(matchId, newGame.id);
+
+      // Re-join the players (swap colors each game)
+      const isEvenGame = match.matchState.gameNumber % 2 === 0;
+      const whiteAddr = isEvenGame ? match.playerBlackAddress : match.playerWhiteAddress;
+      const blackAddr = isEvenGame ? match.playerWhiteAddress : match.playerBlackAddress;
+
+      // Find existing WebSocket connections for these players
+      const whiteWs = findPlayerWs(whiteAddr);
+      const blackWs = findPlayerWs(blackAddr);
+
+      if (whiteWs && blackWs) {
+        const whiteConn = connections.get(whiteWs);
+        const blackConn = connections.get(blackWs);
+        if (whiteConn && blackConn) {
+          gameManager.joinGame(newGame.id, { ws: whiteWs, address: whiteAddr, rating: whiteConn.rating, connectedAt: Date.now() });
+          gameManager.joinGame(newGame.id, { ws: blackWs, address: blackAddr, rating: blackConn.rating, connectedAt: Date.now() });
+
+          const updatedGame = gameManager.getGame(newGame.id)!;
+          const [wN, bN] = await Promise.all([
+            getDisplayName(whiteAddr),
+            getDisplayName(blackAddr),
+          ]);
+
+          gameManager.broadcastToGame(updatedGame, {
+            type: "next_game",
+            game_id: newGame.id,
+            match_state: match.matchState,
+            game_state: updatedGame.gameState,
+          });
+
+          // Also send game_start so the client knows color assignments
+          gameManager.broadcastToGame(updatedGame, {
+            type: "game_start",
+            game_id: newGame.id,
+            white: whiteAddr,
+            black: blackAddr,
+            white_name: wN,
+            black_name: bN,
+            game_state: updatedGame.gameState,
+            match_state: match.matchState,
+          });
+        }
+      }
+    }, 3000); // 3 second delay between games
+  }
+}
+
+/** Find the WebSocket for a player by address */
+function findPlayerWs(address: string): WebSocket | null {
+  for (const [ws, conn] of connections) {
+    if (conn.address === address && ws.readyState === WebSocket.OPEN) {
+      return ws;
+    }
+  }
+  return null;
 }
 
 wss.on("connection", async (ws: WebSocket) => {
@@ -342,20 +435,37 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
+      const matchLength = (msg as { match_length?: number }).match_length ?? 1;
       const result = matchmaker.addToQueue({
         address: conn.address,
         ws,
         rating: conn.rating,
         wagerAmount: msg.wager_amount,
+        matchLength,
         joinedAt: Date.now(),
       });
 
       if (result.matched && result.gameId) {
         const game = gameManager.getGame(result.gameId)!;
+
+        // Create a match if matchLength > 1
+        const ml = result.matchLength ?? matchLength;
+        if (ml > 1) {
+          matchManager.createMatch(
+            result.gameId, // use first gameId as matchId
+            ml,
+            game.playerWhite!.address,
+            game.playerBlack!.address,
+            result.gameId,
+            msg.wager_amount,
+          );
+        }
+
         const [wN, bN] = await Promise.all([
           getDisplayName(game.playerWhite!.address),
           getDisplayName(game.playerBlack!.address),
         ]);
+        const match = matchManager.getMatchForGame(result.gameId);
         const startMsg: ServerMessage = {
           type: "game_start",
           game_id: result.gameId,
@@ -364,6 +474,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           white_name: wN,
           black_name: bN,
           game_state: game.gameState,
+          ...(match ? { match_state: match.matchState } : {}),
         };
         gameManager.broadcastToGame(game, startMsg);
       } else {
@@ -522,15 +633,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       // Check if game is over
       if (result.gameState.gameOver) {
         logger.info("Game over", { gameId: msg.game_id, winner: result.gameState.winner!, resultType: result.gameState.resultType! });
-        gameManager.broadcastToGame(game, {
-          type: "game_over",
-          game_id: msg.game_id,
-          winner: result.gameState.winner!,
-          result_type: result.gameState.resultType!,
-          game_state: result.gameState,
-        });
-        socialManager.recordMatchResult(game, result.gameState.winner!, result.gameState.resultType!);
-        socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+        await handleGameOver(msg.game_id, result.gameState.winner!, result.gameState.resultType!);
       }
       break;
     }
@@ -593,15 +696,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       } else {
         // Normal resignation — immediate game over
         logger.info("Game over", { gameId: msg.game_id, winner: result.winner!, reason: "resignation" });
-        gameManager.broadcastToGame(game, {
-          type: "game_over",
-          game_id: msg.game_id,
-          winner: result.winner!,
-          result_type: "normal",
-          game_state: game.gameState,
-        });
-        socialManager.recordMatchResult(game, result.winner!, "normal");
-        socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+        await handleGameOver(msg.game_id, result.winner!, "normal");
       }
       break;
     }
@@ -614,17 +709,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const result = gameManager.handleAcceptResignation(msg.game_id, conn.address);
       if (!result) { send(ws, { type: "error", message: "Cannot accept resignation" }); return; }
 
-      const game = gameManager.getGame(msg.game_id)!;
       logger.info("Game over", { gameId: msg.game_id, winner: result.winner, reason: "resignation accepted" });
-      gameManager.broadcastToGame(game, {
-        type: "game_over",
-        game_id: msg.game_id,
-        winner: result.winner,
-        result_type: result.resultType,
-        game_state: game.gameState,
-      });
-      socialManager.recordMatchResult(game, result.winner, result.resultType);
-      socialStore.saveGameHistory(game.id, game.gameState.moveHistory);
+      await handleGameOver(msg.game_id, result.winner, result.resultType);
       break;
     }
 
@@ -691,7 +777,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
         game_id: msg.game_id,
         winner: result.winner,
       });
-      socialManager.recordMatchResult(game, result.winner, "normal");
+      // Score in match context (double rejection = normal win at current cube value)
+      await handleGameOver(msg.game_id, result.winner, "normal");
       break;
     }
 

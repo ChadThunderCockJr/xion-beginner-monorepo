@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { GameState, Player, Move } from "@xion-beginner/backgammon-core";
+import type { GameState, Player, Move, MatchState } from "@xion-beginner/backgammon-core";
 import { getPipCount } from "@xion-beginner/backgammon-core";
 import { Board, Die, DoublingCube } from "./Board";
 import { PostGameAnalysis } from "./PostGameAnalysis";
@@ -44,6 +44,8 @@ interface GameScreenProps {
   onBlockPlayer?: (address: string) => void;
   onReportPlayer?: (address: string, reason: string) => void;
   opponentAddress?: string | null;
+  matchState?: MatchState | null;
+  matchOver?: boolean;
 }
 
 const TURN_TIME_LIMIT = 60;
@@ -76,6 +78,7 @@ function PlayerBar({
   timer,
   isDisconnected,
   isMe,
+  matchScore,
 }: {
   name: string;
   color: Player;
@@ -83,6 +86,7 @@ function PlayerBar({
   timer: number | null;
   isDisconnected?: boolean;
   isMe: boolean;
+  matchScore?: { score: number; target: number } | null;
 }) {
   return (
     <div
@@ -105,6 +109,18 @@ function PlayerBar({
           <span className="text-sm font-semibold text-[var(--color-text-primary)]">
             {isMe ? "You" : name}
           </span>
+          {matchScore && (
+            <span
+              className="text-xs font-bold px-1.5 py-0.5 rounded"
+              style={{
+                background: "var(--color-gold-muted)",
+                color: "var(--color-gold-primary)",
+                fontSize: "0.6875rem",
+              }}
+            >
+              {matchScore.score}/{matchScore.target}
+            </span>
+          )}
           {isDisconnected && (
             <>
               <svg
@@ -870,6 +886,8 @@ export function GameScreen({
   onBlockPlayer,
   onReportPlayer,
   opponentAddress,
+  matchState,
+  matchOver = false,
 }: GameScreenProps) {
   const isMyTurn = gameState.currentPlayer === myColor;
   const opponentColor: Player = myColor === "white" ? "black" : "white";
@@ -1110,6 +1128,7 @@ export function GameScreen({
               timer={!isMyTurn && !gameState.gameOver && turnStartedAt ? timeLeft : null}
               isDisconnected={opponentDisconnected}
               isMe={false}
+              matchScore={matchState ? { score: opponentColor === "white" ? matchState.whiteScore : matchState.blackScore, target: matchState.matchLength } : null}
             />
           </div>
           {opponentAddress && onBlockPlayer && onReportPlayer && (
@@ -1149,6 +1168,7 @@ export function GameScreen({
               isActive={isMyTurn && !gameState.gameOver}
               timer={isMyTurn && !gameState.gameOver && turnStartedAt ? timeLeft : null}
               isMe={true}
+              matchScore={matchState ? { score: myColor === "white" ? matchState.whiteScore : matchState.blackScore, target: matchState.matchLength } : null}
             />
           </div>
           {onSendReaction && (

@@ -7,7 +7,7 @@ export class Matchmaker {
 
   constructor(private gameManager: GameManager) {}
 
-  addToQueue(entry: MatchmakingEntry): { matched: boolean; gameId?: string; opponent?: MatchmakingEntry } {
+  addToQueue(entry: MatchmakingEntry): { matched: boolean; gameId?: string; opponent?: MatchmakingEntry; matchLength?: number } {
     // Check if already in queue
     const existing = this.queue.findIndex(e => e.address === entry.address);
     if (existing !== -1) {
@@ -37,7 +37,10 @@ export class Matchmaker {
       this.gameManager.joinGame(game.id, white);
       this.gameManager.joinGame(game.id, black);
 
-      return { matched: true, gameId: game.id, opponent: match };
+      // Use the higher matchLength of the two players (both should match anyway)
+      const matchLength = Math.max(entry.matchLength, match.matchLength);
+
+      return { matched: true, gameId: game.id, opponent: match, matchLength };
     }
 
     // No match found, add to queue
@@ -67,6 +70,7 @@ export class Matchmaker {
     for (const candidate of this.queue) {
       if (candidate.address === entry.address) continue;
       if (candidate.wagerAmount !== entry.wagerAmount) continue;
+      if (candidate.matchLength !== entry.matchLength) continue;
       if (Math.abs(candidate.rating - entry.rating) <= this.ratingRange) {
         candidates.push(candidate);
       }

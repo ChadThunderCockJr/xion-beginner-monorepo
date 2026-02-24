@@ -359,7 +359,9 @@ export function Board({
   function tapMove(point: number) {
     const movesFrom = legalMoves.filter((m) => m.from === point);
     if (movesFrom.length === 0) return;
-    const move = pickMove(movesFrom);
+    // During bear-off, prefer bear-off destination over internal moves
+    const bearOffMoves = movesFrom.filter((m) => m.to === 0 || m.to === 25);
+    const move = bearOffMoves.length > 0 ? pickMove(bearOffMoves) : pickMove(movesFrom);
     onMove(move.from, move.to);
     setHoldPoint(null);
     repeatDestRef.current = move.to;
@@ -384,10 +386,19 @@ export function Board({
       }
     }
 
-    // No hold — find any legal bear-off move and auto-execute with front die
+    // No hold — find bear-off moves, prefer farthest checker (most strategic)
     const bearOffMoves = legalMoves.filter((m) => m.to === 0 || m.to === 25);
     if (bearOffMoves.length > 0) {
-      const best = pickMove(bearOffMoves);
+      // Sort: farthest source point first (highest for white, lowest for black)
+      const sorted = [...bearOffMoves].sort((a, b) =>
+        myColor === "white" ? b.from - a.from : a.from - b.from
+      );
+      // Among sorted, prefer the one matching the active die
+      let best = sorted[0];
+      if (activeDieIndex != null && dice) {
+        const preferred = sorted.find((m) => m.die === dice[activeDieIndex]);
+        if (preferred) best = preferred;
+      }
       onMove(best.from, best.to);
       setHoldPoint(null);
       repeatDestRef.current = best.to;

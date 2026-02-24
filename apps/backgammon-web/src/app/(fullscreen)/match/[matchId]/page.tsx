@@ -47,6 +47,9 @@ export default function MatchPage() {
     rejectDouble,
     sendReaction,
     reset,
+    turnHistory,
+    matchState,
+    matchOver,
   } = useGame(WS_URL, address);
 
   const { blockUser, reportUser } = useSocialContext();
@@ -110,6 +113,7 @@ export default function MatchPage() {
       cubeOwner={gameState.cubeOwner}
       turnStartedAt={turnStartedAt}
       lastOpponentMove={lastOpponentMove}
+      turnHistory={turnHistory}
       pendingConfirmation={pendingConfirmation}
       forcedMoveNotice={forcedMoveNotice}
       disconnectCountdown={disconnectCountdown}
@@ -118,6 +122,8 @@ export default function MatchPage() {
       onBlockPlayer={blockUser}
       onReportPlayer={reportUser}
       opponentAddress={opponent}
+      matchState={matchState}
+      matchOver={matchOver}
       onNewGame={() => {
         reset();
         router.push("/matchmaking");

@@ -101,7 +101,7 @@ export default function MatchmakingPage() {
   useEffect(() => {
     if (authenticated && !joinedRef.current && (status === "idle" || status === "queued")) {
       joinedRef.current = true;
-      joinQueue(0);
+      joinQueue(0, matchLength);
     }
   }, [authenticated, status, joinQueue]);
 

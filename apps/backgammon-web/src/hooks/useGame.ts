@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import type { GameState, Player, Move } from "@xion-beginner/backgammon-core";
+import type { GameState, Player, Move, MatchState } from "@xion-beginner/backgammon-core";
 import { canDouble as checkCanDouble } from "@xion-beginner/backgammon-core";
+import type { TurnRecord } from "./useLocalGame";
 import { useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { useWebSocket } from "./useWebSocket";
 import {
@@ -31,6 +32,14 @@ interface GameContext {
   disconnectCountdown: number | null;
   doubleOffered: boolean;
   doubleOfferedBy: Player | null;
+  // Turn history for post-game analysis
+  turnHistory: TurnRecord[];
+  currentTurnDice: [number, number] | null;
+  currentTurnMoves: { from: number; to: number; die: number }[];
+  turnStartBoard: { points: number[]; whiteOff: number; blackOff: number } | null;
+  // Match state for multi-game matches
+  matchState: MatchState | null;
+  matchOver: boolean;
 }
 
 type GameAction =
@@ -46,6 +55,7 @@ type GameAction =
       gameState: GameState;
       legalMoves: Move[];
       myAddress: string;
+      matchState?: MatchState | null;
     }
   | {
       type: "GAME_SYNC";
@@ -61,7 +71,10 @@ type GameAction =
       winner: Player;
       resultType: string;
       gameState: GameState;
+      matchState?: MatchState | null;
+      matchOver?: boolean;
     }
+  | { type: "NEXT_GAME"; gameId: string; gameState: GameState; matchState: MatchState }
   | { type: "OPPONENT_DISCONNECTED" }
   | { type: "OPPONENT_RECONNECTED" }
   | { type: "QUEUED" }
@@ -98,6 +111,12 @@ const initialGameContext: GameContext = {
   disconnectCountdown: null,
   doubleOffered: false,
   doubleOfferedBy: null,
+  turnHistory: [],
+  currentTurnDice: null,
+  currentTurnMoves: [],
+  turnStartBoard: null,
+  matchState: null,
+  matchOver: false,
 };
 
 function gameReducer(state: GameContext, action: GameAction): GameContext {
@@ -140,6 +159,14 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         lastOpponentMove: null,
         doubleOffered: false,
         doubleOfferedBy: null,
+        turnHistory: [],
+        currentTurnDice: null,
+        currentTurnMoves: [],
+        turnStartBoard: null,
+        matchState: action.matchState ?? state.matchState,
+        matchOver: false,
+        winner: null,
+        resultType: null,
       };
     }
     case "GAME_SYNC": {
@@ -153,7 +180,8 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         turnStartedAt: state.turnStartedAt ?? (hasDice ? Date.now() : null),
       };
     }
-    case "DICE_ROLLED":
+    case "DICE_ROLLED": {
+      const board = action.gameState.board;
       return {
         ...state,
         gameState: action.gameState,
@@ -164,7 +192,11 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         pendingConfirmation: action.needsConfirmation ? true : false,
         doubleOffered: false,
         doubleOfferedBy: null,
+        currentTurnDice: action.gameState.dice,
+        currentTurnMoves: [],
+        turnStartBoard: { points: [...board.points], whiteOff: board.whiteOff, blackOff: board.blackOff },
       };
+    }
     case "MOVE_MADE": {
       const iMadeIt = state.myColor !== null && action.player === state.myColor;
       return {
@@ -176,6 +208,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
           ? { from: action.move.from, to: action.move.to }
           : state.lastOpponentMove,
         pendingConfirmation: iMadeIt && action.needsConfirmation ? true : state.pendingConfirmation,
+        currentTurnMoves: [...state.currentTurnMoves, { from: action.move.from, to: action.move.to, die: action.move.die }],
       };
     }
     case "MOVE_UNDONE":
@@ -184,8 +217,16 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         gameState: action.gameState,
         legalMoves: action.legalMoves,
         undoCount: Math.max(0, state.undoCount - 1),
+        currentTurnMoves: state.currentTurnMoves.slice(0, -1),
       };
-    case "TURN_ENDED":
+    case "TURN_ENDED": {
+      // Finalize turn record before resetting
+      const turnRecord: TurnRecord | null = state.currentTurnDice ? {
+        player: state.gameState?.currentPlayer ?? "white",
+        dice: state.currentTurnDice,
+        moves: state.currentTurnMoves,
+        boardBefore: state.turnStartBoard ?? undefined,
+      } : null;
       return {
         ...state,
         gameState: action.gameState,
@@ -195,8 +236,20 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         pendingConfirmation: false,
         doubleOffered: false,
         doubleOfferedBy: null,
+        turnHistory: turnRecord ? [...state.turnHistory, turnRecord] : state.turnHistory,
+        currentTurnDice: null,
+        currentTurnMoves: [],
+        turnStartBoard: null,
       };
-    case "GAME_OVER":
+    }
+    case "GAME_OVER": {
+      // Finalize the last turn record
+      const finalTurnRecord: TurnRecord | null = state.currentTurnDice && state.currentTurnMoves.length > 0 ? {
+        player: state.gameState?.currentPlayer ?? "white",
+        dice: state.currentTurnDice,
+        moves: state.currentTurnMoves,
+        boardBefore: state.turnStartBoard ?? undefined,
+      } : null;
       return {
         ...state,
         gameState: action.gameState,
@@ -208,6 +261,36 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         turnStartedAt: null,
         doubleOffered: false,
         doubleOfferedBy: null,
+        turnHistory: finalTurnRecord ? [...state.turnHistory, finalTurnRecord] : state.turnHistory,
+        currentTurnDice: null,
+        currentTurnMoves: [],
+        turnStartBoard: null,
+        matchState: action.matchState ?? state.matchState,
+        matchOver: action.matchOver ?? false,
+      };
+    }
+    case "NEXT_GAME":
+      return {
+        ...state,
+        gameId: action.gameId,
+        gameState: action.gameState,
+        matchState: action.matchState,
+        myColor: null, // Reset so GAME_START recalculates (colors swap each game)
+        status: "playing",
+        winner: null,
+        resultType: null,
+        legalMoves: [],
+        undoCount: 0,
+        turnStartedAt: null,
+        lastOpponentMove: null,
+        pendingConfirmation: false,
+        doubleOffered: false,
+        doubleOfferedBy: null,
+        turnHistory: [],
+        currentTurnDice: null,
+        currentTurnMoves: [],
+        turnStartBoard: null,
+        matchOver: false,
       };
     case "DOUBLE_OFFERED":
       return { ...state, doubleOffered: true, doubleOfferedBy: action.player };
@@ -391,6 +474,7 @@ export function useGame(wsUrl: string, address: string | null) {
           gameState: gs,
           legalMoves,
           myAddress: addressRef.current || "",
+          matchState: msg.match_state as MatchState | undefined,
         });
       }),
       on("dice_rolled", (msg) => {
@@ -444,6 +528,16 @@ export function useGame(wsUrl: string, address: string | null) {
           winner,
           resultType: msg.result_type as string,
           gameState: msg.game_state as GameState,
+          matchState: msg.match_state as MatchState | undefined,
+          matchOver: msg.match_over as boolean | undefined,
+        });
+      }),
+      on("next_game", (msg) => {
+        dispatch({
+          type: "NEXT_GAME",
+          gameId: msg.game_id as string,
+          gameState: msg.game_state as GameState,
+          matchState: msg.match_state as MatchState,
         });
       }),
       on("double_offered", (msg) =>
@@ -527,8 +621,8 @@ export function useGame(wsUrl: string, address: string | null) {
   );
 
   const joinQueue = useCallback(
-    (wagerAmount: number) => {
-      sendMessage({ type: "join_queue", wager_amount: wagerAmount });
+    (wagerAmount: number, matchLength: number = 1) => {
+      sendMessage({ type: "join_queue", wager_amount: wagerAmount, match_length: matchLength });
     },
     [sendMessage]
   );
@@ -597,6 +691,7 @@ export function useGame(wsUrl: string, address: string | null) {
 
   return {
     ...state,
+    turnHistory: state.turnHistory,
     canUndo: state.undoCount > 0 || state.pendingConfirmation,
     canDouble: myCanDouble,
     connected,
