@@ -326,24 +326,29 @@ export function Board({
 
   // ─── Opponent move animation ──────────────────────────────────
   useEffect(() => {
-    if (lastOpponentMove && !animatingMove) {
-      const fromPos = getPointCenter(lastOpponentMove.from);
-      const toPos = getPointCenter(lastOpponentMove.to);
-      if (fromPos && toPos) {
-        const opponentColor: "white" | "black" = myColor === "white" ? "black" : "white";
-        setAnimatingMove({
-          fromX: fromPos.x, fromY: fromPos.y,
-          toX: toPos.x, toY: toPos.y,
-          color: opponentColor,
-          sourcePoint: lastOpponentMove.from,
-          destPoint: lastOpponentMove.to,
-          isPlayerMove: false,
-        });
-        const timer = setTimeout(() => setAnimatingMove(null), 200);
-        return () => clearTimeout(timer);
-      }
+    if (!lastOpponentMove) {
+      // Clear any stuck animation when lastOpponentMove is cleared
+      // (new game, CLEAR_LAST_MOVE, etc.)
+      setAnimatingMove(null);
+      return;
     }
-  }, [lastOpponentMove]);
+
+    const fromPos = getPointCenter(lastOpponentMove.from);
+    const toPos = getPointCenter(lastOpponentMove.to);
+    if (!fromPos || !toPos) return;
+
+    const opponentColor: "white" | "black" = myColor === "white" ? "black" : "white";
+    setAnimatingMove({
+      fromX: fromPos.x, fromY: fromPos.y,
+      toX: toPos.x, toY: toPos.y,
+      color: opponentColor,
+      sourcePoint: lastOpponentMove.from,
+      destPoint: lastOpponentMove.to,
+      isPlayerMove: false,
+    });
+    const timer = setTimeout(() => setAnimatingMove(null), 200);
+    return () => clearTimeout(timer);
+  }, [lastOpponentMove, myColor, getPointCenter]);
 
   // ─── Helpers ─────────────────────────────────────────────────
 
