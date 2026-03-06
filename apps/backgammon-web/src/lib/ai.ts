@@ -160,6 +160,7 @@ function countShots(
   opponent: Player
 ): number {
   let shots = 0;
+  const barCount = getBarCount(board, opponent);
 
   // Source point at `dist` away from blotPoint in opponent's moving direction
   const getSource = (dist: number): number | null => {
@@ -180,6 +181,13 @@ function countShots(
   for (let d1 = 1; d1 <= 6; d1++) {
     for (let d2 = 1; d2 <= 6; d2++) {
       let canHit = false;
+
+      // Bar re-entry hits: opponent on bar can enter and land on blot
+      if (barCount > 0 && !canHit) {
+        const entry1 = opponent === "white" ? d1 : 25 - d1;
+        const entry2 = opponent === "white" ? d2 : 25 - d2;
+        if (entry1 === blotPoint || entry2 === blotPoint) canHit = true;
+      }
 
       if (d1 === d2) {
         // Doubles — can reach d, 2d, 3d, 4d
@@ -443,12 +451,6 @@ export async function selectAIMove(
   movesRemaining: number[],
   difficulty: AIDifficulty
 ): Promise<Move[] | null> {
-  // GM always uses the heuristic with 1-ply minimax — GNUBG's single-move
-  // answer has no lookahead and plays weaker than our evaluation + search.
-  if (difficulty === "gm") {
-    return selectHeuristicMove(board, aiColor, movesRemaining, difficulty);
-  }
-
   if (isGnubgReady()) {
     try {
       const dice: [number, number] = [
@@ -456,7 +458,6 @@ export async function selectAIMove(
         movesRemaining[movesRemaining.length > 1 ? 1 : 0],
       ];
 
-      // Other difficulties: get all scored candidates, then pick with randomization
       const results = await getGnubgMoves(board, aiColor, dice, {
         maxMoves: 0, // all moves
         scoreMoves: true,
@@ -471,26 +472,42 @@ export async function selectAIMove(
           return nonEmpty[Math.floor(Math.random() * nonEmpty.length)].moves;
         }
 
-        // Expert: deterministic — always pick the best move
-        if (difficulty === "expert") {
-          return nonEmpty[0].moves;
-        }
-
         // Club: weighted random from top 5 using equity
-        const candidates = nonEmpty.slice(0, Math.min(5, nonEmpty.length));
-
-        const bestEq = candidates[0].evaluation?.eq ?? 0;
-        const adjusted = candidates.map((c) => {
-          const eq = c.evaluation?.eq ?? 0;
-          return { moves: c.moves, weight: Math.max(0.1, 1 - Math.abs(bestEq - eq)) };
-        });
-        const totalWeight = adjusted.reduce((sum, c) => sum + c.weight, 0);
-        let roll = Math.random() * totalWeight;
-        for (const c of adjusted) {
-          roll -= c.weight;
-          if (roll <= 0) return c.moves;
+        if (difficulty === "club") {
+          const candidates = nonEmpty.slice(0, Math.min(5, nonEmpty.length));
+          const bestEq = candidates[0].evaluation?.eq ?? 0;
+          const adjusted = candidates.map((c) => {
+            const eq = c.evaluation?.eq ?? 0;
+            return { moves: c.moves, weight: Math.max(0.1, 1 - Math.abs(bestEq - eq)) };
+          });
+          const totalWeight = adjusted.reduce((sum, c) => sum + c.weight, 0);
+          let roll = Math.random() * totalWeight;
+          for (const c of adjusted) {
+            roll -= c.weight;
+            if (roll <= 0) return c.moves;
+          }
+          return candidates[0].moves;
         }
-        return candidates[0].moves;
+
+        // Expert: weighted random from top 3 (sharper weighting than Club)
+        if (difficulty === "expert") {
+          const candidates = nonEmpty.slice(0, Math.min(3, nonEmpty.length));
+          const bestEq = candidates[0].evaluation?.eq ?? 0;
+          const adjusted = candidates.map((c) => {
+            const eq = c.evaluation?.eq ?? 0;
+            return { moves: c.moves, weight: Math.max(0.1, 1 - Math.abs(bestEq - eq) * 2) };
+          });
+          const totalWeight = adjusted.reduce((sum, c) => sum + c.weight, 0);
+          let roll = Math.random() * totalWeight;
+          for (const c of adjusted) {
+            roll -= c.weight;
+            if (roll <= 0) return c.moves;
+          }
+          return candidates[0].moves;
+        }
+
+        // GM: always pick the best move (deterministic)
+        return nonEmpty[0].moves;
       }
     } catch {
       // Fall through to heuristic
