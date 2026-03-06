@@ -617,7 +617,7 @@ export class GameManager {
     }
   }
 
-  startDisconnectGracePeriod(game: ServerGame, address: string): void {
+  startDisconnectGracePeriod(game: ServerGame, address: string, onForfeit?: (gameId: string, winner: Player, resultType: ResultType) => void): void {
     this.cancelDisconnectGracePeriod(game);
     game.disconnectedPlayer = address;
     game.disconnectedAt = Date.now();
@@ -642,20 +642,24 @@ export class GameManager {
         this.cancelDisconnectGracePeriod(game);
         const disconnectedColor = this.getPlayerColor(game, address);
         if (disconnectedColor && game.status === "playing") {
-          const winner = disconnectedColor === "white" ? "black" : "white";
+          const winner: Player = disconnectedColor === "white" ? "black" : "white";
           game.status = "finished";
           game.gameState.gameOver = true;
           game.gameState.winner = winner;
           game.gameState.resultType = "normal";
           this.clearTurnTimer(game);
           void this.deletePersistedGame(game.id);
-          this.broadcastToGame(game, {
-            type: "game_over",
-            game_id: game.id,
-            winner,
-            result_type: "normal",
-            game_state: game.gameState,
-          });
+          if (onForfeit) {
+            onForfeit(game.id, winner, "normal");
+          } else {
+            this.broadcastToGame(game, {
+              type: "game_over",
+              game_id: game.id,
+              winner,
+              result_type: "normal",
+              game_state: game.gameState,
+            });
+          }
         }
       } else if (opponent) {
         this.sendToPlayer(opponent, {

@@ -48,6 +48,7 @@ export default function MatchPage() {
     sendReaction,
     reset,
     turnHistory,
+    matchTurnHistory,
     matchState,
     matchOver,
   } = useGame(WS_URL, address);
@@ -124,6 +125,7 @@ export default function MatchPage() {
       opponentAddress={opponent}
       matchState={matchState}
       matchOver={matchOver}
+      matchTurnHistory={matchTurnHistory}
       onNewGame={() => {
         reset();
         router.push("/matchmaking");

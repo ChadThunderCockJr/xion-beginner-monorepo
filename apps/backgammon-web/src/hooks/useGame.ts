@@ -34,12 +34,15 @@ interface GameContext {
   doubleOfferedBy: Player | null;
   // Turn history for post-game analysis
   turnHistory: TurnRecord[];
+  currentTurnPlayer: Player | null;
   currentTurnDice: [number, number] | null;
   currentTurnMoves: { from: number; to: number; die: number }[];
   turnStartBoard: { points: number[]; whiteOff: number; blackOff: number } | null;
   // Match state for multi-game matches
   matchState: MatchState | null;
   matchOver: boolean;
+  // Per-game turn histories for match-level analysis
+  matchTurnHistory: TurnRecord[][];
 }
 
 type GameAction =
@@ -74,7 +77,7 @@ type GameAction =
       matchState?: MatchState | null;
       matchOver?: boolean;
     }
-  | { type: "NEXT_GAME"; gameId: string; gameState: GameState; matchState: MatchState }
+  | { type: "NEXT_GAME"; gameId: string; gameState: GameState; matchState: MatchState; myAddress: string; white: string; black: string }
   | { type: "OPPONENT_DISCONNECTED" }
   | { type: "OPPONENT_RECONNECTED" }
   | { type: "QUEUED" }
@@ -112,11 +115,13 @@ const initialGameContext: GameContext = {
   doubleOffered: false,
   doubleOfferedBy: null,
   turnHistory: [],
+  currentTurnPlayer: null,
   currentTurnDice: null,
   currentTurnMoves: [],
   turnStartBoard: null,
   matchState: null,
   matchOver: false,
+  matchTurnHistory: [],
 };
 
 function gameReducer(state: GameContext, action: GameAction): GameContext {
@@ -160,6 +165,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         doubleOffered: false,
         doubleOfferedBy: null,
         turnHistory: [],
+        currentTurnPlayer: null,
         currentTurnDice: null,
         currentTurnMoves: [],
         turnStartBoard: null,
@@ -167,6 +173,8 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         matchOver: false,
         winner: null,
         resultType: null,
+        // Reset matchTurnHistory for a fresh match (not a next_game continuation)
+        matchTurnHistory: [],
       };
     }
     case "GAME_SYNC": {
@@ -192,6 +200,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         pendingConfirmation: action.needsConfirmation ? true : false,
         doubleOffered: false,
         doubleOfferedBy: null,
+        currentTurnPlayer: action.player,
         currentTurnDice: action.gameState.dice,
         currentTurnMoves: [],
         turnStartBoard: { points: [...board.points], whiteOff: board.whiteOff, blackOff: board.blackOff },
@@ -220,9 +229,12 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         currentTurnMoves: state.currentTurnMoves.slice(0, -1),
       };
     case "TURN_ENDED": {
-      // Finalize turn record before resetting
+      // Finalize turn record before resetting.
+      // Use currentTurnPlayer (captured at DICE_ROLLED) because makeMove
+      // auto-switches currentPlayer when all dice are used, so
+      // state.gameState.currentPlayer is already the NEXT player.
       const turnRecord: TurnRecord | null = state.currentTurnDice ? {
-        player: state.gameState?.currentPlayer ?? "white",
+        player: state.currentTurnPlayer ?? state.gameState?.currentPlayer ?? "white",
         dice: state.currentTurnDice,
         moves: state.currentTurnMoves,
         boardBefore: state.turnStartBoard ?? undefined,
@@ -237,19 +249,22 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         doubleOffered: false,
         doubleOfferedBy: null,
         turnHistory: turnRecord ? [...state.turnHistory, turnRecord] : state.turnHistory,
+        currentTurnPlayer: null,
         currentTurnDice: null,
         currentTurnMoves: [],
         turnStartBoard: null,
       };
     }
     case "GAME_OVER": {
-      // Finalize the last turn record
+      // Finalize the last turn record.
+      // Use currentTurnPlayer (captured at DICE_ROLLED) for consistent player attribution.
       const finalTurnRecord: TurnRecord | null = state.currentTurnDice && state.currentTurnMoves.length > 0 ? {
-        player: state.gameState?.currentPlayer ?? "white",
+        player: state.currentTurnPlayer ?? state.gameState?.currentPlayer ?? "white",
         dice: state.currentTurnDice,
         moves: state.currentTurnMoves,
         boardBefore: state.turnStartBoard ?? undefined,
       } : null;
+      const finalTurnHistory = finalTurnRecord ? [...state.turnHistory, finalTurnRecord] : state.turnHistory;
       return {
         ...state,
         gameState: action.gameState,
@@ -261,21 +276,28 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         turnStartedAt: null,
         doubleOffered: false,
         doubleOfferedBy: null,
-        turnHistory: finalTurnRecord ? [...state.turnHistory, finalTurnRecord] : state.turnHistory,
+        turnHistory: finalTurnHistory,
+        currentTurnPlayer: null,
         currentTurnDice: null,
         currentTurnMoves: [],
         turnStartBoard: null,
         matchState: action.matchState ?? state.matchState,
         matchOver: action.matchOver ?? false,
+        // Accumulate completed game's turn history for match-level analysis
+        matchTurnHistory: [...state.matchTurnHistory, finalTurnHistory],
       };
     }
-    case "NEXT_GAME":
+    case "NEXT_GAME": {
+      // Compute myColor from new game's player assignments (colors swap each game)
+      const nextMyColor: Player | null = action.myAddress
+        ? (action.white === action.myAddress ? "white" : "black")
+        : state.myColor;
       return {
         ...state,
         gameId: action.gameId,
         gameState: action.gameState,
         matchState: action.matchState,
-        myColor: null, // Reset so GAME_START recalculates (colors swap each game)
+        myColor: nextMyColor,
         status: "playing",
         winner: null,
         resultType: null,
@@ -287,11 +309,14 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         doubleOffered: false,
         doubleOfferedBy: null,
         turnHistory: [],
+        currentTurnPlayer: null,
         currentTurnDice: null,
         currentTurnMoves: [],
         turnStartBoard: null,
         matchOver: false,
+        // Preserve matchTurnHistory across games
       };
+    }
     case "DOUBLE_OFFERED":
       return { ...state, doubleOffered: true, doubleOfferedBy: action.player };
     case "DOUBLE_ACCEPTED":
@@ -538,6 +563,9 @@ export function useGame(wsUrl: string, address: string | null) {
           gameId: msg.game_id as string,
           gameState: msg.game_state as GameState,
           matchState: msg.match_state as MatchState,
+          myAddress: addressRef.current || "",
+          white: msg.white as string,
+          black: msg.black as string,
         });
       }),
       on("double_offered", (msg) =>
@@ -692,6 +720,7 @@ export function useGame(wsUrl: string, address: string | null) {
   return {
     ...state,
     turnHistory: state.turnHistory,
+    matchTurnHistory: state.matchTurnHistory,
     canUndo: state.undoCount > 0 || state.pendingConfirmation,
     canDouble: myCanDouble,
     connected,

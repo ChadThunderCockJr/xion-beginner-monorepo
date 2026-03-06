@@ -214,6 +214,8 @@ async function handleGameOver(gameId: string, winner: Player, resultType: Result
             game_id: newGame.id,
             match_state: match.matchState,
             game_state: updatedGame.gameState,
+            white: whiteAddr,
+            black: blackAddr,
           });
 
           // Also send game_start so the client knows color assignments
@@ -275,7 +277,9 @@ wss.on("connection", async (ws: WebSocket) => {
       if (result) {
         const { game } = result;
         if (game.status === "playing" && !game.gameState.gameOver) {
-          gameManager.startDisconnectGracePeriod(game, conn.address);
+          gameManager.startDisconnectGracePeriod(game, conn.address, (gId, winner, resultType) => {
+            void handleGameOver(gId, winner, resultType);
+          });
         }
       }
 

@@ -46,6 +46,7 @@ interface GameScreenProps {
   opponentAddress?: string | null;
   matchState?: MatchState | null;
   matchOver?: boolean;
+  matchTurnHistory?: TurnRecord[][];
 }
 
 const TURN_TIME_LIMIT = 60;
@@ -888,6 +889,7 @@ export function GameScreen({
   opponentAddress,
   matchState,
   matchOver = false,
+  matchTurnHistory,
 }: GameScreenProps) {
   const isMyTurn = gameState.currentPlayer === myColor;
   const opponentColor: Player = myColor === "white" ? "black" : "white";
@@ -1082,7 +1084,11 @@ export function GameScreen({
   );
 
   // When showPostGame is active, render PostGameAnalysis full-screen
+  // For match-end, flatten all per-game histories for full-match analysis
   if (gameState.gameOver && showPostGame) {
+    const analysisHistory = matchTurnHistory && matchTurnHistory.length > 0
+      ? matchTurnHistory.flat()
+      : turnHistory;
     return (
       <PostGameAnalysis
         winner={winner}
@@ -1090,7 +1096,7 @@ export function GameScreen({
         resultType={resultType}
         opponentName={opponent || "AI"}
         cubeValue={cubeValue}
-        turnHistory={turnHistory}
+        turnHistory={analysisHistory}
         onRematch={onNewGame}
         onBackToLobby={onBackToLobby ?? onNewGame}
         onBack={() => setShowPostGame(false)}
@@ -1198,8 +1204,67 @@ export function GameScreen({
           </div>
         )}
 
-        {/* Game over overlay */}
-        {gameState.gameOver && (
+        {/* Game over overlay — mid-match transition vs match-end result */}
+        {gameState.gameOver && !matchOver && matchState && (
+          // Mid-match: show score transition, auto-dismissed when next game starts
+          <div className="absolute inset-0 flex items-center justify-center animate-fade-in z-30"
+            style={{ background: "var(--color-overlay)", backdropFilter: "blur(6px)" }}
+          >
+            <div
+              className="panel text-center max-w-xs mx-4 shadow-2xl"
+              role="status"
+              aria-live="polite"
+              style={{
+                padding: "36px 32px 28px",
+                borderColor: winner === myColor
+                  ? "var(--color-gold-primary)"
+                  : "var(--color-danger)",
+              }}
+            >
+              <p className="text-[var(--color-text-muted)] mb-2" style={{ fontSize: "0.75rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                Game {matchState.gameNumber} of {matchState.matchLength * 2 - 1} Complete
+              </p>
+              <h2
+                className={`font-display font-bold mb-4 ${
+                  winner === myColor
+                    ? "text-[var(--color-gold-primary)]"
+                    : "text-[var(--color-danger)]"
+                }`}
+                style={{ fontSize: "1.5rem", lineHeight: 1.2 }}
+              >
+                {winner === myColor ? "You won this game!" : "You lost this game"}
+              </h2>
+              <div className="flex items-center justify-center gap-6 mb-5" style={{ fontSize: "1.125rem" }}>
+                <span className="flex items-center gap-2">
+                  <span style={{
+                    display: "inline-block", width: 12, height: 12, borderRadius: "50%",
+                    background: myColor === "white" ? "#e8e0d4" : "#2c2420",
+                    border: "1px solid var(--color-border-subtle)",
+                  }} />
+                  <span style={{ fontWeight: 700 }}>You: {myColor === "white" ? matchState.whiteScore : matchState.blackScore}</span>
+                </span>
+                <span style={{ color: "var(--color-text-faint)" }}>—</span>
+                <span className="flex items-center gap-2">
+                  <span style={{
+                    display: "inline-block", width: 12, height: 12, borderRadius: "50%",
+                    background: opponentColor === "white" ? "#e8e0d4" : "#2c2420",
+                    border: "1px solid var(--color-border-subtle)",
+                  }} />
+                  <span style={{ fontWeight: 700 }}>Opp: {opponentColor === "white" ? matchState.whiteScore : matchState.blackScore}</span>
+                </span>
+              </div>
+              <p className="text-[var(--color-text-muted)] mb-4" style={{ fontSize: "0.8125rem" }}>
+                Next game starting...
+              </p>
+              <button onClick={onNewGame} className="btn-secondary w-full" style={{ fontSize: "0.8125rem", padding: "10px 20px", opacity: 0.7 }}>
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameState.gameOver && (matchOver || !matchState) && (
+          // Match-end (or single game): show full result overlay
           <div className="absolute inset-0 flex items-center justify-center animate-fade-in z-30"
             style={{ background: "var(--color-overlay)", backdropFilter: "blur(6px)" }}
           >
@@ -1228,8 +1293,15 @@ export function GameScreen({
                   }`}
                   style={{ fontSize: "2.125rem", lineHeight: 1.1 }}
                 >
-                  {winner === myColor ? "Victory!" : "Defeat"}
+                  {matchState
+                    ? (winner === myColor ? "Match Won!" : "Match Lost!")
+                    : (winner === myColor ? "Victory!" : "Defeat")}
                 </h2>
+              {matchState && (
+                <p className="text-[var(--color-text-secondary)] mb-2" style={{ fontSize: "1rem", fontWeight: 600 }}>
+                  Final Score: {myColor === "white" ? matchState.whiteScore : matchState.blackScore} – {opponentColor === "white" ? matchState.whiteScore : matchState.blackScore}
+                </p>
+              )}
               <p className="text-[var(--color-text-muted)] mb-10" style={{ fontSize: "0.875rem", letterSpacing: "0.02em" }}>
                 {resultLabel}
                 {resultType === "gammon" && " — Double points"}

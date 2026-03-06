@@ -88,7 +88,7 @@ export type ServerMessage =
   | { type: "turn_ended"; game_id: string; next_player: Player; game_state: GameState }
   | { type: "game_over"; game_id: string; winner: Player; result_type: ResultType; game_state: GameState; match_state?: MatchState; match_over?: boolean }
   | { type: "match_score"; game_id: string; match_state: MatchState }
-  | { type: "next_game"; game_id: string; match_state: MatchState; game_state: GameState }
+  | { type: "next_game"; game_id: string; match_state: MatchState; game_state: GameState; white: string; black: string }
   | { type: "opponent_disconnected"; game_id: string }
   | { type: "opponent_reconnected"; game_id: string }
   | { type: "opponent_disconnecting"; game_id: string; grace_seconds: number }
