@@ -597,6 +597,7 @@ export default function DashboardPage() {
 
           {/* Wallet */}
           <div
+            onClick={() => router.push("/buy-tokens")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -627,7 +628,6 @@ export default function DashboardPage() {
             >
               USDC
             </span>
-            {/* Deposit link hidden until wallet settings section is implemented */}
           </div>
 
           {/* Logout */}
