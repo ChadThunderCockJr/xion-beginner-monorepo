@@ -18,7 +18,7 @@ const CrossmintEmbeddedCheckout = dynamic(
   { ssr: false }
 );
 
-const CROSSMINT_CLIENT_API_KEY = process.env.NEXT_PUBLIC_CROSSMINT_CLIENT_API_KEY || "";
+const CROSSMINT_CLIENT_API_KEY = process.env.NEXT_PUBLIC_CROSSMINT_CLIENT_API_KEY ?? "";
 const CROSSMINT_COLLECTION_ID = process.env.NEXT_PUBLIC_CROSSMINT_COLLECTION_ID || "";
 const NFT_CONTRACT = process.env.NEXT_PUBLIC_CROSSMINT_NFT_CONTRACT || "";
 const DEV_ADDRESS = process.env.NEXT_PUBLIC_GAMMON_DEV_ADDRESS || "";
@@ -312,36 +312,70 @@ export default function BuyTokensPage() {
             Complete Payment — {selectedPack.label}
           </h2>
 
-          <CrossmintProvider apiKey={CROSSMINT_CLIENT_API_KEY}>
-            <CrossmintEmbeddedCheckout
-              lineItems={{
-                collectionLocator: `crossmint:${CROSSMINT_COLLECTION_ID}`,
-              }}
-              recipient={{
-                walletAddress: userAddress,
-              }}
-              payment={{
-                fiat: { enabled: true },
-                crypto: { enabled: false },
-              }}
-              appearance={{
-                variables: {
-                  colors: {
-                    backgroundPrimary: "var(--color-bg-surface)",
-                    textPrimary: "var(--color-text-primary)",
-                    textSecondary: "var(--color-text-muted)",
-                    accent: "var(--color-gold-primary)",
+          {CROSSMINT_CLIENT_API_KEY.startsWith("ck") || CROSSMINT_CLIENT_API_KEY.startsWith("sk") ? (
+            <CrossmintProvider apiKey={CROSSMINT_CLIENT_API_KEY}>
+              <CrossmintEmbeddedCheckout
+                lineItems={{
+                  collectionLocator: `crossmint:${CROSSMINT_COLLECTION_ID}`,
+                }}
+                recipient={{
+                  walletAddress: userAddress,
+                }}
+                payment={{
+                  fiat: { enabled: true },
+                  crypto: { enabled: false },
+                }}
+                appearance={{
+                  variables: {
+                    colors: {
+                      backgroundPrimary: "var(--color-bg-surface)",
+                      textPrimary: "var(--color-text-primary)",
+                      textSecondary: "var(--color-text-muted)",
+                      accent: "var(--color-gold-primary)",
+                    },
+                    borderRadius: "8px",
                   },
-                  borderRadius: "8px",
-                },
-                rules: {
-                  DestinationInput: {
-                    display: "hidden",
+                  rules: {
+                    DestinationInput: {
+                      display: "hidden",
+                    },
                   },
-                },
+                }}
+              />
+            </CrossmintProvider>
+          ) : (
+            <div
+              style={{
+                background: "var(--color-bg-surface)",
+                border: "1px solid var(--color-border-subtle)",
+                borderRadius: 12,
+                padding: "32px 20px",
+                textAlign: "center",
               }}
-            />
-          </CrossmintProvider>
+            >
+              <p
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "var(--color-text-primary)",
+                  fontFamily: "var(--font-display)",
+                  margin: "0 0 8px",
+                }}
+              >
+                Coming Soon
+              </p>
+              <p
+                style={{
+                  fontSize: "0.8125rem",
+                  color: "var(--color-text-muted)",
+                  fontFamily: "var(--font-body)",
+                  margin: 0,
+                }}
+              >
+                Token purchases are not yet available. Check back soon!
+              </p>
+            </div>
+          )}
 
           <div style={{ marginTop: 20, textAlign: "center" }}>
             <button
