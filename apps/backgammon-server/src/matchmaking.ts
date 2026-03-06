@@ -1,9 +1,10 @@
 import type { MatchmakingEntry, PlayerConnection } from "./types.js";
 import type { GameManager } from "./game-manager.js";
+import { MATCHMAKING_RATING_RANGE } from "./config.js";
 
 export class Matchmaker {
   private queue: MatchmakingEntry[] = [];
-  private ratingRange = 200; // Match within this rating range
+  private ratingRange = MATCHMAKING_RATING_RANGE; // Match within this rating range
 
   constructor(private gameManager: GameManager) {}
 

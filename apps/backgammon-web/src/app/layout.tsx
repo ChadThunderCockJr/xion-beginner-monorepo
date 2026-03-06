@@ -3,18 +3,20 @@
 import { AbstraxionProvider } from "@burnt-labs/abstraxion";
 import { Cinzel, Cormorant_Garamond, Josefin_Sans, JetBrains_Mono, Pinyon_Script } from "next/font/google";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { CHAIN_ID, USDC_DENOM, ESCROW_GRANT_AMOUNT, SITE_URL } from "@/lib/config";
+import { ABSTRAXION_CLEANUP_KEY, ABSTRAXION_CLEANUP_VERSION, ABSTRAXION_STALE_KEYS } from "@/lib/constants";
 import "./globals.css";
 
 // One-time cleanup of stale Abstraxion state from failed auth attempts
-if (typeof window !== "undefined" && window.localStorage.getItem("_abstraxion_cleaned") !== "5") {
-  ["xion-authz-granter-account", "xion-authz-temp-account"].forEach((k) =>
+if (typeof window !== "undefined" && window.localStorage.getItem(ABSTRAXION_CLEANUP_KEY) !== ABSTRAXION_CLEANUP_VERSION) {
+  ABSTRAXION_STALE_KEYS.forEach((k) =>
     window.localStorage.removeItem(k),
   );
   // Remove any keypair data
   Object.keys(window.localStorage)
     .filter((k) => k.startsWith("xion-") || k.startsWith("abstraxion"))
     .forEach((k) => window.localStorage.removeItem(k));
-  window.localStorage.setItem("_abstraxion_cleaned", "5");
+  window.localStorage.setItem(ABSTRAXION_CLEANUP_KEY, ABSTRAXION_CLEANUP_VERSION);
 }
 
 const cinzel = Cinzel({
@@ -56,7 +58,7 @@ const ESCROW_CONTRACT = process.env.NEXT_PUBLIC_ESCROW_CONTRACT || "";
 const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS || "";
 
 const abstraxionConfig = {
-  chainId: "xion-testnet-2",
+  chainId: CHAIN_ID,
   treasury: TREASURY_ADDRESS || "xion1dlm2vellmpau54yd7vywvesvvhu6wnx4vtfzkk8jkzd6yrfvc0hq6l8lu7",
   // Explicit empty bank prevents SDK fallback bank config with broken "0.1" amount
   bank: [] as { denom: string; amount: string }[],
@@ -65,7 +67,7 @@ const abstraxionConfig = {
         contracts: [
           {
             address: ESCROW_CONTRACT,
-            amounts: [{ denom: "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4", amount: "10000000" }],
+            amounts: [{ denom: USDC_DENOM, amount: ESCROW_GRANT_AMOUNT }],
           },
         ],
       }
@@ -91,13 +93,13 @@ export default function RootLayout({
         <meta property="og:title" content="Gammon" />
         <meta property="og:description" content="The world's fairest backgammon platform. Provably fair dice on the blockchain." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://gammon.nyc" />
-        <meta property="og:image" content="https://gammon.nyc/logo.png" />
+        <meta property="og:url" content={SITE_URL} />
+        <meta property="og:image" content={`${SITE_URL}/logo.png`} />
         <meta property="og:image:width" content="512" />
         <meta property="og:image:height" content="512" />
         <meta property="og:image:alt" content="Gammon — The world's fairest backgammon platform" />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:image" content="https://gammon.nyc/logo.png" />
+        <meta name="twitter:image" content={`${SITE_URL}/logo.png`} />
         {/* Inline script to set theme class before first paint — prevents flash */}
         <script
           dangerouslySetInnerHTML={{

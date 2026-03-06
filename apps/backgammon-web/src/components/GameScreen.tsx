@@ -8,6 +8,7 @@ import { PostGameAnalysis } from "./PostGameAnalysis";
 import { EmojiReactions } from "./EmojiReactions";
 import { FocusTrap } from "./ui/FocusTrap";
 import type { TurnRecord } from "@/hooks/useLocalGame";
+import { TURN_TIMER_TICK_MS } from "@/lib/constants";
 
 interface GameScreenProps {
   gameState: GameState;
@@ -926,7 +927,7 @@ export function GameScreen({
       setTimeLeft(Math.max(0, turnTimeLimit - elapsed));
     };
     tick();
-    const interval = setInterval(tick, 1000);
+    const interval = setInterval(tick, TURN_TIMER_TICK_MS);
     return () => clearInterval(interval);
   }, [turnStartedAt, gameState.gameOver]);
 

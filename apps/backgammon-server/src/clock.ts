@@ -1,4 +1,5 @@
 import type { Player } from "@xion-beginner/backgammon-core";
+import { DEFAULT_CLOCK_TIME_MS, DEFAULT_CLOCK_INCREMENT_MS } from "./config.js";
 
 export interface GameClock {
   whiteTimeMs: number;
@@ -11,8 +12,8 @@ export interface GameClock {
 
 /** Create a new clock with given time limit and increment */
 export function createClock(
-  timeLimitMs: number = 3 * 60 * 1000,  // 3 minutes default
-  incrementMs: number = 10 * 1000,       // 10 seconds Bronstein increment
+  timeLimitMs: number = DEFAULT_CLOCK_TIME_MS,  // 3 minutes default
+  incrementMs: number = DEFAULT_CLOCK_INCREMENT_MS,       // 10 seconds Bronstein increment
 ): GameClock {
   return {
     whiteTimeMs: timeLimitMs,

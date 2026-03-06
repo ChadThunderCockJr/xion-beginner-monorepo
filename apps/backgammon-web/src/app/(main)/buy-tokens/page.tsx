@@ -7,6 +7,7 @@ import {
   useAbstraxionSigningClient,
 } from "@burnt-labs/abstraxion";
 import { toUtf8 } from "@cosmjs/encoding";
+import { BALANCE_POLL_INTERVAL_MS } from "@/lib/constants";
 
 // Dynamically import Crossmint to avoid SSR crashes (browser-only SDK)
 const CrossmintProvider = dynamic(
@@ -88,7 +89,7 @@ export default function BuyTokensPage() {
     const interval = setInterval(() => {
       fetchGammonBalance();
       fetchOwnedPacks();
-    }, 5000);
+    }, BALANCE_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [redeemSuccess, fetchGammonBalance, fetchOwnedPacks]);
 

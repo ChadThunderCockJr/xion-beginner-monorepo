@@ -15,6 +15,8 @@ import {
   playTurnEnd,
   playGameOver,
 } from "@/lib/sounds";
+import { CLEAR_LAST_MOVE_DELAY_MS, CLEAR_REACTION_DELAY_MS, DEFAULT_TURN_TIME_LIMIT_SEC } from "@/lib/constants";
+import { USDC_DENOM } from "@/lib/config";
 
 interface GameContext {
   gameId: string | null;
@@ -133,7 +135,7 @@ const initialGameContext: GameContext = {
   error: null,
   undoCount: 0,
   turnStartedAt: null,
-  turnTimeLimit: 60,
+  turnTimeLimit: DEFAULT_TURN_TIME_LIMIT_SEC,
   lastOpponentMove: null,
   lastReaction: null,
   pendingConfirmation: false,
@@ -787,7 +789,7 @@ export function useGame(wsUrl: string, address: string | null) {
   // Clear last opponent move after 3 seconds
   useEffect(() => {
     if (state.lastOpponentMove) {
-      const timer = setTimeout(() => dispatch({ type: "CLEAR_LAST_MOVE" }), 3000);
+      const timer = setTimeout(() => dispatch({ type: "CLEAR_LAST_MOVE" }), CLEAR_LAST_MOVE_DELAY_MS);
       return () => clearTimeout(timer);
     }
   }, [state.lastOpponentMove]);
@@ -795,7 +797,7 @@ export function useGame(wsUrl: string, address: string | null) {
   // Clear incoming reaction after 3 seconds
   useEffect(() => {
     if (state.lastReaction) {
-      const timer = setTimeout(() => dispatch({ type: "CLEAR_REACTION" }), 3000);
+      const timer = setTimeout(() => dispatch({ type: "CLEAR_REACTION" }), CLEAR_REACTION_DELAY_MS);
       return () => clearTimeout(timer);
     }
   }, [state.lastReaction]);
@@ -912,7 +914,7 @@ export function useGame(wsUrl: string, address: string | null) {
   const submitDoubleDeposit = useCallback(async () => {
     if (!state.gameId || !abstraxionClient || !state.doubleDepositRequired) return;
     const escrowContract = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS;
-    const denom = process.env.NEXT_PUBLIC_GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4";
+    const denom = process.env.NEXT_PUBLIC_GAMMON_DENOM || USDC_DENOM;
     if (!escrowContract) {
       console.error("[useGame] NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS not set");
       return;

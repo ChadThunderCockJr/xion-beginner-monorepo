@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 import cors from "cors";
+import { RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_MESSAGES, WS_MAX_PAYLOAD_BYTES, INTER_GAME_DELAY_MS, ONLINE_CLEANUP_INTERVAL_MS } from "./config.js";
 import { GameManager } from "./game-manager.js";
 import { Matchmaker } from "./matchmaking.js";
 import { MatchManager } from "./match-manager.js";
@@ -22,11 +23,11 @@ function checkRateLimit(ws: WebSocket): boolean {
   const now = Date.now();
   let entry = wsRateLimits.get(ws);
   if (!entry || now > entry.resetAt) {
-    entry = { count: 0, resetAt: now + 1000 };
+    entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
     wsRateLimits.set(ws, entry);
   }
   entry.count++;
-  if (entry.count > 30) {
+  if (entry.count > RATE_LIMIT_MAX_MESSAGES) {
     send(ws, { type: "error", message: "Rate limit exceeded" });
     ws.close(1008, "Rate limit exceeded");
     return false;
@@ -133,7 +134,7 @@ app.get("/api/game/:gameId/history", async (req, res) => {
 });
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 16 * 1024 }); // 16KB max
+const wss = new WebSocketServer({ server, path: "/ws", maxPayload: WS_MAX_PAYLOAD_BYTES }); // 16KB max
 
 // Initialize Redis
 getRedis();
@@ -232,7 +233,7 @@ async function handleGameOver(gameId: string, winner: Player, resultType: Result
           });
         }
       }
-    }, 3000); // 3 second delay between games
+    }, INTER_GAME_DELAY_MS); // 3 second delay between games
   }
 }
 
@@ -946,7 +947,7 @@ setInterval(async () => {
   try {
     await socialStore.cleanupStaleOnlinePlayers();
   } catch { /* ignore */ }
-}, 60_000); // Every minute
+}, ONLINE_CLEANUP_INTERVAL_MS); // Every minute
 
 server.listen(PORT, () => {
   logger.info("Server started", { port: PORT, ws: `/ws`, health: `/health` });

@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { NONCE_TTL_MS, NONCE_CLEANUP_INTERVAL_MS } from "./config.js";
 
 // Nonce store with TTL
 const nonceStore = new Map<string, { createdAt: number }>();
-const NONCE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Clean up expired nonces periodically
 setInterval(() => {
@@ -12,7 +12,7 @@ setInterval(() => {
       nonceStore.delete(nonce);
     }
   }
-}, 60_000);
+}, NONCE_CLEANUP_INTERVAL_MS);
 
 /** Generate a single-use nonce for auth challenge */
 export function generateNonce(): string {

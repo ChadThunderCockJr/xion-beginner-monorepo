@@ -19,6 +19,7 @@ import {
 } from "@/lib/sounds";
 import { selectAIMove, getThinkingDelay, shouldAIDouble, shouldAIAcceptDouble, type AIDifficulty } from "@/lib/ai";
 import { preloadGnubg } from "@/lib/gnubg";
+import { MOVE_ANIMATION_STEP_MS } from "@/lib/constants";
 
 // ── Persistence ───────────────────────────────────────────────
 
@@ -764,7 +765,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
         let currentBoard = gs;
 
         moves.forEach((move, i) => {
-          const delay = 350 + i * 350;
+          const delay = MOVE_ANIMATION_STEP_MS + i * MOVE_ANIMATION_STEP_MS;
           const t = setTimeout(() => {
             if (cancelled) return;
 

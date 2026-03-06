@@ -9,6 +9,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { fetchStats, fetchMatches, fetchOnlineCount, timeAgo } from "@/lib/api";
 import type { PlayerStats, MatchResult } from "@/lib/api";
 import Tutorial from "@/components/Tutorial";
+import { ONLINE_COUNT_POLL_INTERVAL_MS } from "@/lib/constants";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -302,7 +303,7 @@ export default function DashboardPage() {
       } catch {}
     };
     fetchOnline();
-    const interval = setInterval(fetchOnline, 30000);
+    const interval = setInterval(fetchOnline, ONLINE_COUNT_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 

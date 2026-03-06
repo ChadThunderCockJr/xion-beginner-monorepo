@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import { GameDiceHistory } from "./dice.js";
+import { DEFAULT_TURN_TIME_LIMIT_SEC, DOUBLE_DEPOSIT_TIMEOUT_MS, STALLING_MIN_MOVES, STALLING_THRESHOLD_PCTG, DISCONNECT_GRACE_SEC, DISCONNECT_GRACE_DOUBLE_SEC, DISCONNECT_CHECK_INTERVAL_MS } from "./config.js";
 import {
   createGameState,
   setDice,
@@ -94,7 +95,7 @@ export class GameManager {
             spectators: [],
             createdAt: Date.now(),
             turnTimer: null,
-            turnTimeLimit: 60,
+            turnTimeLimit: DEFAULT_TURN_TIME_LIMIT_SEC,
             turnMoveStack: data.turnMoveStack || [],
             pendingConfirmation: data.pendingConfirmation || null,
             disconnectTimer: null,
@@ -136,7 +137,7 @@ export class GameManager {
     return String(randomInt(1000, 10000)) + String(Date.now() % 1000);
   }
 
-  createGame(wagerAmount: number, turnTimeLimit: number = 60): ServerGame {
+  createGame(wagerAmount: number, turnTimeLimit: number = DEFAULT_TURN_TIME_LIMIT_SEC): ServerGame {
     const id = this.generateShortId();
     const game: ServerGame = {
       id,
@@ -569,7 +570,7 @@ export class GameManager {
       if (game.pendingDoubleDeposit) {
         onTimeout(game.id);
       }
-    }, 120_000); // 120 seconds
+    }, DOUBLE_DEPOSIT_TIMEOUT_MS); // 120 seconds
   }
 
   /** Handle double deposit timeout — cancel pending double, refund deposits. */
@@ -734,13 +735,13 @@ export class GameManager {
   // ── Stalling Detection ────────────────────────────────────────
 
   checkStalling(game: ServerGame, playerAddress: string): { warn: boolean; penalize: boolean } {
-    if (game.moveTimes.length < 3) return { warn: false, penalize: false };
+    if (game.moveTimes.length < STALLING_MIN_MOVES) return { warn: false, penalize: false };
 
     const recent = game.moveTimes.slice(-3);
     const avgTime = recent.reduce((a, b) => a + b, 0) / recent.length;
     const turnLimit = game.turnTimeLimit * 1000;
 
-    if (avgTime > turnLimit * 0.8) {
+    if (avgTime > turnLimit * STALLING_THRESHOLD_PCTG) {
       if (game.stallingWarned) return { warn: false, penalize: true };
       return { warn: true, penalize: false };
     }
@@ -808,7 +809,7 @@ export class GameManager {
     game.disconnectedPlayer = address;
     game.disconnectedAt = Date.now();
     // Extend grace period to 120s when double deposits are pending (on-chain tx takes time)
-    const graceSec = game.pendingDoubleDeposit ? 120 : 30;
+    const graceSec = game.pendingDoubleDeposit ? DISCONNECT_GRACE_DOUBLE_SEC : DISCONNECT_GRACE_SEC;
 
     const opponent = game.playerWhite?.address === address ? game.playerBlack : game.playerWhite;
     if (opponent) {
@@ -821,7 +822,7 @@ export class GameManager {
 
     let elapsed = 0;
     game.disconnectTimer = setInterval(() => {
-      elapsed += 5;
+      elapsed += DISCONNECT_CHECK_INTERVAL_MS / 1000;
       const remaining = graceSec - elapsed;
 
       if (remaining <= 0) {
@@ -855,7 +856,7 @@ export class GameManager {
           seconds_remaining: remaining,
         });
       }
-    }, 5000);
+    }, DISCONNECT_CHECK_INTERVAL_MS);
   }
 
   cancelDisconnectGracePeriod(game: ServerGame): void {

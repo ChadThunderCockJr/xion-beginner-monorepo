@@ -1,4 +1,5 @@
 import { logger } from "./logger.js";
+import { CHAIN_ADDRESS_PREFIX, GAS_PRICE, DEFAULT_DENOM } from "./config.js";
 
 export type EscrowStatus = "none" | "pending_deposits" | "active" | "awaiting_double_deposits" | "settled" | "cancelled" | "forfeited";
 
@@ -60,7 +61,7 @@ export class EscrowClient {
       const GasPrice = stargateMod.GasPrice ?? stargateMod.default?.GasPrice;
 
       const wallet = await DirectSecp256k1HdWallet.fromMnemonic(this.adminMnemonic, {
-        prefix: "xion",
+        prefix: CHAIN_ADDRESS_PREFIX,
       });
       const [account] = await wallet.getAccounts();
       this.adminAddress = account.address;
@@ -68,7 +69,7 @@ export class EscrowClient {
       this.signingClient = await SigningCosmWasmClient.connectWithSigner(
         this.rpcUrl,
         wallet,
-        { gasPrice: GasPrice.fromString("0.025uxion") },
+        { gasPrice: GasPrice.fromString(GAS_PRICE) },
       );
 
       logger.info("Escrow client initialized", { admin: this.adminAddress });
@@ -85,7 +86,7 @@ export class EscrowClient {
     playerA: string,
     playerB: string,
     wagerAmount: string,
-    denom: string = process.env.GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4", // Gammon token or USDC fallback
+    denom: string = DEFAULT_DENOM, // Gammon token or USDC fallback
   ): Promise<boolean> {
     if (!(await this.init())) return false;
 
@@ -266,7 +267,7 @@ export class EscrowClient {
   }
 
   /** Query a player's token balance */
-  async queryBalance(address: string, denom: string = process.env.GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4"): Promise<string> {
+  async queryBalance(address: string, denom: string = DEFAULT_DENOM): Promise<string> {
     if (!(await this.init())) return "0";
 
     try {

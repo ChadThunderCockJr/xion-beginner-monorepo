@@ -1,5 +1,6 @@
 import { getRedis } from "./redis.js";
 import type { MoveRecord } from "@xion-beginner/backgammon-core";
+import { MAX_SEARCH_RESULTS, REDIS_SCAN_BATCH_SIZE, CHAIN_ADDRESS_PREFIX, ONLINE_HEARTBEAT_TTL_SEC, MAX_ACTIVITY_ITEMS, MAX_MATCH_HISTORY, CHALLENGE_EXPIRY_SEC, RATING_K_PROVISIONAL, RATING_K_INTERMEDIATE, RATING_K_ESTABLISHED, RATING_PROVISIONAL_THRESHOLD, RATING_ESTABLISHED_THRESHOLD, RATING_MIN, RATING_DEFAULT, GAME_HISTORY_TTL_SEC } from "./config.js";
 
 // ── Profile ────────────────────────────────────────────────────
 
@@ -102,14 +103,14 @@ export async function searchPlayers(query: string): Promise<Array<{ address: str
     }
 
     // Prefix search via SCAN on username:* keys — run full scan to avoid SCAN misses
-    if (results.length < 10) {
+    if (results.length < MAX_SEARCH_RESULTS) {
       let cursor = "0";
       const pattern = `username:${lowerQuery}*`;
       do {
-        const [nextCursor, keys] = await r.scan(cursor, "MATCH", pattern, "COUNT", 200);
+        const [nextCursor, keys] = await r.scan(cursor, "MATCH", pattern, "COUNT", REDIS_SCAN_BATCH_SIZE);
         cursor = nextCursor;
         for (const key of keys) {
-          if (results.length >= 10) break;
+          if (results.length >= MAX_SEARCH_RESULTS) break;
           const addr = await r.get(key);
           if (addr && !seen.has(addr)) {
             seen.add(addr);
@@ -119,17 +120,17 @@ export async function searchPlayers(query: string): Promise<Array<{ address: str
             }
           }
         }
-      } while (cursor !== "0" && results.length < 10);
+      } while (cursor !== "0" && results.length < MAX_SEARCH_RESULTS);
     }
 
     // Also scan profile:* keys to match by display name
-    if (results.length < 10) {
+    if (results.length < MAX_SEARCH_RESULTS) {
       let cursor = "0";
       do {
-        const [nextCursor, keys] = await r.scan(cursor, "MATCH", "profile:*", "COUNT", 200);
+        const [nextCursor, keys] = await r.scan(cursor, "MATCH", "profile:*", "COUNT", REDIS_SCAN_BATCH_SIZE);
         cursor = nextCursor;
         for (const key of keys) {
-          if (results.length >= 10) break;
+          if (results.length >= MAX_SEARCH_RESULTS) break;
           const addr = key.replace("profile:", "");
           if (seen.has(addr)) continue;
           const profile = await getProfile(addr);
@@ -142,11 +143,11 @@ export async function searchPlayers(query: string): Promise<Array<{ address: str
             }
           }
         }
-      } while (cursor !== "0" && results.length < 10);
+      } while (cursor !== "0" && results.length < MAX_SEARCH_RESULTS);
     }
 
     // If query looks like an address, try direct lookup
-    if (query.startsWith("xion1") && !seen.has(query)) {
+    if (query.startsWith(CHAIN_ADDRESS_PREFIX + "1") && !seen.has(query)) {
       const profile = await getProfile(query);
       if (profile) {
         results.push({ address: query, username: profile.username, displayName: profile.displayName });
@@ -259,7 +260,7 @@ export async function markOnline(address: string): Promise<void> {
     const r = getRedis();
     if (!r) return;
     await r.sadd("online_players", address);
-    await r.set(`online_heartbeat:${address}`, "1", "EX", 300); // 5 min TTL
+    await r.set(`online_heartbeat:${address}`, "1", "EX", ONLINE_HEARTBEAT_TTL_SEC); // 5 min TTL
   } catch { /* ignore */ }
 }
 
@@ -267,7 +268,7 @@ export async function refreshOnlineHeartbeat(address: string): Promise<void> {
   try {
     const r = getRedis();
     if (!r) return;
-    await r.set(`online_heartbeat:${address}`, "1", "EX", 300);
+    await r.set(`online_heartbeat:${address}`, "1", "EX", ONLINE_HEARTBEAT_TTL_SEC);
   } catch { /* ignore */ }
 }
 
@@ -325,10 +326,10 @@ export async function addActivity(address: string, item: ActivityItem): Promise<
     if (!r) return;
     const key = `activity:${address}`;
     await r.zadd(key, item.timestamp, JSON.stringify(item));
-    // Cap at 50 most recent
+    // Cap at most recent
     const count = await r.zcard(key);
-    if (count > 50) {
-      await r.zremrangebyrank(key, 0, count - 51);
+    if (count > MAX_ACTIVITY_ITEMS) {
+      await r.zremrangebyrank(key, 0, count - MAX_ACTIVITY_ITEMS - 1);
     }
   } catch { /* ignore */ }
 }
@@ -360,8 +361,8 @@ export async function recordMatchResult(address: string, result: MatchResult): P
     const key = `matches:${address}`;
     await r.zadd(key, result.timestamp, JSON.stringify(result));
     const count = await r.zcard(key);
-    if (count > 100) {
-      await r.zremrangebyrank(key, 0, count - 101);
+    if (count > MAX_MATCH_HISTORY) {
+      await r.zremrangebyrank(key, 0, count - MAX_MATCH_HISTORY - 1);
     }
   } catch { /* ignore */ }
 }
@@ -390,7 +391,7 @@ export async function createChallenge(challenge: Challenge): Promise<boolean> {
     const r = getRedis();
     if (!r) return false;
     // 60 second TTL
-    await r.setex(`challenge:${challenge.id}`, 60, JSON.stringify(challenge));
+    await r.setex(`challenge:${challenge.id}`, CHALLENGE_EXPIRY_SEC, JSON.stringify(challenge));
     return true;
   } catch { return false; }
 }
@@ -423,20 +424,20 @@ export interface RatingInfo {
 export async function getRating(address: string): Promise<RatingInfo> {
   try {
     const r = getRedis();
-    if (!r) return { rating: 1500, ratingChange: 0 };
+    if (!r) return { rating: RATING_DEFAULT, ratingChange: 0 };
     const data = await r.hgetall(`rating:${address}`);
     return {
-      rating: data.rating ? parseInt(data.rating) : 1500,
+      rating: data.rating ? parseInt(data.rating) : RATING_DEFAULT,
       ratingChange: data.ratingChange ? parseInt(data.ratingChange) : 0,
     };
-  } catch { return { rating: 1500, ratingChange: 0 }; }
+  } catch { return { rating: RATING_DEFAULT, ratingChange: 0 }; }
 }
 
 /** Get K-factor based on number of games played */
 function getKFactor(totalGames: number): number {
-  if (totalGames < 20) return 40;   // Provisional
-  if (totalGames < 100) return 20;  // Intermediate
-  return 10;                         // Established
+  if (totalGames < RATING_PROVISIONAL_THRESHOLD) return RATING_K_PROVISIONAL;
+  if (totalGames < RATING_ESTABLISHED_THRESHOLD) return RATING_K_INTERMEDIATE;
+  return RATING_K_ESTABLISHED;
 }
 
 export async function updateRatings(
@@ -454,8 +455,8 @@ export async function updateRatings(
       getStats(winnerAddr),
       getStats(loserAddr),
     ]);
-    const winnerRating = winnerData.rating ? parseInt(winnerData.rating) : 1500;
-    const loserRating = loserData.rating ? parseInt(loserData.rating) : 1500;
+    const winnerRating = winnerData.rating ? parseInt(winnerData.rating) : RATING_DEFAULT;
+    const loserRating = loserData.rating ? parseInt(loserData.rating) : RATING_DEFAULT;
 
     // Variable K-factor based on game count
     const winnerK = getKFactor(winnerStats.totalGames);
@@ -472,8 +473,8 @@ export async function updateRatings(
     const winnerChange = Math.round(winnerK * multiplier * (1 - expectedWinner));
     const loserChange = Math.round(loserK * multiplier * (0 - expectedLoser));
 
-    const newWinnerRating = Math.max(100, winnerRating + winnerChange);
-    const newLoserRating = Math.max(100, loserRating + loserChange);
+    const newWinnerRating = Math.max(RATING_MIN, winnerRating + winnerChange);
+    const newLoserRating = Math.max(RATING_MIN, loserRating + loserChange);
 
     await r.hset(`rating:${winnerAddr}`, "rating", String(newWinnerRating), "ratingChange", String(winnerChange));
     await r.hset(`rating:${loserAddr}`, "rating", String(newLoserRating), "ratingChange", String(loserChange));
@@ -683,7 +684,7 @@ export async function getOnlineCount(): Promise<number> {
 
 // ── Game History ───────────────────────────────────────────────
 
-const GAME_HISTORY_TTL = 365 * 24 * 60 * 60; // 1 year
+const GAME_HISTORY_TTL = GAME_HISTORY_TTL_SEC;
 
 export async function saveGameHistory(gameId: string, moveHistory: MoveRecord[]): Promise<void> {
   try {

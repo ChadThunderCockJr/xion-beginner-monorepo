@@ -1,5 +1,6 @@
 import { logger } from "./logger.js";
 import { getRedis } from "./redis.js";
+import { CHAIN_ADDRESS_PREFIX, GAS_PRICE, REDEMPTION_POLL_INTERVAL_MS, NFT_QUERY_LIMIT } from "./config.js";
 
 /**
  * Gammon Token Redemption Service
@@ -16,7 +17,7 @@ import { getRedis } from "./redis.js";
  * 5. Marks the token as processed in Redis
  */
 
-const POLL_INTERVAL_MS = 10_000; // 10 seconds
+const POLL_INTERVAL_MS = REDEMPTION_POLL_INTERVAL_MS;
 
 interface RedemptionConfig {
   rpcUrl: string;
@@ -61,7 +62,7 @@ async function initClient(config: RedemptionConfig): Promise<boolean> {
     const GasPrice = stargateMod.GasPrice ?? stargateMod.default?.GasPrice;
 
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(config.adminMnemonic, {
-      prefix: "xion",
+      prefix: CHAIN_ADDRESS_PREFIX,
     });
     const [account] = await wallet.getAccounts();
     adminAddress = account.address;
@@ -69,7 +70,7 @@ async function initClient(config: RedemptionConfig): Promise<boolean> {
     signingClient = await SigningCosmWasmClient.connectWithSigner(
       config.rpcUrl,
       wallet,
-      { gasPrice: GasPrice.fromString("0.025uxion") }
+      { gasPrice: GasPrice.fromString(GAS_PRICE) }
     );
 
     logger.info("Gammon redemption client initialized", { admin: adminAddress });
@@ -221,7 +222,7 @@ async function pollForRedemptions(config: RedemptionConfig): Promise<void> {
   try {
     // Query all tokens owned by the dev address
     const result = await signingClient.queryContractSmart(config.nftContract, {
-      tokens: { owner: config.devAddress, limit: 30 },
+      tokens: { owner: config.devAddress, limit: NFT_QUERY_LIMIT },
     });
 
     const tokenIds: string[] = result?.tokens || [];

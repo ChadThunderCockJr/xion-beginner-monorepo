@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBalance } from "@/hooks/useBalance";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { WS_URL } from "@/lib/ws-config";
+import { PULSE_INTERVAL_MS, COUNTDOWN_TICK_MS, INVITE_TIMEOUT_MS } from "@/lib/constants";
 
 /* ── Constants ── */
 
@@ -96,7 +97,7 @@ const WalletIcon = () => (
 function PulsingDot() {
   const [pulse, setPulse] = useState(false);
   useEffect(() => {
-    const interval = setInterval(() => setPulse((p) => !p), 800);
+    const interval = setInterval(() => setPulse((p) => !p), PULSE_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
   return (
@@ -350,7 +351,7 @@ function WagerConfirmModal({
         }
         return prev - 1;
       });
-    }, 1000);
+    }, COUNTDOWN_TICK_MS);
     return () => clearInterval(timer);
   }, [isHighExposure]);
 
@@ -648,7 +649,7 @@ export default function CreateMatchPage() {
   // Countdown timer for waiting screen → navigate to match
   useEffect(() => {
     if (screen === "waiting" && countdown > 0) {
-      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      const timer = setTimeout(() => setCountdown((c) => c - 1), COUNTDOWN_TICK_MS);
       return () => clearTimeout(timer);
     }
     if (screen === "waiting" && countdown === 0 && gameId) {
@@ -664,7 +665,7 @@ export default function CreateMatchPage() {
       if (!sessionToastDismissed.current) {
         setSessionToast(true);
       }
-    }, 10 * 60 * 1000); // 10 minutes
+    }, INVITE_TIMEOUT_MS); // 10 minutes
     return () => clearTimeout(timer);
   }, []);
 

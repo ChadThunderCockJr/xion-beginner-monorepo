@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { REDIS_MAX_RETRIES, REDIS_RETRY_DELAY_MIN_MS, REDIS_RETRY_DELAY_MAX_MS } from "./config.js";
 
 let redis: Redis | null = null;
 
@@ -12,8 +13,8 @@ export function getRedis(): Redis | null {
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       retryStrategy(times) {
-        if (times > 3) return null; // stop retrying
-        return Math.min(times * 500, 2000);
+        if (times > REDIS_MAX_RETRIES) return null; // stop retrying
+        return Math.min(times * REDIS_RETRY_DELAY_MIN_MS, REDIS_RETRY_DELAY_MAX_MS);
       },
     });
 
