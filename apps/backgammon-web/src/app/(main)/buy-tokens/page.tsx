@@ -1,12 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   useAbstraxionAccount,
   useAbstraxionSigningClient,
 } from "@burnt-labs/abstraxion";
-import { CrossmintProvider, CrossmintEmbeddedCheckout } from "@crossmint/client-sdk-react-ui";
 import { toUtf8 } from "@cosmjs/encoding";
+
+// Dynamically import Crossmint to avoid SSR crashes (browser-only SDK)
+const CrossmintProvider = dynamic(
+  () => import("@crossmint/client-sdk-react-ui").then((mod) => mod.CrossmintProvider),
+  { ssr: false }
+);
+const CrossmintEmbeddedCheckout = dynamic(
+  () => import("@crossmint/client-sdk-react-ui").then((mod) => mod.CrossmintEmbeddedCheckout),
+  { ssr: false }
+);
 
 const CROSSMINT_CLIENT_API_KEY = process.env.NEXT_PUBLIC_CROSSMINT_CLIENT_API_KEY || "";
 const CROSSMINT_COLLECTION_ID = process.env.NEXT_PUBLIC_CROSSMINT_COLLECTION_ID || "";
