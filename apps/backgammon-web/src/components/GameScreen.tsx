@@ -47,9 +47,10 @@ interface GameScreenProps {
   matchState?: MatchState | null;
   matchOver?: boolean;
   matchTurnHistory?: TurnRecord[][];
+  turnTimeLimit?: number;
 }
 
-const TURN_TIME_LIMIT = 60;
+const DEFAULT_TURN_TIME_LIMIT = 60;
 
 // Visually-hidden style for aria-live region
 const srOnlyStyle: React.CSSProperties = {
@@ -890,6 +891,7 @@ export function GameScreen({
   matchState,
   matchOver = false,
   matchTurnHistory,
+  turnTimeLimit = DEFAULT_TURN_TIME_LIMIT,
 }: GameScreenProps) {
   const isMyTurn = gameState.currentPlayer === myColor;
   const opponentColor: Player = myColor === "white" ? "black" : "white";
@@ -913,15 +915,15 @@ export function GameScreen({
   }, [gameState.dice?.[0], gameState.dice?.[1]]);
 
   // Turn timer
-  const [timeLeft, setTimeLeft] = useState(TURN_TIME_LIMIT);
+  const [timeLeft, setTimeLeft] = useState(turnTimeLimit);
   useEffect(() => {
     if (!turnStartedAt || gameState.gameOver) {
-      setTimeLeft(TURN_TIME_LIMIT);
+      setTimeLeft(turnTimeLimit);
       return;
     }
     const tick = () => {
       const elapsed = Math.floor((Date.now() - turnStartedAt) / 1000);
-      setTimeLeft(Math.max(0, TURN_TIME_LIMIT - elapsed));
+      setTimeLeft(Math.max(0, turnTimeLimit - elapsed));
     };
     tick();
     const interval = setInterval(tick, 1000);

@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
         wager_amount: u128,
     },
 
-    /// Deposit wager into escrow. Send USDC with this message.
+    /// Deposit wager into escrow. Send funds with this message.
     Deposit { game_id: String },
 
     /// Settle the game and pay the winner. Called by game contract or admin.
@@ -45,6 +45,24 @@ pub enum ExecuteMsg {
 
     /// Claim timeout if opponent hasn't deposited within timeout period.
     ClaimTimeout { game_id: String },
+
+    /// Offer a double — transitions escrow to AwaitingDoubleDeposits.
+    /// Called by game contract or admin after both players accept the double.
+    OfferDouble {
+        game_id: String,
+        doubler: String,
+        new_cube_value: u32,
+    },
+
+    /// Deposit additional funds for a pending double. Send funds with this message.
+    DoubleDeposit { game_id: String },
+
+    /// Reject a double — forfeit game, pay current pot to doubler.
+    /// Called by game contract or admin.
+    RejectDouble {
+        game_id: String,
+        rejecter: String,
+    },
 
     /// Admin: update configuration
     UpdateConfig {
@@ -91,11 +109,27 @@ pub struct EscrowResponse {
     pub player_a: Addr,
     pub player_b: Addr,
     pub wager_amount: u128,
-    pub player_a_deposited: bool,
-    pub player_b_deposited: bool,
+    /// Cumulative amount deposited by player A
+    pub player_a_deposited: u128,
+    /// Cumulative amount deposited by player B
+    pub player_b_deposited: u128,
     pub status: String,
     pub created_at: u64,
     pub settled_at: Option<u64>,
+    /// Current doubling cube value
+    pub cube_value: u32,
+    /// Pending double info (if any)
+    pub pending_double: Option<PendingDoubleResponse>,
+}
+
+#[cw_serde]
+pub struct PendingDoubleResponse {
+    pub doubler: Addr,
+    pub responder: Addr,
+    pub new_cube_value: u32,
+    pub additional_deposit: u128,
+    pub doubler_deposited: bool,
+    pub responder_deposited: bool,
 }
 
 #[cw_serde]

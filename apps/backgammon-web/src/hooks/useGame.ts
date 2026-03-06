@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { GameState, Player, Move, MatchState } from "@xion-beginner/backgammon-core";
-import { canDouble as checkCanDouble } from "@xion-beginner/backgammon-core";
+import {
+  canDouble as checkCanDouble,
+  makeMove as coreMakeMove,
+  getLegalFirstMoves,
+} from "@xion-beginner/backgammon-core";
 import type { TurnRecord } from "./useLocalGame";
 import { useAbstraxionSigningClient } from "@burnt-labs/abstraxion";
 import { useWebSocket } from "./useWebSocket";
@@ -25,6 +29,7 @@ interface GameContext {
   error: string | null;
   undoCount: number;
   turnStartedAt: number | null;
+  turnTimeLimit: number;
   lastOpponentMove: { from: number; to: number } | null;
   lastReaction: { emoji: string; from: string } | null;
   pendingConfirmation: boolean;
@@ -32,6 +37,15 @@ interface GameContext {
   disconnectCountdown: number | null;
   doubleOffered: boolean;
   doubleOfferedBy: Player | null;
+  // Double deposit state (wagered games only)
+  doubleDepositRequired: boolean;
+  doubleDepositAmount: string;
+  doubleDepositNewCubeValue: number;
+  doubleDepositDoubler: string | null;
+  doubleDepositResponder: string | null;
+  doubleDepositDoublerDone: boolean;
+  doubleDepositResponderDone: boolean;
+  doubleDepositComplete: boolean;
   // Turn history for post-game analysis
   turnHistory: TurnRecord[];
   currentTurnPlayer: Player | null;
@@ -43,6 +57,10 @@ interface GameContext {
   matchOver: boolean;
   // Per-game turn histories for match-level analysis
   matchTurnHistory: TurnRecord[][];
+  // Client-side move buffering for multiplayer turn confirmation
+  bufferedMoves: { from: number; to: number }[];
+  localGameState: GameState | null;
+  localLegalMoves: Move[];
 }
 
 type GameAction =
@@ -59,6 +77,7 @@ type GameAction =
       legalMoves: Move[];
       myAddress: string;
       matchState?: MatchState | null;
+      turnTimeLimit?: number;
     }
   | {
       type: "GAME_SYNC";
@@ -92,7 +111,14 @@ type GameAction =
   | { type: "CLEAR_REACTION" }
   | { type: "DOUBLE_OFFERED"; player: Player; cubeValue: number }
   | { type: "DOUBLE_ACCEPTED"; cubeValue: number; cubeOwner: Player }
-  | { type: "DOUBLE_REJECTED"; winner: Player };
+  | { type: "DOUBLE_REJECTED"; winner: Player }
+  | { type: "DOUBLE_AWAITING_DEPOSITS"; newCubeValue: number; additionalDeposit: string; doubler: string; responder: string }
+  | { type: "DOUBLE_DEPOSIT_RECEIVED"; player: string; depositsComplete: boolean }
+  | { type: "DOUBLE_DEPOSITS_COMPLETE"; newCubeValue: number; cubeOwner: Player }
+  | { type: "DOUBLE_DEPOSIT_TIMEOUT" }
+  | { type: "LOCAL_MOVE"; from: number; to: number; die: number; newState: GameState; legalMoves: Move[] }
+  | { type: "LOCAL_UNDO" }
+  | { type: "CLEAR_BUFFER" };
 
 const initialGameContext: GameContext = {
   gameId: null,
@@ -107,6 +133,7 @@ const initialGameContext: GameContext = {
   error: null,
   undoCount: 0,
   turnStartedAt: null,
+  turnTimeLimit: 60,
   lastOpponentMove: null,
   lastReaction: null,
   pendingConfirmation: false,
@@ -114,6 +141,14 @@ const initialGameContext: GameContext = {
   disconnectCountdown: null,
   doubleOffered: false,
   doubleOfferedBy: null,
+  doubleDepositRequired: false,
+  doubleDepositAmount: "0",
+  doubleDepositNewCubeValue: 0,
+  doubleDepositDoubler: null,
+  doubleDepositResponder: null,
+  doubleDepositDoublerDone: false,
+  doubleDepositResponderDone: false,
+  doubleDepositComplete: false,
   turnHistory: [],
   currentTurnPlayer: null,
   currentTurnDice: null,
@@ -122,6 +157,9 @@ const initialGameContext: GameContext = {
   matchState: null,
   matchOver: false,
   matchTurnHistory: [],
+  bufferedMoves: [],
+  localGameState: null,
+  localLegalMoves: [],
 };
 
 function gameReducer(state: GameContext, action: GameAction): GameContext {
@@ -173,6 +211,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         matchOver: false,
         winner: null,
         resultType: null,
+        turnTimeLimit: action.turnTimeLimit ?? state.turnTimeLimit,
         // Reset matchTurnHistory for a fresh match (not a next_game continuation)
         matchTurnHistory: [],
       };
@@ -204,6 +243,10 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         currentTurnDice: action.gameState.dice,
         currentTurnMoves: [],
         turnStartBoard: { points: [...board.points], whiteOff: board.whiteOff, blackOff: board.blackOff },
+        // Clear any buffered moves from previous turn
+        bufferedMoves: [],
+        localGameState: null,
+        localLegalMoves: [],
       };
     }
     case "MOVE_MADE": {
@@ -244,7 +287,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         gameState: action.gameState,
         legalMoves: [],
         undoCount: 0,
-        turnStartedAt: Date.now(),
+        turnStartedAt: null,
         pendingConfirmation: false,
         doubleOffered: false,
         doubleOfferedBy: null,
@@ -253,6 +296,9 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         currentTurnDice: null,
         currentTurnMoves: [],
         turnStartBoard: null,
+        bufferedMoves: [],
+        localGameState: null,
+        localLegalMoves: [],
       };
     }
     case "GAME_OVER": {
@@ -335,6 +381,48 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         status: "finished",
         doubleOffered: false,
         doubleOfferedBy: null,
+        doubleDepositRequired: false,
+      };
+    case "DOUBLE_AWAITING_DEPOSITS":
+      return {
+        ...state,
+        doubleOffered: false,
+        doubleOfferedBy: null,
+        doubleDepositRequired: true,
+        doubleDepositAmount: action.additionalDeposit,
+        doubleDepositNewCubeValue: action.newCubeValue,
+        doubleDepositDoubler: action.doubler,
+        doubleDepositResponder: action.responder,
+        doubleDepositDoublerDone: false,
+        doubleDepositResponderDone: false,
+        doubleDepositComplete: false,
+      };
+    case "DOUBLE_DEPOSIT_RECEIVED":
+      return {
+        ...state,
+        doubleDepositDoublerDone: action.player === state.doubleDepositDoubler ? true : state.doubleDepositDoublerDone,
+        doubleDepositResponderDone: action.player === state.doubleDepositResponder ? true : state.doubleDepositResponderDone,
+      };
+    case "DOUBLE_DEPOSITS_COMPLETE":
+      return {
+        ...state,
+        doubleDepositRequired: false,
+        doubleDepositComplete: true,
+        doubleDepositDoublerDone: true,
+        doubleDepositResponderDone: true,
+        gameState: state.gameState
+          ? { ...state.gameState, cubeValue: action.newCubeValue, cubeOwner: action.cubeOwner }
+          : state.gameState,
+      };
+    case "DOUBLE_DEPOSIT_TIMEOUT":
+      return {
+        ...state,
+        doubleDepositRequired: false,
+        doubleDepositComplete: false,
+        doubleDepositDoubler: null,
+        doubleDepositResponder: null,
+        doubleDepositDoublerDone: false,
+        doubleDepositResponderDone: false,
       };
     case "OPPONENT_DISCONNECTED":
       return { ...state, opponentDisconnected: true };
@@ -360,6 +448,43 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
       return { ...state, lastReaction: { emoji: action.emoji, from: action.from } };
     case "CLEAR_REACTION":
       return { ...state, lastReaction: null };
+    case "LOCAL_MOVE":
+      return {
+        ...state,
+        bufferedMoves: [...state.bufferedMoves, { from: action.from, to: action.to }],
+        localGameState: action.newState,
+        localLegalMoves: action.legalMoves,
+        currentTurnMoves: [...state.currentTurnMoves, { from: action.from, to: action.to, die: action.die }],
+      };
+    case "LOCAL_UNDO": {
+      if (state.bufferedMoves.length === 0 || !state.gameState) return state;
+      // Replay all buffered moves except the last one from server state
+      const remaining = state.bufferedMoves.slice(0, -1);
+      let replayState: GameState = state.gameState;
+      for (const m of remaining) {
+        const next = coreMakeMove(replayState, m.from, m.to);
+        if (next) replayState = next;
+      }
+      const replayLegal = replayState.movesRemaining.length > 0
+        ? getLegalFirstMoves(replayState.board, replayState.currentPlayer, replayState.movesRemaining)
+        : [];
+      return {
+        ...state,
+        bufferedMoves: remaining,
+        localGameState: remaining.length > 0 ? replayState : null,
+        localLegalMoves: remaining.length > 0 ? replayLegal : state.legalMoves,
+        currentTurnMoves: state.currentTurnMoves.slice(0, -1),
+      };
+    }
+    case "CLEAR_BUFFER":
+      return {
+        ...state,
+        bufferedMoves: [],
+        localGameState: null,
+        localLegalMoves: [],
+        // Reset currentTurnMoves so server MOVE_MADE responses re-populate without duplicates
+        currentTurnMoves: [],
+      };
     default:
       return state;
   }
@@ -375,6 +500,8 @@ export function useGame(wsUrl: string, address: string | null) {
   myColorRef.current = state.myColor;
   const stateRef = useRef(state);
   stateRef.current = state;
+  // Track whether we're flushing buffered moves to server
+  const flushingRef = useRef(false);
 
   // Track auth_challenge nonce from server
   const [authNonce, setAuthNonce] = useState<string | null>(null);
@@ -500,6 +627,7 @@ export function useGame(wsUrl: string, address: string | null) {
           legalMoves,
           myAddress: addressRef.current || "",
           matchState: msg.match_state as MatchState | undefined,
+          turnTimeLimit: msg.turn_time_limit as number | undefined,
         });
       }),
       on("dice_rolled", (msg) => {
@@ -516,6 +644,19 @@ export function useGame(wsUrl: string, address: string | null) {
         const player = msg.player as Player;
         const move = msg.move as Move;
         const gs = msg.game_state as GameState;
+        // During flush, suppress our own move_made echoes (server state updates silently)
+        if (flushingRef.current && player === myColorRef.current) {
+          // Still update server state silently for consistency
+          dispatch({
+            type: "MOVE_MADE",
+            gameState: gs,
+            legalMoves: (msg.legal_moves || []) as Move[],
+            player,
+            move,
+            needsConfirmation: msg.needs_confirmation as boolean | undefined,
+          });
+          return;
+        }
         const isHit = player !== myColorRef.current;
         if (isHit) {
           playCheckerHit();
@@ -539,6 +680,7 @@ export function useGame(wsUrl: string, address: string | null) {
         });
       }),
       on("turn_ended", (msg) => {
+        flushingRef.current = false;
         playTurnEnd();
         dispatch({
           type: "TURN_ENDED",
@@ -588,6 +730,32 @@ export function useGame(wsUrl: string, address: string | null) {
           winner: msg.winner as Player,
         })
       ),
+      on("double_awaiting_deposits", (msg) =>
+        dispatch({
+          type: "DOUBLE_AWAITING_DEPOSITS",
+          newCubeValue: msg.new_cube_value as number,
+          additionalDeposit: msg.additional_deposit as string,
+          doubler: msg.doubler as string,
+          responder: msg.responder as string,
+        })
+      ),
+      on("double_deposit_received", (msg) =>
+        dispatch({
+          type: "DOUBLE_DEPOSIT_RECEIVED",
+          player: msg.player as string,
+          depositsComplete: msg.deposits_complete as boolean,
+        })
+      ),
+      on("double_deposits_complete", (msg) =>
+        dispatch({
+          type: "DOUBLE_DEPOSITS_COMPLETE",
+          newCubeValue: msg.new_cube_value as number,
+          cubeOwner: msg.cube_owner as Player,
+        })
+      ),
+      on("double_deposit_timeout", () =>
+        dispatch({ type: "DOUBLE_DEPOSIT_TIMEOUT" })
+      ),
       on("opponent_disconnected", () =>
         dispatch({ type: "OPPONENT_DISCONNECTED" })
       ),
@@ -635,8 +803,13 @@ export function useGame(wsUrl: string, address: string | null) {
   // No forced move auto-play — player always confirms manually
 
   const createGame = useCallback(
-    (wagerAmount: number) => {
-      sendMessage({ type: "create_game", wager_amount: wagerAmount });
+    (wagerAmount: number, matchLength?: number, timeControl?: number) => {
+      sendMessage({
+        type: "create_game",
+        wager_amount: wagerAmount,
+        match_length: matchLength,
+        time_control: timeControl,
+      });
     },
     [sendMessage]
   );
@@ -666,20 +839,54 @@ export function useGame(wsUrl: string, address: string | null) {
 
   const makeMove = useCallback(
     (from: number, to: number) => {
-      if (state.gameId)
-        sendMessage({ type: "move", game_id: state.gameId, from, to });
+      if (!state.gameId) return;
+      // Buffer locally: validate with core lib, don't send to server
+      const currentState = stateRef.current.localGameState || stateRef.current.gameState;
+      if (!currentState) return;
+      const newState = coreMakeMove(currentState, from, to);
+      if (!newState) return; // invalid move
+      // Determine which die was used by comparing movesRemaining
+      const oldMoves = [...currentState.movesRemaining];
+      const newMoves = [...newState.movesRemaining];
+      let die = oldMoves[0] || 0;
+      for (const d of oldMoves) {
+        const idx = newMoves.indexOf(d);
+        if (idx === -1) { die = d; break; }
+        newMoves.splice(idx, 1);
+      }
+      const legalMoves = newState.movesRemaining.length > 0
+        ? getLegalFirstMoves(newState.board, newState.currentPlayer, newState.movesRemaining)
+        : [];
+      dispatch({ type: "LOCAL_MOVE", from, to, die, newState, legalMoves });
     },
-    [sendMessage, state.gameId]
+    [state.gameId]
   );
 
   const endTurn = useCallback(() => {
-    if (state.gameId)
+    if (!state.gameId) return;
+    const moves = stateRef.current.bufferedMoves;
+    if (moves.length > 0) {
+      // Flush all buffered moves to the server, then end turn
+      flushingRef.current = true;
+      for (const m of moves) {
+        sendMessage({ type: "move", game_id: state.gameId!, from: m.from, to: m.to });
+      }
+      sendMessage({ type: "end_turn", game_id: state.gameId! });
+      dispatch({ type: "CLEAR_BUFFER" });
+      // flushingRef will be cleared when turn_ended arrives
+    } else {
       sendMessage({ type: "end_turn", game_id: state.gameId });
+    }
   }, [sendMessage, state.gameId]);
 
   const undoMove = useCallback(() => {
-    if (state.gameId)
+    if (!state.gameId) return;
+    if (stateRef.current.bufferedMoves.length > 0) {
+      // Undo locally — no server call needed
+      dispatch({ type: "LOCAL_UNDO" });
+    } else {
       sendMessage({ type: "undo_move", game_id: state.gameId });
+    }
   }, [sendMessage, state.gameId]);
 
   const resign = useCallback(() => {
@@ -701,6 +908,33 @@ export function useGame(wsUrl: string, address: string | null) {
       sendMessage({ type: "reject_double", game_id: state.gameId });
   }, [sendMessage, state.gameId]);
 
+  /** Submit on-chain double deposit, then notify server */
+  const submitDoubleDeposit = useCallback(async () => {
+    if (!state.gameId || !abstraxionClient || !state.doubleDepositRequired) return;
+    const escrowContract = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS;
+    const denom = process.env.NEXT_PUBLIC_GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4";
+    if (!escrowContract) {
+      console.error("[useGame] NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS not set");
+      return;
+    }
+    try {
+      const amount = state.doubleDepositAmount;
+      await abstraxionClient.execute(
+        addressRef.current!,
+        escrowContract,
+        { double_deposit: { game_id: state.gameId } },
+        "auto",
+        undefined,
+        [{ denom, amount }],
+      );
+      // Notify server that deposit was made
+      sendMessage({ type: "double_deposit_confirmed", game_id: state.gameId });
+    } catch (err) {
+      console.error("[useGame] Double deposit failed:", err);
+      dispatch({ type: "ERROR", message: "Double deposit transaction failed" });
+    }
+  }, [state.gameId, state.doubleDepositRequired, state.doubleDepositAmount, abstraxionClient, sendMessage]);
+
   const sendReaction = useCallback(
     (emoji: string) => {
       if (state.gameId) {
@@ -717,11 +951,20 @@ export function useGame(wsUrl: string, address: string | null) {
     ? checkCanDouble(state.gameState, state.myColor)
     : false;
 
+  // Expose local state when buffer is active
+  const hasBuffer = state.bufferedMoves.length > 0;
+  const effectiveGameState = hasBuffer ? state.localGameState : state.gameState;
+  const effectiveLegalMoves = hasBuffer ? state.localLegalMoves : state.legalMoves;
+  const bufferPendingConfirmation = hasBuffer && state.localLegalMoves.length === 0;
+
   return {
     ...state,
+    gameState: effectiveGameState,
+    legalMoves: effectiveLegalMoves,
     turnHistory: state.turnHistory,
     matchTurnHistory: state.matchTurnHistory,
-    canUndo: state.undoCount > 0 || state.pendingConfirmation,
+    canUndo: hasBuffer || state.undoCount > 0 || state.pendingConfirmation,
+    pendingConfirmation: bufferPendingConfirmation || state.pendingConfirmation,
     canDouble: myCanDouble,
     connected,
     authenticated,
@@ -737,6 +980,7 @@ export function useGame(wsUrl: string, address: string | null) {
     offerDouble,
     acceptDouble,
     rejectDouble,
+    submitDoubleDeposit,
     sendReaction,
     reset,
   };

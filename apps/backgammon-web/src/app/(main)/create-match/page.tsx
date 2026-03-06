@@ -634,9 +634,9 @@ export default function CreateMatchPage() {
   useEffect(() => {
     if (wantCreate && authenticated && !createdRef.current) {
       createdRef.current = true;
-      createGame(0); // wager=0 for MVP
+      createGame(0, matchLengthNum, timeControlNum * 60); // wager=0 for MVP; timeControl in seconds
     }
-  }, [wantCreate, authenticated, createGame]);
+  }, [wantCreate, authenticated, createGame, matchLengthNum, timeControlNum]);
 
   // When status transitions to "playing" (opponent joined + game_start), show waiting/countdown
   useEffect(() => {

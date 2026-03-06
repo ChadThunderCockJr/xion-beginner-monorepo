@@ -228,6 +228,7 @@ async function handleGameOver(gameId: string, winner: Player, resultType: Result
             black_name: bN,
             game_state: updatedGame.gameState,
             match_state: match.matchState,
+            turn_time_limit: updatedGame.turnTimeLimit,
           });
         }
       }
@@ -361,6 +362,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
               black_name: bName,
               game_state: game.gameState,
               legal_moves: legalMoves,
+              turn_time_limit: game.turnTimeLimit,
             });
           }
         }
@@ -372,7 +374,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       const conn = connections.get(ws);
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
 
-      const game = gameManager.createGame(msg.wager_amount);
+      const turnTimeLimit = msg.time_control && msg.time_control > 0 ? msg.time_control : 60;
+      const game = gameManager.createGame(msg.wager_amount, turnTimeLimit);
       const player: PlayerConnection = {
         ws,
         address: conn.address,
@@ -383,6 +386,12 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       if (result) {
         logger.info("Game created", { gameId: game.id, address: conn.address });
         send(ws, { type: "game_created", game_id: game.id, color: result.color });
+      }
+
+      // Store match settings on the game for deferred match creation when second player joins
+      const matchLength = msg.match_length ?? 1;
+      if (matchLength > 1) {
+        game.pendingMatchLength = matchLength;
       }
       break;
     }
@@ -417,6 +426,20 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
 
       // Notify both players game is starting
       if (game.playerWhite && game.playerBlack) {
+        // Create match if pending from create_game
+        if (game.pendingMatchLength && game.pendingMatchLength > 1) {
+          matchManager.createMatch(
+            game.id,
+            game.pendingMatchLength,
+            game.playerWhite.address,
+            game.playerBlack.address,
+            game.id,
+            game.wagerAmount,
+          );
+          delete game.pendingMatchLength;
+        }
+
+        const match = matchManager.getMatchForGame(game.id);
         const [wN, bN] = await Promise.all([
           getDisplayName(game.playerWhite.address),
           getDisplayName(game.playerBlack.address),
@@ -429,6 +452,8 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           white_name: wN,
           black_name: bN,
           game_state: game.gameState,
+          ...(match ? { match_state: match.matchState } : {}),
+          turn_time_limit: game.turnTimeLimit,
         };
         gameManager.broadcastToGame(game, startMsg);
       }
@@ -479,6 +504,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
           black_name: bN,
           game_state: game.gameState,
           ...(match ? { match_state: match.matchState } : {}),
+          turn_time_limit: game.turnTimeLimit,
         };
         gameManager.broadcastToGame(game, startMsg);
       } else {
@@ -754,16 +780,48 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
       gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
-      const result = gameManager.handleAcceptDouble(msg.game_id, conn.address);
-      if (!result) { send(ws, { type: "error", message: "Cannot accept double", code: "CANNOT_ACCEPT" }); return; }
+      const game = gameManager.getGame(msg.game_id);
+      if (!game) { send(ws, { type: "error", message: "Game not found" }); return; }
 
-      const game = gameManager.getGame(msg.game_id)!;
-      gameManager.broadcastToGame(game, {
-        type: "double_accepted",
-        game_id: msg.game_id,
-        cube_value: result.cubeValue,
-        cube_owner: result.cubeOwner,
-      });
+      if (game.wagerAmount > 0) {
+        // Wagered game: initiate escrow deposit flow
+        const result = await gameManager.handleAcceptDoubleWagered(msg.game_id, conn.address);
+        if (!result) { send(ws, { type: "error", message: "Cannot accept double", code: "CANNOT_ACCEPT" }); return; }
+
+        // Tell both players to deposit additional funds
+        gameManager.broadcastToGame(game, {
+          type: "double_awaiting_deposits",
+          game_id: msg.game_id,
+          new_cube_value: result.cubeValue,
+          additional_deposit: result.additionalDeposit,
+          doubler: result.doubler,
+          responder: result.responder,
+        });
+
+        // Start 120s deposit timeout
+        gameManager.startDoubleDepositTimer(game, (gId) => {
+          const g = gameManager.getGame(gId);
+          if (g) {
+            gameManager.broadcastToGame(g, {
+              type: "double_deposit_timeout",
+              game_id: gId,
+              message: "Double deposit timed out. Reverting to pre-double state.",
+            });
+            void gameManager.handleDoubleDepositTimeout(gId);
+          }
+        });
+      } else {
+        // Free game: immediate accept, no escrow
+        const result = gameManager.handleAcceptDoubleFree(msg.game_id, conn.address);
+        if (!result) { send(ws, { type: "error", message: "Cannot accept double", code: "CANNOT_ACCEPT" }); return; }
+
+        gameManager.broadcastToGame(game, {
+          type: "double_accepted",
+          game_id: msg.game_id,
+          cube_value: result.cubeValue,
+          cube_owner: result.cubeOwner,
+        });
+      }
       break;
     }
 
@@ -772,10 +830,19 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
       gameManager.updatePlayerWs(msg.game_id, conn.address, ws);
 
-      const result = gameManager.handleRejectDouble(msg.game_id, conn.address);
+      const game = gameManager.getGame(msg.game_id);
+      if (!game) { send(ws, { type: "error", message: "Game not found" }); return; }
+
+      let result: { winner: Player } | null;
+      if (game.wagerAmount > 0) {
+        // Wagered game: settle escrow to doubler
+        result = await gameManager.handleRejectDoubleWagered(msg.game_id, conn.address);
+      } else {
+        result = gameManager.handleRejectDouble(msg.game_id, conn.address);
+      }
+
       if (!result) { send(ws, { type: "error", message: "Cannot reject double", code: "CANNOT_REJECT" }); return; }
 
-      const game = gameManager.getGame(msg.game_id)!;
       gameManager.broadcastToGame(game, {
         type: "double_rejected",
         game_id: msg.game_id,
@@ -783,6 +850,46 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
       });
       // Score in match context (double rejection = normal win at current cube value)
       await handleGameOver(msg.game_id, result.winner, "normal");
+      break;
+    }
+
+    case "double_deposit_confirmed": {
+      const conn = connections.get(ws);
+      if (!conn) { send(ws, { type: "error", message: "Not authenticated" }); return; }
+
+      const game = gameManager.getGame(msg.game_id);
+      if (!game || !game.pendingDoubleDeposit) {
+        send(ws, { type: "error", message: "No pending double deposit" });
+        return;
+      }
+
+      // Verify deposit on-chain
+      const depositResult = await gameManager.verifyDoubleDeposit(msg.game_id, conn.address);
+      if (!depositResult) {
+        send(ws, { type: "error", message: "Failed to verify deposit" });
+        return;
+      }
+
+      if (depositResult.playerDeposited) {
+        // Notify both players about deposit progress
+        gameManager.broadcastToGame(game, {
+          type: "double_deposit_received",
+          game_id: msg.game_id,
+          player: conn.address,
+          deposits_complete: depositResult.depositsComplete,
+        });
+      }
+
+      if (depositResult.depositsComplete) {
+        // Both deposited — game resumes with new cube value
+        const playerColor = gameManager.getPlayerColor(game, game.pendingDoubleDeposit?.responder || conn.address);
+        gameManager.broadcastToGame(game, {
+          type: "double_deposits_complete",
+          game_id: msg.game_id,
+          new_cube_value: game.gameState.cubeValue,
+          cube_owner: playerColor || "white",
+        });
+      }
       break;
     }
 
@@ -846,5 +953,12 @@ server.listen(PORT, () => {
 
   gameManager.restoreGames().then((count) => {
     if (count > 0) console.log(`Restored ${count} active games from Redis`);
+  });
+
+  // Start Gammon token redemption service (NFT burn → token mint)
+  import("./gammon-redemption.js").then(({ startRedemptionService }) => {
+    startRedemptionService();
+  }).catch((err) => {
+    logger.warn("Gammon redemption service not started", { error: String(err) });
   });
 });

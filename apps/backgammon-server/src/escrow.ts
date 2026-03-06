@@ -1,6 +1,15 @@
 import { logger } from "./logger.js";
 
-export type EscrowStatus = "none" | "pending_deposits" | "active" | "settled" | "cancelled";
+export type EscrowStatus = "none" | "pending_deposits" | "active" | "awaiting_double_deposits" | "settled" | "cancelled" | "forfeited";
+
+export interface PendingDoubleInfo {
+  doubler: string;
+  responder: string;
+  newCubeValue: number;
+  additionalDeposit: string;
+  doublerDeposited: boolean;
+  responderDeposited: boolean;
+}
 
 export interface EscrowInfo {
   gameId: string;
@@ -8,8 +17,14 @@ export interface EscrowInfo {
   playerB: string;
   wagerAmount: string;
   status: EscrowStatus;
-  playerADeposited: boolean;
-  playerBDeposited: boolean;
+  /** Cumulative amount deposited by player A */
+  playerADeposited: string;
+  /** Cumulative amount deposited by player B */
+  playerBDeposited: string;
+  /** Current doubling cube value */
+  cubeValue: number;
+  /** Pending double info (if any) */
+  pendingDouble: PendingDoubleInfo | null;
 }
 
 /**
@@ -70,7 +85,7 @@ export class EscrowClient {
     playerA: string,
     playerB: string,
     wagerAmount: string,
-    denom: string = "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4", // USDC on XION
+    denom: string = process.env.GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4", // Gammon token or USDC fallback
   ): Promise<boolean> {
     if (!(await this.init())) return false;
 
@@ -116,8 +131,17 @@ export class EscrowClient {
         playerB: result.player_b,
         wagerAmount: String(result.wager_amount),
         status: mapContractStatus(result.status),
-        playerADeposited: result.player_a_deposited ?? false,
-        playerBDeposited: result.player_b_deposited ?? false,
+        playerADeposited: String(result.player_a_deposited ?? "0"),
+        playerBDeposited: String(result.player_b_deposited ?? "0"),
+        cubeValue: result.cube_value ?? 1,
+        pendingDouble: result.pending_double ? {
+          doubler: result.pending_double.doubler,
+          responder: result.pending_double.responder,
+          newCubeValue: result.pending_double.new_cube_value,
+          additionalDeposit: String(result.pending_double.additional_deposit),
+          doublerDeposited: result.pending_double.doubler_deposited ?? false,
+          responderDeposited: result.pending_double.responder_deposited ?? false,
+        } : null,
       };
     } catch (err) {
       logger.error("Failed to query escrow", { gameId, error: String(err) });
@@ -125,7 +149,9 @@ export class EscrowClient {
     }
   }
 
-  /** Settle the escrow -- send winnings to the winner */
+  /** Settle the escrow -- send winnings to the winner.
+   *  Payout is now based on actual deposits in the contract (cube-aware).
+   *  The multiplier parameter is kept for API compatibility but ignored by the contract. */
   async settle(
     gameId: string,
     winner: string,
@@ -134,20 +160,13 @@ export class EscrowClient {
     if (!(await this.init())) return false;
 
     try {
-      const msg = multiplier > 1
-        ? {
-            settle_with_multiplier: {
-              game_id: gameId,
-              winner,
-              multiplier: String(multiplier),
-            },
-          }
-        : {
-            settle: {
-              game_id: gameId,
-              winner,
-            },
-          };
+      // Always use simple settle — contract uses actual deposited amounts
+      const msg = {
+        settle: {
+          game_id: gameId,
+          winner,
+        },
+      };
 
       await this.signingClient.execute(
         this.adminAddress,
@@ -184,8 +203,70 @@ export class EscrowClient {
     }
   }
 
+  /** Offer a double — transitions contract to AwaitingDoubleDeposits */
+  async offerDouble(
+    gameId: string,
+    doubler: string,
+    newCubeValue: number,
+  ): Promise<boolean> {
+    if (!(await this.init())) return false;
+
+    try {
+      const msg = {
+        offer_double: {
+          game_id: gameId,
+          doubler,
+          new_cube_value: newCubeValue,
+        },
+      };
+
+      await this.signingClient.execute(
+        this.adminAddress,
+        this.contractAddress,
+        msg,
+        "auto",
+      );
+
+      logger.info("Escrow double offered", { gameId, doubler, newCubeValue });
+      return true;
+    } catch (err) {
+      logger.error("Failed to offer double in escrow", { gameId, error: String(err) });
+      return false;
+    }
+  }
+
+  /** Reject a double — forfeit game, pay pot to doubler */
+  async rejectDouble(
+    gameId: string,
+    rejecter: string,
+  ): Promise<boolean> {
+    if (!(await this.init())) return false;
+
+    try {
+      const msg = {
+        reject_double: {
+          game_id: gameId,
+          rejecter,
+        },
+      };
+
+      await this.signingClient.execute(
+        this.adminAddress,
+        this.contractAddress,
+        msg,
+        "auto",
+      );
+
+      logger.info("Escrow double rejected", { gameId, rejecter });
+      return true;
+    } catch (err) {
+      logger.error("Failed to reject double in escrow", { gameId, error: String(err) });
+      return false;
+    }
+  }
+
   /** Query a player's token balance */
-  async queryBalance(address: string, denom: string = "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4"): Promise<string> {
+  async queryBalance(address: string, denom: string = process.env.GAMMON_DENOM || "ibc/6490A7EAB61059BFC1CDDEB05917DD70BDF3A611654162A1A47DB930D40D8AF4"): Promise<string> {
     if (!(await this.init())) return "0";
 
     try {
@@ -207,8 +288,10 @@ function mapContractStatus(status: any): EscrowStatus {
     const s = status.toLowerCase();
     if (s === "awaiting_deposits" || s === "pending_deposits" || s === "pending") return "pending_deposits";
     if (s === "active" || s === "funded") return "active";
+    if (s === "awaiting_double_deposits" || s === "awaitingdoubledeposits") return "awaiting_double_deposits";
     if (s === "settled" || s === "completed") return "settled";
     if (s === "cancelled" || s === "canceled" || s === "timed_out") return "cancelled";
+    if (s === "forfeited") return "forfeited";
   }
   // Handle Rust enum as object: { awaiting_deposits: {} } or { active: {} }
   if (typeof status === "object") {

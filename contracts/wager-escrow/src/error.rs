@@ -45,4 +45,16 @@ pub enum ContractError {
 
     #[error("Insufficient contract balance: need {needed}, have {available}")]
     InsufficientBalance { needed: u128, available: u128 },
+
+    #[error("No pending double offer")]
+    NoPendingDouble {},
+
+    #[error("Player has already deposited for this double")]
+    AlreadyDepositedDouble {},
+
+    #[error("Invalid cube value: {value}")]
+    InvalidCubeValue { value: u32 },
+
+    #[error("Cube value {value} exceeds maximum of {max}")]
+    CubeValueExceedsMax { value: u32, max: u32 },
 }

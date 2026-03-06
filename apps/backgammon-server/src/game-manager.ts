@@ -15,7 +15,7 @@ import {
   type Move,
   type ResultType,
 } from "@xion-beginner/backgammon-core";
-import { getEscrowClient, getSettlementMultiplier } from "./escrow.js";
+import { getEscrowClient } from "./escrow.js";
 import type { ServerGame, PlayerConnection, ServerMessage } from "./types.js";
 
 export class GameManager {
@@ -104,6 +104,7 @@ export class GameManager {
             pendingResignation: null,
             moveTimes: [],
             stallingWarned: false,
+            pendingDoubleDeposit: null,
           };
           this.games.set(game.id, game);
 
@@ -135,7 +136,7 @@ export class GameManager {
     return String(randomInt(1000, 10000)) + String(Date.now() % 1000);
   }
 
-  createGame(wagerAmount: number): ServerGame {
+  createGame(wagerAmount: number, turnTimeLimit: number = 60): ServerGame {
     const id = this.generateShortId();
     const game: ServerGame = {
       id,
@@ -147,7 +148,7 @@ export class GameManager {
       status: "waiting",
       createdAt: Date.now(),
       turnTimer: null,
-      turnTimeLimit: 60,
+      turnTimeLimit,
       turnMoveStack: [],
       pendingConfirmation: null,
       disconnectTimer: null,
@@ -157,6 +158,7 @@ export class GameManager {
       pendingResignation: null,
       moveTimes: [],
       stallingWarned: false,
+      pendingDoubleDeposit: null,
     };
     this.diceHistories.set(id, new GameDiceHistory());
     this.games.set(id, game);
@@ -305,7 +307,8 @@ export class GameManager {
     if (game.pendingConfirmation === playerAddress) {
       game.pendingConfirmation = null;
       game.turnMoveStack = [];
-      this.clearTurnTimer(game);
+      // Start timer for next player's roll phase (will be reset when they roll)
+      this.startTurnTimer(game);
       void this.persistGame(game);
       return game.gameState;
     }
@@ -318,7 +321,8 @@ export class GameManager {
 
     game.turnMoveStack = [];
     game.gameState = endTurn(game.gameState);
-    this.clearTurnTimer(game);
+    // Start timer for next player's roll phase (will be reset when they roll)
+    this.startTurnTimer(game);
 
     void this.persistGame(game);
 
@@ -418,6 +422,7 @@ export class GameManager {
     const game = this.games.get(gameId);
     if (game) {
       this.clearTurnTimer(game);
+      this.clearDoubleDepositTimer(game);
       if (game.playerWhite) this.playerGames.delete(game.playerWhite.address);
       if (game.playerBlack) this.playerGames.delete(game.playerBlack.address);
       this.games.delete(gameId);
@@ -438,7 +443,8 @@ export class GameManager {
     return { player: playerColor, cubeValue: game.gameState.cubeValue * 2 };
   }
 
-  handleAcceptDouble(gameId: string, playerAddress: string): { cubeValue: number; cubeOwner: Player } | null {
+  /** Accept double for free games (no wager). Mutates game state immediately. */
+  handleAcceptDoubleFree(gameId: string, playerAddress: string): { cubeValue: number; cubeOwner: Player } | null {
     const game = this.games.get(gameId);
     if (!game || game.status !== "playing") return null;
     const playerColor = this.getPlayerColor(game, playerAddress);
@@ -446,6 +452,158 @@ export class GameManager {
     game.gameState = acceptDouble(game.gameState, playerColor);
     void this.persistGame(game);
     return { cubeValue: game.gameState.cubeValue, cubeOwner: game.gameState.cubeOwner! };
+  }
+
+  /** Accept double for wagered games — initiates escrow deposit flow.
+   *  Returns info needed to start the deposit process. */
+  async handleAcceptDoubleWagered(
+    gameId: string,
+    playerAddress: string,
+  ): Promise<{
+    cubeValue: number;
+    cubeOwner: Player;
+    additionalDeposit: string;
+    doubler: string;
+    responder: string;
+  } | null> {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+
+    const newCubeValue = game.gameState.cubeValue * 2;
+    const doublerColor: Player = playerColor === "white" ? "black" : "white";
+    const doublerAddress = doublerColor === "white"
+      ? game.playerWhite?.address
+      : game.playerBlack?.address;
+
+    if (!doublerAddress) return null;
+
+    // Call escrow contract to transition to AwaitingDoubleDeposits
+    const escrow = getEscrowClient();
+    if (!escrow) return null;
+
+    const success = await escrow.offerDouble(gameId, doublerAddress, newCubeValue);
+    if (!success) return null;
+
+    // Calculate additional deposit: old_cube * wager
+    const additionalDeposit = String(game.gameState.cubeValue * game.wagerAmount);
+
+    // Track pending double deposit on the game
+    game.pendingDoubleDeposit = {
+      doubler: doublerAddress,
+      responder: playerAddress,
+      newCubeValue,
+      additionalDeposit,
+      doublerDeposited: false,
+      responderDeposited: false,
+      depositTimer: null,
+    };
+    game.escrowStatus = "awaiting_double_deposits";
+
+    void this.persistGame(game);
+
+    return {
+      cubeValue: newCubeValue,
+      cubeOwner: playerColor,
+      additionalDeposit,
+      doubler: doublerAddress,
+      responder: playerAddress,
+    };
+  }
+
+  /** Verify a double deposit and update tracking. Returns deposit status. */
+  async verifyDoubleDeposit(
+    gameId: string,
+    playerAddress: string,
+  ): Promise<{ depositsComplete: boolean; playerDeposited: boolean } | null> {
+    const game = this.games.get(gameId);
+    if (!game || !game.pendingDoubleDeposit) return null;
+
+    const pending = game.pendingDoubleDeposit;
+    if (playerAddress !== pending.doubler && playerAddress !== pending.responder) return null;
+
+    // Query on-chain escrow to verify the deposit
+    const escrow = getEscrowClient();
+    if (!escrow) return null;
+
+    const info = await escrow.queryEscrowStatus(gameId);
+    if (!info || !info.pendingDouble) return null;
+
+    // Update our tracking based on on-chain state
+    pending.doublerDeposited = info.pendingDouble.doublerDeposited;
+    pending.responderDeposited = info.pendingDouble.responderDeposited;
+
+    const depositsComplete = pending.doublerDeposited && pending.responderDeposited;
+
+    if (depositsComplete) {
+      // Update game state with the accepted double
+      const accepterColor = this.getPlayerColor(game, pending.responder);
+      if (accepterColor) {
+        game.gameState = acceptDouble(game.gameState, accepterColor);
+      }
+      // Clean up pending state
+      this.clearDoubleDepositTimer(game);
+      game.pendingDoubleDeposit = null;
+      game.escrowStatus = "active";
+      void this.persistGame(game);
+    }
+
+    return {
+      depositsComplete,
+      playerDeposited: playerAddress === pending.doubler
+        ? pending.doublerDeposited
+        : pending.responderDeposited,
+    };
+  }
+
+  /** Start a timer for double deposit timeout (120s). */
+  startDoubleDepositTimer(
+    game: ServerGame,
+    onTimeout: (gameId: string) => void,
+  ): void {
+    this.clearDoubleDepositTimer(game);
+    if (!game.pendingDoubleDeposit) return;
+
+    game.pendingDoubleDeposit.depositTimer = setTimeout(() => {
+      if (game.pendingDoubleDeposit) {
+        onTimeout(game.id);
+      }
+    }, 120_000); // 120 seconds
+  }
+
+  /** Handle double deposit timeout — cancel pending double, refund deposits. */
+  async handleDoubleDepositTimeout(gameId: string): Promise<void> {
+    const game = this.games.get(gameId);
+    if (!game || !game.pendingDoubleDeposit) return;
+
+    // Cancel the escrow double on-chain (refunds happen in contract)
+    const escrow = getEscrowClient();
+    if (escrow) {
+      await escrow.cancel(gameId);
+    }
+
+    this.clearDoubleDepositTimer(game);
+    game.pendingDoubleDeposit = null;
+    game.escrowStatus = "cancelled";
+
+    // End the game as forfeit — non-depositing player loses
+    const pending = game.pendingDoubleDeposit;
+    // If timeout, treat it as game cancelled rather than picking a winner
+    this.broadcastToGame(game, {
+      type: "double_deposit_timeout" as any,
+      game_id: gameId,
+      message: "Double deposit timed out. Game cancelled.",
+    });
+
+    void this.persistGame(game);
+  }
+
+  private clearDoubleDepositTimer(game: ServerGame): void {
+    if (game.pendingDoubleDeposit?.depositTimer) {
+      clearTimeout(game.pendingDoubleDeposit.depositTimer);
+      game.pendingDoubleDeposit.depositTimer = null;
+    }
   }
 
   handleRejectDouble(gameId: string, playerAddress: string): { winner: Player } | null {
@@ -457,6 +615,30 @@ export class GameManager {
     game.gameState = result.state;
     game.status = "finished";
     this.clearTurnTimer(game);
+    void this.deletePersistedGame(gameId);
+    return { winner: result.winner };
+  }
+
+  /** Reject double for wagered games — settles escrow to doubler. */
+  async handleRejectDoubleWagered(gameId: string, playerAddress: string): Promise<{ winner: Player } | null> {
+    const game = this.games.get(gameId);
+    if (!game || game.status !== "playing") return null;
+    const playerColor = this.getPlayerColor(game, playerAddress);
+    if (!playerColor) return null;
+
+    // Settle escrow: rejecter forfeits, doubler gets pot
+    const escrow = getEscrowClient();
+    if (escrow) {
+      await escrow.rejectDouble(gameId, playerAddress);
+    }
+
+    const result = rejectDouble(game.gameState, playerColor);
+    game.gameState = result.state;
+    game.status = "finished";
+    game.escrowStatus = "forfeited";
+    this.clearTurnTimer(game);
+    this.clearDoubleDepositTimer(game);
+    game.pendingDoubleDeposit = null;
     void this.deletePersistedGame(gameId);
     return { winner: result.winner };
   }
@@ -537,14 +719,14 @@ export class GameManager {
     return created;
   }
 
-  async settleEscrow(gameId: string, winner: string, resultType: ResultType): Promise<boolean> {
+  async settleEscrow(gameId: string, winner: string, _resultType: ResultType): Promise<boolean> {
     const escrow = getEscrowClient();
     if (!escrow) return false;
     const game = this.games.get(gameId);
     if (!game || game.escrowStatus !== "active") return false;
 
-    const multiplier = getSettlementMultiplier(resultType, game.gameState.cubeValue);
-    const settled = await escrow.settle(gameId, winner, multiplier);
+    // Contract now uses actual deposited amounts (cube-aware), no multiplier needed
+    const settled = await escrow.settle(gameId, winner);
     if (settled) game.escrowStatus = "settled";
     return settled;
   }
@@ -590,6 +772,8 @@ export class GameManager {
           // Auto-confirm on timeout
           game.pendingConfirmation = null;
           game.turnMoveStack = [];
+          // Start timer for next player's roll phase
+          this.startTurnTimer(game);
           this.broadcastToGame(game, {
             type: "turn_ended",
             game_id: game.id,
@@ -599,6 +783,8 @@ export class GameManager {
         } else {
           game.turnMoveStack = [];
           game.gameState = endTurn(game.gameState);
+          // Start timer for next player's roll phase
+          this.startTurnTimer(game);
           this.broadcastToGame(game, {
             type: "turn_ended",
             game_id: game.id,
@@ -621,7 +807,8 @@ export class GameManager {
     this.cancelDisconnectGracePeriod(game);
     game.disconnectedPlayer = address;
     game.disconnectedAt = Date.now();
-    const graceSec = 30;
+    // Extend grace period to 120s when double deposits are pending (on-chain tx takes time)
+    const graceSec = game.pendingDoubleDeposit ? 120 : 30;
 
     const opponent = game.playerWhite?.address === address ? game.playerBlack : game.playerWhite;
     if (opponent) {

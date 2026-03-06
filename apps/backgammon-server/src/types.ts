@@ -16,10 +16,21 @@ export interface ServerGame {
   disconnectTimer: ReturnType<typeof setInterval> | null;
   disconnectedPlayer: string | null;
   disconnectedAt: number | null;
-  escrowStatus: "none" | "pending_deposits" | "active" | "settled" | "cancelled";
+  escrowStatus: "none" | "pending_deposits" | "active" | "awaiting_double_deposits" | "settled" | "cancelled" | "forfeited";
   pendingResignation: { player: string; resignType: "normal" | "gammon" | "backgammon" } | null;
   moveTimes: number[];
   stallingWarned: boolean;
+  pendingMatchLength?: number;
+  /** Pending double deposit info for wagered games */
+  pendingDoubleDeposit: {
+    doubler: string;
+    responder: string;
+    newCubeValue: number;
+    additionalDeposit: string;
+    doublerDeposited: boolean;
+    responderDeposited: boolean;
+    depositTimer: ReturnType<typeof setTimeout> | null;
+  } | null;
 }
 
 export interface PlayerConnection {
@@ -41,7 +52,7 @@ export interface MatchmakingEntry {
 // Client -> Server messages
 export type ClientMessage =
   | { type: "auth"; address: string; signature?: string; pubkey?: string; nonce?: string; signer_address?: string }
-  | { type: "create_game"; wager_amount: number }
+  | { type: "create_game"; wager_amount: number; match_length?: number; time_control?: number }
   | { type: "join_game"; game_id: string }
   | { type: "rejoin_game"; game_id: string }
   | { type: "join_queue"; wager_amount: number; match_length?: number }
@@ -57,6 +68,7 @@ export type ClientMessage =
   | { type: "offer_double"; game_id: string }
   | { type: "accept_double"; game_id: string }
   | { type: "reject_double"; game_id: string }
+  | { type: "double_deposit_confirmed"; game_id: string }
   | { type: "spectate"; game_id: string }
   // Social messages
   | { type: "set_profile"; display_name: string }
@@ -70,7 +82,9 @@ export type ClientMessage =
   | { type: "accept_challenge"; challenge_id: string }
   | { type: "decline_challenge"; challenge_id: string }
   | { type: "set_username"; username: string }
-  | { type: "search_players"; query: string };
+  | { type: "search_players"; query: string }
+  // Reaction
+  | { type: "reaction"; game_id: string; emoji: string };
 
 // Server -> Client messages
 export type ServerMessage =
@@ -79,7 +93,7 @@ export type ServerMessage =
   | { type: "error"; message: string; code?: string }
   | { type: "game_created"; game_id: string; color: Player }
   | { type: "game_joined"; game_id: string; color: Player; opponent: string; opponent_name?: string }
-  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState; legal_moves?: Move[]; match_state?: MatchState }
+  | { type: "game_start"; game_id: string; white: string; black: string; white_name?: string; black_name?: string; game_state: GameState; legal_moves?: Move[]; match_state?: MatchState; turn_time_limit?: number }
   | { type: "queue_joined"; position: number }
   | { type: "queue_left" }
   | { type: "dice_rolled"; game_id: string; dice: [number, number]; player: Player; game_state: GameState; legal_moves: Move[]; needs_confirmation?: boolean }
@@ -101,6 +115,11 @@ export type ServerMessage =
   | { type: "double_offered"; game_id: string; player: Player; cube_value: number }
   | { type: "double_accepted"; game_id: string; cube_value: number; cube_owner: Player }
   | { type: "double_rejected"; game_id: string; winner: Player }
+  // Cube deposit messages (wagered games)
+  | { type: "double_awaiting_deposits"; game_id: string; new_cube_value: number; additional_deposit: string; doubler: string; responder: string }
+  | { type: "double_deposit_received"; game_id: string; player: string; deposits_complete: boolean }
+  | { type: "double_deposits_complete"; game_id: string; new_cube_value: number; cube_owner: Player }
+  | { type: "double_deposit_timeout"; game_id: string; message: string }
   // Resignation messages
   | { type: "resign_offered"; game_id: string; player: Player; resign_type: "normal" | "gammon" | "backgammon" }
   | { type: "resign_accepted"; game_id: string; winner: Player; result_type: ResultType }
@@ -124,7 +143,9 @@ export type ServerMessage =
   | { type: "challenge_declined"; challenge_id: string }
   | { type: "username_set"; username: string }
   | { type: "username_error"; message: string }
-  | { type: "search_results"; results: SearchResultEntry[] };
+  | { type: "search_results"; results: SearchResultEntry[] }
+  // Reaction
+  | { type: "reaction"; game_id: string; emoji: string; from: string };
 
 export interface FriendEntry {
   address: string;

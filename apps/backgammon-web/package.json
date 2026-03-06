@@ -12,6 +12,8 @@
   "dependencies": {
     "@burnt-labs/abstraxion": "1.0.0-alpha.75",
     "@burnt-labs/signers": "1.0.0-alpha.6",
+    "@cosmjs/encoding": "^0.38.1",
+    "@crossmint/client-sdk-react-ui": "^2.6.16",
     "@xion-beginner/backgammon-core": "workspace:*",
     "@xion-beginner/ui": "workspace:*",
     "clsx": "^2.1.1",

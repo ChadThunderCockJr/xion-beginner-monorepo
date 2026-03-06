@@ -51,6 +51,7 @@ export default function MatchPage() {
     matchTurnHistory,
     matchState,
     matchOver,
+    turnTimeLimit,
   } = useGame(WS_URL, address);
 
   const { blockUser, reportUser } = useSocialContext();
@@ -126,6 +127,7 @@ export default function MatchPage() {
       matchState={matchState}
       matchOver={matchOver}
       matchTurnHistory={matchTurnHistory}
+      turnTimeLimit={turnTimeLimit}
       onNewGame={() => {
         reset();
         router.push("/matchmaking");
