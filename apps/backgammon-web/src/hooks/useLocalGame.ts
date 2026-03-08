@@ -762,7 +762,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
                   const ended = coreEndTurn(gs);
                   aiThinkingRef.current = false;
                   dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-                }, 200);
+                }, 500);
                 timers.push(t2);
                 return;
               }
@@ -831,7 +831,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
                         aiThinkingRef.current = false;
                         dispatch({ type: "AI_TURN_ENDED", gameState: latest });
                       }
-                    }, 100);
+                    }, 300);
                     timers.push(tEnd);
                   }
                 }, delay);
