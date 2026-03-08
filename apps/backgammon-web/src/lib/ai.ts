@@ -238,10 +238,10 @@ export async function shouldAIAcceptDouble(
 /** Get a random thinking delay in ms for the given difficulty */
 export function getThinkingDelay(difficulty: AIDifficulty): number {
   const ranges: Record<AIDifficulty, [number, number]> = {
-    beginner: [200, 500],
-    club: [300, 700],
-    expert: [400, 900],
-    gm: [500, 1000],
+    beginner: [100, 250],
+    club: [100, 300],
+    expert: [150, 350],
+    gm: [200, 400],
   };
   const [min, max] = ranges[difficulty];
   return min + Math.random() * (max - min);
