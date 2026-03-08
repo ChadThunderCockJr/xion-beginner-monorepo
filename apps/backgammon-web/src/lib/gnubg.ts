@@ -234,7 +234,7 @@ export async function getGnubgMoves(
   board: BoardState,
   player: Player,
   dice: [number, number],
-  options?: { maxMoves?: number; scoreMoves?: boolean },
+  options?: { maxMoves?: number; scoreMoves?: boolean; plies?: number; cubeful?: boolean },
 ): Promise<GnubgMoveResult[]> {
   await ensureWorker();
 
@@ -244,8 +244,8 @@ export async function getGnubgMoves(
   return new Promise<GnubgMoveResult[]>((resolve, reject) => {
     const timeout = setTimeout(() => {
       pending.delete(id);
-      reject(new Error("gnubg getMoves timed out (10s)"));
-    }, 10_000);
+      reject(new Error("gnubg getMoves timed out (30s)"));
+    }, 30_000);
 
     pending.set(id, {
       resolve: (rawMoves: GnubgRawMove[]) => {
@@ -282,6 +282,8 @@ export async function getGnubgMoves(
         dice,
         maxMoves: options?.maxMoves,
         scoreMoves: options?.scoreMoves,
+        plies: options?.plies,
+        cubeful: options?.cubeful,
       },
     } satisfies GnubgRequest);
   });

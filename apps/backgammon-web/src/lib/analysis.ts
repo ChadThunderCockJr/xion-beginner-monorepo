@@ -3,8 +3,8 @@ import {
   createInitialBoard,
   generateAllMoveSequences,
   applySingleMove,
+  getPipCount,
 } from "@xion-beginner/backgammon-core";
-import { evaluateBoard, WEIGHTS } from "./ai";
 import { getGnubgMoves, isGnubgReady, type GnubgMoveResult } from "./gnubg";
 
 /* ── Types ── */
@@ -68,25 +68,19 @@ export interface TurnRecord {
 
 /* ── Helpers ── */
 
-const GM_WEIGHTS = WEIGHTS.gm;
-
-/** Normalize raw eval score to [-1, +1] range.
- *  Divisor of 150 prevents saturation — with GM weights, raw scores
- *  can reach ±200, and backgammon's dice variance means even losing
- *  positions retain meaningful winning chances. */
-function normalize(rawScore: number): number {
-  return Math.tanh(rawScore / 150);
-}
-
-/** Evaluate position from white's perspective (normalized) */
-function evalWhite(board: BoardState): number {
-  const whiteScore = evaluateBoard(board, "white", GM_WEIGHTS);
-  return normalize(whiteScore);
-}
-
-/** Evaluate position from a player's own perspective (raw, for ranking) */
-function evalPlayer(board: BoardState, player: Player): number {
-  return evaluateBoard(board, player, GM_WEIGHTS);
+/**
+ * Simple pip-count-based equity estimate used ONLY as a last-resort fallback
+ * when GNUBG is unavailable. Returns a value in roughly [-1, +1] from white's
+ * perspective. This is intentionally crude — the real evaluation comes from GNUBG.
+ */
+function fallbackEquityWhite(board: BoardState): number {
+  const whitePips = getPipCount(board, "white");
+  const blackPips = getPipCount(board, "black");
+  // Normalize pip difference: 167 is starting pip count
+  const diff = (blackPips - whitePips) / 167;
+  // Add bearing-off progress
+  const offBonus = (board.whiteOff - board.blackOff) / 15;
+  return Math.tanh((diff + offBonus) * 2);
 }
 
 /** Format a move sequence into notation like "13/7 8/5" */
@@ -112,7 +106,7 @@ function computePerformanceRating(avgEquityLoss: number): number {
 function applyMoveSequence(
   board: BoardState,
   player: Player,
-  moves: Move[]
+  moves: Move[],
 ): BoardState {
   let result = board;
   for (const move of moves) {
@@ -139,7 +133,7 @@ function buildDiceArray(dice: [number, number]): number[] {
 export function estimateWinProbability(
   board: BoardState,
   nextPlayer: Player,
-  samples: number = 150
+  samples: number = 150,
 ): { white: number; black: number } {
   let whiteWins = 0;
 
@@ -176,11 +170,11 @@ export function estimateWinProbability(
   return { white: whitePct, black: 100 - whitePct };
 }
 
-/* ── Core Analysis ── */
+/* ── Core Analysis (fallback — used only when GNUBG is unavailable) ── */
 
 export function analyzeGame(turnHistory: TurnRecord[]): GameAnalysis {
   let board = createInitialBoard();
-  const equityHistory: number[] = [evalWhite(board)];
+  const equityHistory: number[] = [fallbackEquityWhite(board)];
   const turns: TurnAnalysis[] = [];
 
   for (let i = 0; i < turnHistory.length; i++) {
@@ -188,52 +182,43 @@ export function analyzeGame(turnHistory: TurnRecord[]): GameAnalysis {
     const { player, dice, moves: playedMoves } = turn;
     const diceArray = buildDiceArray(dice);
 
-    // Use stored board state if available (prevents replay divergence)
     if (turn.boardBefore) {
       board = turn.boardBefore;
     }
 
-    // Generate all candidate move sequences
     const allSequences = generateAllMoveSequences(board, player, diceArray);
-
-    // Canonical key for the played move
     const playedKey = playedMoves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
 
-    // Track player-perspective score alongside white equity
-    const candidatesWithScore: (CandidateMove & { playerScore: number })[] = [];
+    const scored: (CandidateMove & { playerEq: number })[] = [];
 
     if (allSequences.length === 0 || (allSequences.length === 1 && allSequences[0].length === 0)) {
-      // No legal moves (forced pass)
-      candidatesWithScore.push({
+      scored.push({
         moves: [],
         notation: "(no moves)",
-        equity: evalWhite(board),
+        equity: fallbackEquityWhite(board),
         isPlayed: playedMoves.length === 0,
-        playerScore: evalPlayer(board, player),
+        playerEq: 0,
       });
     } else {
       for (const seq of allSequences) {
         const resultBoard = applyMoveSequence(board, player, seq);
+        const whiteEq = fallbackEquityWhite(resultBoard);
         const key = seq.map((m) => `${m.from}/${m.to}`).sort().join(" ");
-        candidatesWithScore.push({
+        scored.push({
           moves: seq,
           notation: formatNotation(seq),
-          equity: evalWhite(resultBoard),
+          equity: whiteEq,
           isPlayed: key === playedKey,
-          playerScore: evalPlayer(resultBoard, player),
+          playerEq: player === "white" ? whiteEq : -whiteEq,
         });
       }
     }
 
-    // Sort by player's own evaluation (descending) — matches how the AI picks moves
-    candidatesWithScore.sort((a, b) => b.playerScore - a.playerScore);
+    scored.sort((a, b) => b.playerEq - a.playerEq);
+    const candidates: CandidateMove[] = scored.map(({ playerEq: _, ...rest }) => rest);
 
-    // Strip playerScore for storage, keeping the sort order
-    const candidates: CandidateMove[] = candidatesWithScore.map(({ playerScore: _, ...rest }) => rest);
-
-    // Deduplicate by sorted notation (different orderings of the same moves are identical)
-    // Preserve isPlayed flag across duplicates
-    const seenMap = new Map<string, number>(); // key -> index in uniqueCandidates
+    // Deduplicate
+    const seenMap = new Map<string, number>();
     const uniqueCandidates: CandidateMove[] = [];
     for (const c of candidates) {
       const key = c.moves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
@@ -242,37 +227,27 @@ export function analyzeGame(turnHistory: TurnRecord[]): GameAnalysis {
         seenMap.set(key, uniqueCandidates.length);
         uniqueCandidates.push(c);
       } else if (c.isPlayed) {
-        // A duplicate is the played move — mark the kept candidate as played
         uniqueCandidates[existing] = { ...uniqueCandidates[existing], isPlayed: true };
       }
     }
 
-    // Top 5 candidates, but always include the played move
     let topCandidates = uniqueCandidates.slice(0, 5);
-    const hasPlayed = topCandidates.some((c) => c.isPlayed);
-    if (!hasPlayed) {
+    if (!topCandidates.some((c) => c.isPlayed)) {
       const playedCandidate = uniqueCandidates.find((c) => c.isPlayed);
       if (playedCandidate) {
         topCandidates = [...topCandidates.slice(0, 4), playedCandidate];
       }
     }
 
-    // Apply the played moves to get actual resulting board
     const playedBoard = applyMoveSequence(board, player, playedMoves);
-    const playedEquity = evalWhite(playedBoard);
-
-    // Best equity (white perspective) from the correctly-ranked candidates
+    const playedEquity = fallbackEquityWhite(playedBoard);
     const bestEquity = uniqueCandidates.length > 0 ? uniqueCandidates[0].equity : playedEquity;
 
-    // Equity loss: use player-perspective eval for accurate comparison
-    // (candidates are already sorted by player eval, so [0] is truly best from player's view)
-    const bestPlayerScore = uniqueCandidates.length > 0
-      ? evalPlayer(applyMoveSequence(board, player, uniqueCandidates[0].moves), player)
-      : evalPlayer(playedBoard, player);
-    const playedPlayerScore = evalPlayer(playedBoard, player);
-    const equityLoss = Math.max(0, normalize(bestPlayerScore) - normalize(playedPlayerScore));
-
-    const errorClass = classifyError(equityLoss);
+    const bestPlayerEq = uniqueCandidates.length > 0
+      ? (player === "white" ? uniqueCandidates[0].equity : -uniqueCandidates[0].equity)
+      : (player === "white" ? playedEquity : -playedEquity);
+    const playedPlayerEq = player === "white" ? playedEquity : -playedEquity;
+    const equityLoss = Math.max(0, bestPlayerEq - playedPlayerEq);
 
     turns.push({
       turnNumber: i + 1,
@@ -283,18 +258,15 @@ export function analyzeGame(turnHistory: TurnRecord[]): GameAnalysis {
       equityAfter: playedEquity,
       bestEquity,
       equityLoss,
-      errorClass,
+      errorClass: classifyError(equityLoss),
       candidates: topCandidates,
       boardBefore: board,
     });
 
     equityHistory.push(playedEquity);
-
-    // Advance board state
     board = playedBoard;
   }
 
-  // Compute per-player summaries
   const whiteSummary = computeSummary(turns, "white");
   const blackSummary = computeSummary(turns, "black");
 
@@ -318,35 +290,19 @@ function computeSummary(turns: TurnAnalysis[], player: Player): PlayerSummary {
 
   const blunders = playerTurns.filter((t) => t.errorClass === "blunder").length;
   const mistakes = playerTurns.filter((t) => t.errorClass === "mistake").length;
-  const inaccuracies = playerTurns.filter(
-    (t) => t.errorClass === "inaccuracy"
-  ).length;
-  const totalEquityLoss = playerTurns.reduce(
-    (sum, t) => sum + t.equityLoss,
-    0
-  );
+  const inaccuracies = playerTurns.filter((t) => t.errorClass === "inaccuracy").length;
+  const totalEquityLoss = playerTurns.reduce((sum, t) => sum + t.equityLoss, 0);
   const avgEquityLoss = totalEquityLoss / totalTurns;
   const performanceRating = computePerformanceRating(avgEquityLoss);
 
-  return {
-    totalTurns,
-    blunders,
-    mistakes,
-    inaccuracies,
-    avgEquityLoss,
-    performanceRating,
-  };
+  return { totalTurns, blunders, mistakes, inaccuracies, avgEquityLoss, performanceRating };
 }
 
 /* ── WASM-Based Analysis ── */
 
 /**
  * Analyze a game using GNU Backgammon's WASM engine for proper equity scores.
- * Returns the same GameAnalysis structure but with accurate neural-network equity
- * and win probability data.
- *
- * Processes turns sequentially (each WASM call takes ~50-200ms).
- * Falls back to heuristic analysis for any turn where WASM fails.
+ * Falls back to heuristic analysis if GNUBG is unavailable.
  */
 export async function analyzeGameWithGnubg(
   turnHistory: TurnRecord[],
@@ -366,7 +322,6 @@ export async function analyzeGameWithGnubg(
     const turn = turnHistory[i];
     const { player, dice, moves: playedMoves } = turn;
 
-    // Use stored board state if available
     if (turn.boardBefore) {
       board = turn.boardBefore;
     }
@@ -374,35 +329,22 @@ export async function analyzeGameWithGnubg(
     let turnAnalysis: TurnAnalysis;
 
     try {
-      // Get all scored candidates from gnubg
       const gnubgResults = await getGnubgMoves(board, player, dice, {
         scoreMoves: true,
-        maxMoves: 0, // 0 = return all moves
+        maxMoves: 0,
       });
 
       turnAnalysis = buildGnubgTurnAnalysis(
-        i + 1,
-        player,
-        dice,
-        playedMoves,
-        board,
-        gnubgResults,
+        i + 1, player, dice, playedMoves, board, gnubgResults,
       );
     } catch {
-      // Fall back to heuristic analysis for this turn
-      turnAnalysis = buildHeuristicTurnAnalysis(
-        i + 1,
-        player,
-        dice,
-        playedMoves,
-        board,
+      turnAnalysis = buildFallbackTurnAnalysis(
+        i + 1, player, dice, playedMoves, board,
       );
     }
 
     turns.push(turnAnalysis);
     equityHistory.push(turnAnalysis.equityAfter);
-
-    // Advance board state
     board = applyMoveSequence(board, player, playedMoves);
   }
 
@@ -423,8 +365,6 @@ function buildGnubgTurnAnalysis(
 ): TurnAnalysis {
   const playedKey = playedMoves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
 
-  // Build candidates from gnubg results
-  // gnubg returns them sorted best-first by equity
   const candidates: CandidateMove[] = [];
   let playedEquity: number | null = null;
   let bestEquity: number | null = null;
@@ -434,13 +374,12 @@ function buildGnubgTurnAnalysis(
     const key = result.moves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
     const isPlayed = key === playedKey;
 
-    // gnubg equity is from current player's perspective
-    // Convert to white's perspective for consistent display
+    // gnubg equity is from current player's perspective — convert to white's
     const rawEq = result.evaluation?.eq ?? 0;
     const whiteEq = player === "white" ? rawEq : -rawEq;
 
     if (bestEquity === null) {
-      bestEquity = whiteEq; // first result is the best
+      bestEquity = whiteEq;
     }
 
     if (isPlayed) {
@@ -457,13 +396,11 @@ function buildGnubgTurnAnalysis(
     });
   }
 
-  // If no move matched played (edge case: gnubg may have different move generation),
-  // fall back to computing played equity from heuristic
+  // Fallback if played move wasn't found in gnubg results
   if (playedEquity === null) {
     const playedBoard = applyMoveSequence(board, player, playedMoves);
-    playedEquity = evalWhite(playedBoard);
+    playedEquity = fallbackEquityWhite(playedBoard);
 
-    // Add the played move to candidates
     candidates.push({
       moves: playedMoves,
       notation: formatNotation(playedMoves),
@@ -476,13 +413,12 @@ function buildGnubgTurnAnalysis(
     bestEquity = playedEquity;
   }
 
-  // Equity loss: from the moving player's perspective
-  const bestPlayerEq = candidates.length > 0 ? (candidates[0].equity) : playedEquity;
+  // Equity loss from the moving player's perspective
+  const bestPlayerEq = candidates.length > 0 ? candidates[0].equity : playedEquity;
   const equityLoss = player === "white"
     ? Math.max(0, bestPlayerEq - playedEquity)
-    : Math.max(0, playedEquity - bestPlayerEq); // for black, lower white equity is better
+    : Math.max(0, playedEquity - bestPlayerEq);
 
-  // Top 5 candidates + always include played
   let topCandidates = candidates.slice(0, 5);
   if (!topCandidates.some((c) => c.isPlayed)) {
     const played = candidates.find((c) => c.isPlayed);
@@ -507,8 +443,8 @@ function buildGnubgTurnAnalysis(
   };
 }
 
-/** Fallback: build TurnAnalysis using heuristic evaluation (same as analyzeGame logic) */
-function buildHeuristicTurnAnalysis(
+/** Fallback turn analysis when GNUBG fails for a specific turn */
+function buildFallbackTurnAnalysis(
   turnNumber: number,
   player: Player,
   dice: [number, number],
@@ -519,37 +455,37 @@ function buildHeuristicTurnAnalysis(
   const allSequences = generateAllMoveSequences(board, player, diceArray);
   const playedKey = playedMoves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
 
-  const candidatesWithScore: (CandidateMove & { playerScore: number })[] = [];
+  const scored: (CandidateMove & { playerEq: number })[] = [];
 
   if (allSequences.length === 0 || (allSequences.length === 1 && allSequences[0].length === 0)) {
-    candidatesWithScore.push({
+    scored.push({
       moves: [],
       notation: "(no moves)",
-      equity: evalWhite(board),
+      equity: fallbackEquityWhite(board),
       isPlayed: playedMoves.length === 0,
-      playerScore: evalPlayer(board, player),
+      playerEq: 0,
     });
   } else {
     for (const seq of allSequences) {
       const resultBoard = applyMoveSequence(board, player, seq);
+      const whiteEq = fallbackEquityWhite(resultBoard);
       const key = seq.map((m) => `${m.from}/${m.to}`).sort().join(" ");
-      candidatesWithScore.push({
+      scored.push({
         moves: seq,
         notation: formatNotation(seq),
-        equity: evalWhite(resultBoard),
+        equity: whiteEq,
         isPlayed: key === playedKey,
-        playerScore: evalPlayer(resultBoard, player),
+        playerEq: player === "white" ? whiteEq : -whiteEq,
       });
     }
   }
 
-  candidatesWithScore.sort((a, b) => b.playerScore - a.playerScore);
-  const candidates: CandidateMove[] = candidatesWithScore.map(({ playerScore: _, ...rest }) => rest);
+  scored.sort((a, b) => b.playerEq - a.playerEq);
 
   // Deduplicate
   const seenMap = new Map<string, number>();
   const uniqueCandidates: CandidateMove[] = [];
-  for (const c of candidates) {
+  for (const { playerEq: _, ...c } of scored) {
     const key = c.moves.map((m) => `${m.from}/${m.to}`).sort().join(" ");
     const existing = seenMap.get(key);
     if (existing === undefined) {
@@ -569,13 +505,14 @@ function buildHeuristicTurnAnalysis(
   }
 
   const playedBoard = applyMoveSequence(board, player, playedMoves);
-  const playedEquity = evalWhite(playedBoard);
+  const playedEquity = fallbackEquityWhite(playedBoard);
   const bestEquity = uniqueCandidates.length > 0 ? uniqueCandidates[0].equity : playedEquity;
-  const bestPlayerScore = uniqueCandidates.length > 0
-    ? evalPlayer(applyMoveSequence(board, player, uniqueCandidates[0].moves), player)
-    : evalPlayer(playedBoard, player);
-  const playedPlayerScore = evalPlayer(playedBoard, player);
-  const equityLoss = Math.max(0, normalize(bestPlayerScore) - normalize(playedPlayerScore));
+
+  const bestPlayerEq = uniqueCandidates.length > 0
+    ? (player === "white" ? uniqueCandidates[0].equity : -uniqueCandidates[0].equity)
+    : (player === "white" ? playedEquity : -playedEquity);
+  const playedPlayerEq = player === "white" ? playedEquity : -playedEquity;
+  const equityLoss = Math.max(0, bestPlayerEq - playedPlayerEq);
 
   return {
     turnNumber,
@@ -607,18 +544,38 @@ export interface CubeAnalysis {
 }
 
 /**
- * Analyze a cube decision based on equity.
- * - Doubling is correct when equity > 0.6 from doubler's perspective
- * - Taking is correct when equity < 0.75 from receiver's perspective (i.e., > 0.25 chance)
+ * Analyze a cube decision using GNUBG equity probe.
+ * Falls back to pip-count estimate if GNUBG is unavailable.
+ *
+ * Money game doubling theory:
+ *   - Double when equity ≥ ~0.66
+ *   - Take when equity ≥ -0.76 (opponent's equity ≤ 0.76)
  */
-export function analyzeCubeDecision(
+export async function analyzeCubeDecision(
   board: BoardState,
   player: Player,
   action: "offered" | "accepted" | "rejected",
   cubeValue: number,
-): CubeAnalysis {
-  const playerEq = normalize(evaluateBoard(board, player, GM_WEIGHTS));
-  const opponentEq = -playerEq; // from opponent's perspective
+): Promise<CubeAnalysis> {
+  // Try to get GNUBG equity
+  let playerEq: number;
+
+  if (isGnubgReady()) {
+    try {
+      // Probe with a representative dice roll
+      const results = await getGnubgMoves(board, player, [3, 1], {
+        maxMoves: 1,
+        scoreMoves: true,
+      });
+      playerEq = results.length > 0 && results[0].evaluation
+        ? results[0].evaluation.eq
+        : fallbackEquityWhite(board) * (player === "white" ? 1 : -1);
+    } catch {
+      playerEq = fallbackEquityWhite(board) * (player === "white" ? 1 : -1);
+    }
+  } else {
+    playerEq = fallbackEquityWhite(board) * (player === "white" ? 1 : -1);
+  }
 
   let correctAction: CubeDecision;
   let isCorrect: boolean;
@@ -626,39 +583,35 @@ export function analyzeCubeDecision(
   let details: string;
 
   if (action === "offered") {
-    // Was doubling correct?
-    // Double is correct when player's normalized equity > 0.6
-    const shouldDouble = playerEq > 0.6;
+    const shouldDouble = playerEq > 0.66;
     correctAction = shouldDouble ? "double" : "no_double";
     isCorrect = shouldDouble;
-    equityLoss = shouldDouble ? 0 : Math.max(0, 0.6 - playerEq) * cubeValue * 0.1;
+    equityLoss = shouldDouble ? 0 : Math.max(0, 0.66 - playerEq) * cubeValue * 0.1;
     details = shouldDouble
       ? `Correct double (equity: ${playerEq.toFixed(3)})`
-      : `Premature double (equity: ${playerEq.toFixed(3)}, need > 0.60)`;
+      : `Premature double (equity: ${playerEq.toFixed(3)}, need > 0.66)`;
   } else if (action === "accepted") {
-    // Was taking correct?
-    // Take is correct when opponent's equity > 0.25 (i.e., player equity < 0.75)
-    const shouldTake = playerEq < 0.75;
+    // "player" here is the one accepting — their equity should be > -0.76
+    const shouldTake = playerEq > -0.76;
     correctAction = shouldTake ? "take" : "drop";
     isCorrect = shouldTake;
-    equityLoss = shouldTake ? 0 : Math.max(0, playerEq - 0.75) * cubeValue * 0.1;
+    equityLoss = shouldTake ? 0 : Math.max(0, -0.76 - playerEq) * cubeValue * 0.1;
     details = shouldTake
-      ? `Correct take (opponent equity: ${opponentEq.toFixed(3)})`
-      : `Should have dropped (opponent equity: ${opponentEq.toFixed(3)}, too low)`;
+      ? `Correct take (equity: ${playerEq.toFixed(3)})`
+      : `Should have dropped (equity: ${playerEq.toFixed(3)}, too low)`;
   } else {
-    // Was dropping correct?
-    // Drop is correct when opponent's equity < 0.25 (i.e., player equity > 0.75)
-    const shouldDrop = playerEq > 0.75;
+    // Rejected — was dropping correct?
+    const shouldDrop = playerEq <= -0.76;
     correctAction = shouldDrop ? "drop" : "take";
     isCorrect = shouldDrop;
-    equityLoss = shouldDrop ? 0 : Math.max(0, 0.75 - playerEq) * cubeValue * 0.1;
+    equityLoss = shouldDrop ? 0 : Math.max(0, playerEq - (-0.76)) * cubeValue * 0.1;
     details = shouldDrop
-      ? `Correct drop (opponent equity: ${opponentEq.toFixed(3)})`
-      : `Should have taken (opponent equity: ${opponentEq.toFixed(3)}, enough to play)`;
+      ? `Correct drop (equity: ${playerEq.toFixed(3)})`
+      : `Should have taken (equity: ${playerEq.toFixed(3)}, enough to play)`;
   }
 
   return {
-    turnNumber: 0, // set by caller
+    turnNumber: 0,
     player,
     action,
     correctAction,

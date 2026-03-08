@@ -21,6 +21,8 @@ export interface GnubgRequest {
     dice: [number, number];
     maxMoves?: number;
     scoreMoves?: boolean;
+    plies?: number;
+    cubeful?: boolean;
   };
 }
 
@@ -98,6 +100,8 @@ self.onmessage = (e: MessageEvent<GnubgRequest>) => {
       player: "x", // We always map current player as X
       "max-moves": payload.maxMoves ?? 0,
       "score-moves": payload.scoreMoves ?? false,
+      plies: payload.plies ?? 0,
+      cubeful: payload.cubeful ?? true,
     });
 
     const resultJson = wasm_get_moves(args);

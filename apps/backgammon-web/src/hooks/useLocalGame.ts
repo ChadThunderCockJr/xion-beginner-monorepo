@@ -653,11 +653,11 @@ export function useLocalGame(difficulty: AIDifficulty) {
     const aiColor: Player = s.myColor === "white" ? "black" : "white";
     const delay = getThinkingDelay(difficultyRef.current);
 
-    const t = setTimeout(() => {
+    const t = setTimeout(async () => {
       const current = stateRef.current;
       if (!current.doubleOffered || current.doubleOfferedBy !== current.myColor) return;
 
-      const accepts = shouldAIAcceptDouble(
+      const accepts = await shouldAIAcceptDouble(
         current.gameState.board,
         aiColor,
         current.cubeValue,
@@ -708,19 +708,23 @@ export function useLocalGame(difficulty: AIDifficulty) {
       s.cubeValue < 64 &&
       (s.cubeOwner === null || s.cubeOwner === aiColor);
 
-    if (canAIDouble && shouldAIDouble(s.gameState.board, aiColor, s.cubeValue, difficultyRef.current)) {
-      const t0 = setTimeout(() => {
+    // Async: check doubling then proceed to roll
+    (async () => {
+      if (canAIDouble) {
+        const wantsDouble = await shouldAIDouble(
+          s.gameState.board, aiColor, s.cubeValue, difficultyRef.current
+        );
         if (cancelled) return;
-        aiThinkingRef.current = false;
-        dispatch({ type: "AI_OFFER_DOUBLE" });
-      }, thinkDelay);
-      timers.push(t0);
-
-      return () => {
-        cleanup();
-        aiThinkingRef.current = false;
-      };
-    }
+        if (wantsDouble) {
+          const t0 = setTimeout(() => {
+            if (cancelled) return;
+            aiThinkingRef.current = false;
+            dispatch({ type: "AI_OFFER_DOUBLE" });
+          }, thinkDelay);
+          timers.push(t0);
+          return; // Don't roll — wait for human response
+        }
+      }
 
     // Step 1: think, then roll
     const t1 = setTimeout(() => {
@@ -824,6 +828,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
       })();
     }, thinkDelay);
     timers.push(t1);
+    })(); // end async doubling/roll IIFE
 
     return () => {
       cleanup();

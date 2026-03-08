@@ -228,33 +228,6 @@ export function Sidebar() {
         </span>
       </Link>
 
-      {/* Quick Play CTA */}
-      <Link
-        href="/matchmaking"
-        style={{
-          width: "100%",
-          padding: "12px 16px",
-          background: "var(--color-gold-primary)",
-          border: "none",
-          borderRadius: 6,
-          color: "var(--color-accent-fg)",
-          fontSize: "0.9375rem",
-          fontWeight: 700,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          marginBottom: 24,
-          fontFamily: "var(--font-body)",
-          boxShadow: "var(--shadow-gold)",
-          textDecoration: "none",
-        }}
-      >
-        {Icons.play("var(--color-accent-fg)")}
-        Quick Play
-      </Link>
-
       {/* Primary Navigation */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <NavItem icon={Icons.home} label="Home" href="/" active={isActive("/")} />
