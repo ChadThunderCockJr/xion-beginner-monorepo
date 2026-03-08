@@ -91,14 +91,23 @@ export async function selectAIMove(
     movesRemaining[movesRemaining.length > 1 ? 1 : 0],
   ];
 
-  const results = await getGnubgMoves(board, aiColor, dice, {
-    maxMoves: 0, // all candidates
-    scoreMoves: true,
-    plies: settings.plies,
-    cubeful: settings.cubeful,
-  });
+  let results;
+  try {
+    results = await getGnubgMoves(board, aiColor, dice, {
+      maxMoves: 0, // all candidates
+      scoreMoves: true,
+      plies: settings.plies,
+      cubeful: settings.cubeful,
+    });
+  } catch (err) {
+    console.error("[AI] getGnubgMoves failed:", err);
+    return null;
+  }
 
-  if (results.length === 0) return null;
+  if (results.length === 0) {
+    console.warn("[AI] GNUBG returned 0 results for dice", dice);
+    return null;
+  }
 
   const nonEmpty = results.filter((r) => r.moves.length > 0);
   if (nonEmpty.length === 0) return [];

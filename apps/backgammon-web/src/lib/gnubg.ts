@@ -47,6 +47,7 @@ function ensureWorker(): Promise<void> {
     const initTimeout = setTimeout(() => {
       if (!workerReady) {
         console.warn("[GNUBG] WASM init timed out (30s)");
+        readyPromise = null; // Allow retry
         reject(new Error("WASM init timed out (30s)"));
       }
     }, 30_000);
@@ -66,6 +67,7 @@ function ensureWorker(): Promise<void> {
         // Init error
         clearTimeout(initTimeout);
         console.warn("[GNUBG] WASM init failed:", msg.error);
+        readyPromise = null; // Allow retry
         reject(new Error(msg.error));
         return;
       }
@@ -87,6 +89,7 @@ function ensureWorker(): Promise<void> {
       clearTimeout(initTimeout);
       if (!workerReady) {
         console.warn("[GNUBG] Worker error:", err.message);
+        readyPromise = null; // Allow retry
         reject(new Error(`Worker error: ${err.message}`));
       }
     };

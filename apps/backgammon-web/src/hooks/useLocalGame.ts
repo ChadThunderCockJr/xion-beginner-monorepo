@@ -769,14 +769,24 @@ export function useLocalGame(difficulty: AIDifficulty) {
 
         // Animate moves one by one
         let currentBoard = gs;
+        let moveFailed = false;
 
         moves.forEach((move, i) => {
           const delay = MOVE_ANIMATION_STEP_MS + i * MOVE_ANIMATION_STEP_MS;
           const t = setTimeout(() => {
-            if (cancelled) return;
+            if (cancelled || moveFailed) return;
 
             const result = coreMakeMove(currentBoard, move.from, move.to);
-            if (!result) return;
+            if (!result) {
+              console.error("[AI] coreMakeMove failed for move", i, move, "board:", currentBoard);
+              moveFailed = true;
+              // End turn gracefully on invalid move
+              playTurnEnd();
+              const ended = coreEndTurn(currentBoard);
+              aiThinkingRef.current = false;
+              dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+              return;
+            }
             currentBoard = result;
 
             // Detect hit
