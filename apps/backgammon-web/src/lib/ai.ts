@@ -40,14 +40,15 @@ const DIFFICULTY_SETTINGS: Record<AIDifficulty, DifficultySettings> = {
  * Wait for the GNUBG WASM engine to be ready, with a timeout.
  * Kicks off preloading if not already started.
  */
-async function waitForGnubg(timeoutMs = 15_000): Promise<boolean> {
+async function waitForGnubg(timeoutMs = 3_000): Promise<boolean> {
   if (isGnubgReady()) return true;
 
   preloadGnubg();
 
+  // Short wait — if WASM hasn't loaded yet, fall back quickly
   const start = Date.now();
   while (!isGnubgReady() && Date.now() - start < timeoutMs) {
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 50));
   }
   return isGnubgReady();
 }
@@ -180,8 +181,8 @@ async function probeEquity(
   player: Player,
   noise: number,
 ): Promise<number | null> {
-  const ready = await waitForGnubg(5_000);
-  if (!ready) return null;
+  // Don't block long for cube decisions — skip if GNUBG not already loaded
+  if (!isGnubgReady()) return null;
 
   try {
     const results = await getGnubgMoves(board, player, PROBE_DICE, {
