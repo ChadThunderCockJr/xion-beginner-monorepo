@@ -689,6 +689,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
     if (aiThinkingRef.current) return;
     if (s.doubleOffered) return; // Wait for human to respond to AI's double
 
+    console.log("[AI] Turn starting for", s.myColor === "white" ? "black" : "white");
     aiThinkingRef.current = true;
 
     let cancelled = false;
@@ -751,6 +752,8 @@ export function useLocalGame(difficulty: AIDifficulty) {
           gs.movesRemaining,
           difficultyRef.current
         );
+
+        console.log("[AI] selectAIMove returned:", moves?.length ?? "null", "moves", moves);
 
         if (cancelled) return;
 

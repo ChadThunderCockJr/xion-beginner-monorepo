@@ -1,4 +1,5 @@
 import type { BoardState, Move, Player } from "@xion-beginner/backgammon-core";
+import { generateAllMoveSequences } from "@xion-beginner/backgammon-core";
 import { getGnubgMoves, isGnubgReady, preloadGnubg } from "./gnubg";
 
 export type AIDifficulty = "beginner" | "club" | "expert" | "gm";
@@ -66,11 +67,30 @@ function applyNoise(equity: number, noise: number): number {
   return equity + gaussian * noise;
 }
 
+/* ── Fallback Move Selection ── */
+
+/**
+ * Pick a random legal move sequence when GNUBG is unavailable.
+ * Returns the longest legal sequence (backgammon rules require using max dice).
+ */
+function selectFallbackMove(
+  board: BoardState,
+  aiColor: Player,
+  movesRemaining: number[],
+): Move[] | null {
+  const sequences = generateAllMoveSequences(board, aiColor, movesRemaining);
+  if (sequences.length === 0) return null;
+  const nonEmpty = sequences.filter((s) => s.length > 0);
+  if (nonEmpty.length === 0) return [];
+  return nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
+}
+
 /* ── Move Selection ── */
 
 /**
  * Select the AI's move sequence for a given board state and difficulty.
  * Uses GNUBG at the configured ply depth, then applies noise to equity scores.
+ * Falls back to random legal move if GNUBG is unavailable.
  * Returns the chosen move sequence, or null if no moves are available.
  */
 export async function selectAIMove(
@@ -81,8 +101,8 @@ export async function selectAIMove(
 ): Promise<Move[] | null> {
   const ready = await waitForGnubg();
   if (!ready) {
-    console.warn("[AI] GNUBG WASM not ready after timeout — no move available");
-    return null;
+    console.warn("[AI] GNUBG WASM not ready — using fallback move selection");
+    return selectFallbackMove(board, aiColor, movesRemaining);
   }
 
   const settings = DIFFICULTY_SETTINGS[difficulty];
@@ -100,13 +120,13 @@ export async function selectAIMove(
       cubeful: settings.cubeful,
     });
   } catch (err) {
-    console.error("[AI] getGnubgMoves failed:", err);
-    return null;
+    console.error("[AI] getGnubgMoves failed, using fallback:", err);
+    return selectFallbackMove(board, aiColor, movesRemaining);
   }
 
   if (results.length === 0) {
-    console.warn("[AI] GNUBG returned 0 results for dice", dice);
-    return null;
+    console.warn("[AI] GNUBG returned 0 results for dice", dice, "— using fallback");
+    return selectFallbackMove(board, aiColor, movesRemaining);
   }
 
   const nonEmpty = results.filter((r) => r.moves.length > 0);
