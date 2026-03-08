@@ -181,11 +181,13 @@ function TopNav({
   onMenuToggle,
   showPointNumbers,
   onTogglePointNumbers,
+  matchState,
 }: {
   onBack?: () => void;
   onMenuToggle: () => void;
   showPointNumbers: boolean;
   onTogglePointNumbers: () => void;
+  matchState?: MatchState | null;
 }) {
   return (
     <header
@@ -204,25 +206,27 @@ function TopNav({
           ←
         </button>
         <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-          Rated · 5pt
+          {matchState ? `Rated · ${matchState.matchLength}pt` : "Practice"}
         </span>
       </div>
 
       {/* Match Score */}
-      <div
-        className="flex items-center gap-2"
-        style={{
-          padding: "3px 12px",
-          background: "var(--color-bg-surface)",
-          borderRadius: 5,
-          border: "1px solid var(--color-border-subtle)",
-        }}
-      >
-        <span className="text-[15px] font-bold text-[var(--color-text-primary)]">0</span>
-        <span className="text-[10px] text-[var(--color-text-muted)]">–</span>
-        <span className="text-[15px] font-bold text-[var(--color-text-primary)]">0</span>
-        <span className="text-[9px] text-[var(--color-text-muted)] ml-0.5">/ 5</span>
-      </div>
+      {matchState && (
+        <div
+          className="flex items-center gap-2"
+          style={{
+            padding: "3px 12px",
+            background: "var(--color-bg-surface)",
+            borderRadius: 5,
+            border: "1px solid var(--color-border-subtle)",
+          }}
+        >
+          <span className="text-[15px] font-bold text-[var(--color-text-primary)]">{matchState.whiteScore}</span>
+          <span className="text-[10px] text-[var(--color-text-muted)]">–</span>
+          <span className="text-[15px] font-bold text-[var(--color-text-primary)]">{matchState.blackScore}</span>
+          <span className="text-[9px] text-[var(--color-text-muted)] ml-0.5">/ {matchState.matchLength}</span>
+        </div>
+      )}
 
       <div className="flex items-center gap-1.5">
         <div
@@ -1123,6 +1127,7 @@ export function GameScreen({
         onMenuToggle={() => setShowMenu(!showMenu)}
         showPointNumbers={showPointNumbers}
         onTogglePointNumbers={togglePointNumbers}
+        matchState={matchState}
       />
 
       {/* Game Area */}

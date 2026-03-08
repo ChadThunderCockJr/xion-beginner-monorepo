@@ -710,6 +710,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
 
     // Async: check doubling then proceed to roll
     (async () => {
+      try {
       if (canAIDouble) {
         const wantsDouble = await shouldAIDouble(
           s.gameState.board, aiColor, s.cubeValue, difficultyRef.current
@@ -743,6 +744,7 @@ export function useLocalGame(difficulty: AIDifficulty) {
 
       // Step 2: select and play moves (async for WASM GM engine)
       (async () => {
+        try {
         const moves = await selectAIMove(
           gs.board,
           aiColor,
@@ -825,9 +827,19 @@ export function useLocalGame(difficulty: AIDifficulty) {
           }, delay);
           timers.push(t);
         });
+        } catch (err) {
+          console.error("[AI] Move selection failed:", err);
+          const ended = coreEndTurn(gs);
+          aiThinkingRef.current = false;
+          dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+        }
       })();
     }, thinkDelay);
     timers.push(t1);
+      } catch (err) {
+        console.error("[AI] Turn failed:", err);
+        aiThinkingRef.current = false;
+      }
     })(); // end async doubling/roll IIFE
 
     return () => {
