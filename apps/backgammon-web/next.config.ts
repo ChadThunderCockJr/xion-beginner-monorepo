@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Long cache for GNUBG WASM (versioned filename gbweb.1.wasm)
+        source: "/gnubg/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           {

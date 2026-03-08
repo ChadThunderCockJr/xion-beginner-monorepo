@@ -10,6 +10,7 @@ import { fetchStats, fetchMatches, fetchOnlineCount, timeAgo } from "@/lib/api";
 import type { PlayerStats, MatchResult } from "@/lib/api";
 import Tutorial from "@/components/Tutorial";
 import { ONLINE_COUNT_POLL_INTERVAL_MS } from "@/lib/constants";
+import { preloadGnubg } from "@/lib/gnubg";
 
 // ── Icons ──────────────────────────────────────────────────────
 
@@ -281,6 +282,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [onlineCount, setOnlineCount] = useState<number>(0);
+
+  // Start loading GNUBG WASM early so AI games are ready faster
+  useEffect(() => { preloadGnubg(); }, []);
 
   useEffect(() => {
     if (!address) return;
