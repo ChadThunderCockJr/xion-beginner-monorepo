@@ -54,14 +54,17 @@ let ready = false;
 
 async function init() {
   try {
+    // Blob-URL workers can't resolve root-relative paths, so build absolute URLs
+    const base = self.origin;
+
     // Load the Go WASM runtime bridge via fetch+eval
     // (importScripts fails in blob-URL workers created by webpack)
-    const jsText = await (await fetch("/gnubg/wasm_exec.js")).text();
+    const jsText = await (await fetch(`${base}/gnubg/wasm_exec.js`)).text();
     (0, eval)(jsText);
 
     const go = new Go();
     const result = await WebAssembly.instantiateStreaming(
-      fetch("/gnubg/gbweb.1.wasm"),
+      fetch(`${base}/gnubg/gbweb.1.wasm`),
       go.importObject,
     );
 
