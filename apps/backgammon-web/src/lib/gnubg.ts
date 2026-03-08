@@ -110,6 +110,11 @@ export function preloadGnubg(): void {
   });
 }
 
+/** Wait for GNUBG to become ready. Kicks off loading if needed. */
+export function waitForGnubg(): Promise<void> {
+  return ensureWorker();
+}
+
 /* ── Board Format Translation ── */
 
 /**

@@ -5,7 +5,7 @@ import type { BoardState, Move, Player } from "@xion-beginner/backgammon-core";
 import { getPipCount } from "@xion-beginner/backgammon-core";
 import { Card } from "@/components/ui";
 import { analyzeGame, analyzeGameWithGnubg, estimateWinProbability } from "@/lib/analysis";
-import { isGnubgReady } from "@/lib/gnubg";
+import { isGnubgReady, waitForGnubg } from "@/lib/gnubg";
 import type { GameAnalysis, TurnAnalysis, CandidateMove as CandidateMoveData, ErrorClass, WinProbability } from "@/lib/analysis";
 
 /* ── Theme Constants (CSS-variable-aware) ── */
@@ -466,6 +466,7 @@ export function PostGameAnalysis({
   // ── Analysis engine (WASM-based when available, heuristic fallback) ──
   const [analysis, setAnalysis] = useState<GameAnalysis | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState<{ current: number; total: number } | null>(null);
+  const [engineLoading, setEngineLoading] = useState(!isGnubgReady());
 
   useEffect(() => {
     if (!turnHistory || turnHistory.length === 0) {
@@ -473,28 +474,47 @@ export function PostGameAnalysis({
       return;
     }
 
-    // Start with fast heuristic analysis immediately
-    setAnalysis(analyzeGame(turnHistory));
+    let cancelled = false;
 
-    // Then upgrade to WASM analysis if available
-    if (isGnubgReady()) {
-      let cancelled = false;
-      setAnalysisProgress({ current: 0, total: turnHistory.length });
+    async function runAnalysis() {
+      // Wait for the GNUBG engine to load
+      if (!isGnubgReady()) {
+        setEngineLoading(true);
+        try {
+          await waitForGnubg();
+        } catch {
+          // Engine failed to load — fall back to heuristic
+          if (!cancelled) {
+            setEngineLoading(false);
+            setAnalysis(analyzeGame(turnHistory!));
+          }
+          return;
+        }
+        if (cancelled) return;
+        setEngineLoading(false);
+      }
 
-      analyzeGameWithGnubg(turnHistory, (current, total) => {
-        if (!cancelled) setAnalysisProgress({ current, total });
-      }).then((wasmAnalysis) => {
+      // Run WASM analysis
+      setAnalysisProgress({ current: 0, total: turnHistory!.length });
+      try {
+        const wasmAnalysis = await analyzeGameWithGnubg(turnHistory!, (current, total) => {
+          if (!cancelled) setAnalysisProgress({ current, total });
+        });
         if (!cancelled) {
           setAnalysis(wasmAnalysis);
           setAnalysisProgress(null);
         }
-      }).catch(() => {
-        // Keep heuristic analysis on failure
-        if (!cancelled) setAnalysisProgress(null);
-      });
-
-      return () => { cancelled = true; };
+      } catch {
+        // Fall back to heuristic on failure
+        if (!cancelled) {
+          setAnalysis(analyzeGame(turnHistory!));
+          setAnalysisProgress(null);
+        }
+      }
     }
+
+    runAnalysis();
+    return () => { cancelled = true; };
   }, [turnHistory]);
 
   // Build display moves
@@ -725,7 +745,23 @@ export function PostGameAnalysis({
       <main className="p-3 sm:p-4 md:p-6" style={{ flex: 1, overflow: "auto" }}>
 
         {/* ═══ SUMMARY TAB ═══ */}
-        {activeTab === "summary" && (
+        {activeTab === "summary" && (engineLoading || !analysis) && (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 16, padding: "80px 24px", textAlign: "center",
+          }}>
+            <div style={{
+              width: 32, height: 32, border: `3px solid ${C.gold.primary}`,
+              borderTopColor: "transparent", borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+            }} />
+            <span style={{ fontSize: "0.875rem", fontWeight: W.semibold, color: C.gold.primary }}>
+              Loading GNU Backgammon engine...
+            </span>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+        {activeTab === "summary" && !engineLoading && analysis && (
           <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Performance Rating */}
             {mySummary && oppSummary && (
@@ -782,9 +818,27 @@ export function PostGameAnalysis({
         )}
 
         {/* ═══ ANALYSIS TAB (Galaxy-style) ═══ */}
-        {activeTab === "analysis" && (
+        {activeTab === "analysis" && (engineLoading || (analysisProgress && !analysis)) && (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 16, padding: "80px 24px", textAlign: "center",
+          }}>
+            <div style={{
+              width: 32, height: 32, border: `3px solid ${C.gold.primary}`,
+              borderTopColor: "transparent", borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+            }} />
+            <span style={{ fontSize: "0.875rem", fontWeight: W.semibold, color: C.gold.primary }}>
+              {engineLoading
+                ? "Loading GNU Backgammon engine..."
+                : `Analyzing with GNU Backgammon engine... (${analysisProgress!.current}/${analysisProgress!.total})`}
+            </span>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
+        {activeTab === "analysis" && !engineLoading && !(analysisProgress && !analysis) && (
           <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* WASM analysis progress */}
+            {/* WASM analysis progress (upgrading existing results) */}
             {analysisProgress && (
               <div style={{
                 display: "flex", alignItems: "center", gap: 10,
