@@ -96,28 +96,49 @@ function EquityGraph({ equityHistory, turns, selectedMove, totalMoves, onSelectM
   const n = equityHistory.length;
   if (n < 2) return null;
 
-  const stepX = w / (n - 1);
-  const toY = (eq: number) => graphH / 2 - (eq * graphH) / 2;
+  // Smooth equity with a 3-point weighted moving average to reduce turn-to-turn noise
+  const smoothed = equityHistory.map((eq, i, arr) => {
+    if (i === 0 || i === arr.length - 1) return eq;
+    return arr[i - 1] * 0.25 + eq * 0.5 + arr[i + 1] * 0.25;
+  });
 
-  const pathD = equityHistory.map((eq, i) => {
-    const x = i * stepX;
-    const y = toY(eq);
-    return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-  }).join(" ");
+  const stepX = w / (n - 1);
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+  const toY = (eq: number) => graphH / 2 - (clamp(eq) * graphH) / 2;
+  const midY = graphH / 2;
+
+  // Build smooth bezier path through the points
+  const pts = smoothed.map((eq, i) => ({ x: i * stepX, y: toY(eq) }));
+  let pathD = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const tension = 0.3;
+    const p0 = pts[Math.max(0, i - 2)];
+    const p1 = pts[i - 1];
+    const p2 = pts[i];
+    const p3 = pts[Math.min(pts.length - 1, i + 1)];
+    const cp1x = p1.x + (p2.x - p0.x) * tension;
+    const cp1y = p1.y + (p2.y - p0.y) * tension;
+    const cp2x = p2.x - (p3.x - p1.x) * tension;
+    const cp2y = p2.y - (p3.y - p1.y) * tension;
+    pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+
+  // Fill path closes to center line, not bottom
+  const fillD = `${pathD} L ${pts[pts.length - 1].x} ${midY} L ${pts[0].x} ${midY} Z`;
 
   const errorDots = turns
     .filter(t => t.errorClass === "blunder" || t.errorClass === "mistake")
     .map(t => ({
       x: t.turnNumber * stepX,
-      y: toY(t.equityAfter),
+      y: toY(smoothed[t.turnNumber] ?? t.equityAfter),
       color: t.errorClass === "blunder" ? C.error : C.gold.primary,
       turn: t.turnNumber,
     }));
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "auto", aspectRatio: `${w} / ${h}` }}>
-      <line x1="0" y1={graphH / 2} x2={w} y2={graphH / 2} stroke={C.bg.subtle} strokeWidth="1" strokeDasharray="4 4" />
-      <path d={`${pathD} L ${(n - 1) * stepX} ${graphH} L 0 ${graphH} Z`} fill={C.gold.faint} />
+      <line x1="0" y1={midY} x2={w} y2={midY} stroke={C.bg.subtle} strokeWidth="1" strokeDasharray="4 4" />
+      <path d={fillD} fill={C.gold.faint} />
       <path d={pathD} fill="none" stroke={C.gold.primary} strokeWidth="2" />
       {errorDots.map((b) => (
         <g key={b.turn} style={{ cursor: "pointer" }} onClick={() => onSelectMove(b.turn)}>

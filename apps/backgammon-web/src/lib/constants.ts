@@ -1,7 +1,7 @@
 // Timings
 export const CLEAR_LAST_MOVE_DELAY_MS = 3000;
 export const CLEAR_REACTION_DELAY_MS = 3000;
-export const MOVE_ANIMATION_STEP_MS = 275;
+export const MOVE_ANIMATION_STEP_MS = 350;
 export const BALANCE_POLL_INTERVAL_MS = 5000;
 export const ONLINE_COUNT_POLL_INTERVAL_MS = 30000;
 export const TURN_TIMER_TICK_MS = 1000;
