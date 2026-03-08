@@ -689,7 +689,6 @@ export function useLocalGame(difficulty: AIDifficulty) {
     if (aiThinkingRef.current) return;
     if (s.doubleOffered) return; // Wait for human to respond to AI's double
 
-    console.log("[AI] Turn starting for", s.myColor === "white" ? "black" : "white");
     aiThinkingRef.current = true;
 
     let cancelled = false;
@@ -712,143 +711,141 @@ export function useLocalGame(difficulty: AIDifficulty) {
     // Async: check doubling then proceed to roll
     (async () => {
       try {
-      if (canAIDouble) {
-        const wantsDouble = await shouldAIDouble(
-          s.gameState.board, aiColor, s.cubeValue, difficultyRef.current
-        );
-        if (cancelled) return;
-        if (wantsDouble) {
-          const t0 = setTimeout(() => {
-            if (cancelled) return;
-            aiThinkingRef.current = false;
-            dispatch({ type: "AI_OFFER_DOUBLE" });
-          }, thinkDelay);
-          timers.push(t0);
-          return; // Don't roll — wait for human response
-        }
-      }
-
-    // Step 1: think, then roll
-    const t1 = setTimeout(() => {
-      if (cancelled) return;
-
-      const die1 = Math.floor(Math.random() * 6) + 1;
-      const die2 = Math.floor(Math.random() * 6) + 1;
-      playDiceRoll();
-
-      const currentGs = stateRef.current.gameState;
-      const gs = setDice(currentGs, die1, die2);
-      const aiColor = gs.currentPlayer;
-      const legalMoves = getLegalFirstMoves(gs.board, aiColor, gs.movesRemaining);
-
-      dispatch({ type: "AI_ROLLED", gameState: gs, legalMoves });
-
-      // Step 2: select and play moves (async for WASM GM engine)
-      (async () => {
-        try {
-        const moves = await selectAIMove(
-          gs.board,
-          aiColor,
-          gs.movesRemaining,
-          difficultyRef.current
-        );
-
-        console.log("[AI] selectAIMove returned:", moves?.length ?? "null", "moves", moves);
-
-        if (cancelled) return;
-
-        if (!moves || moves.length === 0) {
-          // No legal moves — end turn
-          const t2 = setTimeout(() => {
-            if (cancelled) return;
-            playTurnEnd();
-            const ended = coreEndTurn(gs);
-            aiThinkingRef.current = false;
-            dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-          }, 500);
-          timers.push(t2);
-          return;
+        if (canAIDouble) {
+          const wantsDouble = await shouldAIDouble(
+            s.gameState.board, aiColor, s.cubeValue, difficultyRef.current
+          );
+          if (cancelled) return;
+          if (wantsDouble) {
+            const t0 = setTimeout(() => {
+              if (cancelled) return;
+              aiThinkingRef.current = false;
+              dispatch({ type: "AI_OFFER_DOUBLE" });
+            }, thinkDelay);
+            timers.push(t0);
+            return; // Don't roll — wait for human response
+          }
         }
 
-        // Animate moves one by one
-        let currentBoard = gs;
-        let moveFailed = false;
+        // Step 1: think, then roll
+        const t1 = setTimeout(() => {
+          if (cancelled) return;
 
-        moves.forEach((move, i) => {
-          const delay = MOVE_ANIMATION_STEP_MS + i * MOVE_ANIMATION_STEP_MS;
-          const t = setTimeout(() => {
-            if (cancelled || moveFailed) return;
+          const die1 = Math.floor(Math.random() * 6) + 1;
+          const die2 = Math.floor(Math.random() * 6) + 1;
+          playDiceRoll();
 
-            const result = coreMakeMove(currentBoard, move.from, move.to);
-            if (!result) {
-              console.error("[AI] coreMakeMove failed for move", i, move, "board:", currentBoard);
-              moveFailed = true;
-              // End turn gracefully on invalid move
-              playTurnEnd();
-              const ended = coreEndTurn(currentBoard);
-              aiThinkingRef.current = false;
-              dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-              return;
-            }
-            currentBoard = result;
+          const currentGs = stateRef.current.gameState;
+          const gs = setDice(currentGs, die1, die2);
+          const aiColor = gs.currentPlayer;
+          const legalMoves = getLegalFirstMoves(gs.board, aiColor, gs.movesRemaining);
 
-            // Detect hit
-            const prevVal = stateRef.current.gameState.board.points[move.to];
-            const isHit =
-              (aiColor === "white" && prevVal === -1) ||
-              (aiColor === "black" && prevVal === 1);
-            if (isHit) {
-              playCheckerHit();
-            } else {
-              playCheckerPlace();
-            }
+          dispatch({ type: "AI_ROLLED", gameState: gs, legalMoves });
 
-            if (result.gameOver) {
-              playGameOver(result.winner !== stateRef.current.myColor);
-              aiThinkingRef.current = false;
-              dispatch({
-                type: "GAME_OVER",
-                winner: result.winner!,
-                resultType: result.resultType!,
-                gameState: result,
-                finalMove: move,
-              });
-              return;
-            }
+          // Step 2: select and play moves (async for WASM GM engine)
+          (async () => {
+            try {
+              const moves = await selectAIMove(
+                gs.board,
+                aiColor,
+                gs.movesRemaining,
+                difficultyRef.current
+              );
 
-            dispatch({ type: "AI_MOVED", gameState: result, move });
+              if (cancelled) return;
 
-            // After last move, end turn
-            if (i === moves.length - 1) {
-              const tEnd = setTimeout(() => {
-                if (cancelled) return;
-                // If turn hasn't auto-ended (currentPlayer already flipped), manually end
-                const latest = stateRef.current.gameState;
-                if (latest.currentPlayer !== stateRef.current.myColor && !latest.gameOver) {
+              if (!moves || moves.length === 0) {
+                // No legal moves — end turn
+                const t2 = setTimeout(() => {
+                  if (cancelled) return;
                   playTurnEnd();
-                  const ended = coreEndTurn(latest);
+                  const ended = coreEndTurn(gs);
                   aiThinkingRef.current = false;
                   dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-                } else {
-                  // Turn already flipped via makeMove auto-end
-                  aiThinkingRef.current = false;
-                  dispatch({ type: "AI_TURN_ENDED", gameState: latest });
-                }
-              }, 300);
-              timers.push(tEnd);
+                }, 500);
+                timers.push(t2);
+                return;
+              }
+
+              // Animate moves one by one
+              let currentBoard = gs;
+              let moveFailed = false;
+
+              moves.forEach((move, i) => {
+                const delay = MOVE_ANIMATION_STEP_MS + i * MOVE_ANIMATION_STEP_MS;
+                const t = setTimeout(() => {
+                  if (cancelled || moveFailed) return;
+
+                  const result = coreMakeMove(currentBoard, move.from, move.to);
+                  if (!result) {
+                    console.error("[AI] coreMakeMove failed for move", i, move, "board:", currentBoard);
+                    moveFailed = true;
+                    // End turn gracefully on invalid move
+                    playTurnEnd();
+                    const ended = coreEndTurn(currentBoard);
+                    aiThinkingRef.current = false;
+                    dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+                    return;
+                  }
+                  currentBoard = result;
+
+                  // Detect hit
+                  const prevVal = stateRef.current.gameState.board.points[move.to];
+                  const isHit =
+                    (aiColor === "white" && prevVal === -1) ||
+                    (aiColor === "black" && prevVal === 1);
+                  if (isHit) {
+                    playCheckerHit();
+                  } else {
+                    playCheckerPlace();
+                  }
+
+                  if (result.gameOver) {
+                    playGameOver(result.winner !== stateRef.current.myColor);
+                    aiThinkingRef.current = false;
+                    dispatch({
+                      type: "GAME_OVER",
+                      winner: result.winner!,
+                      resultType: result.resultType!,
+                      gameState: result,
+                      finalMove: move,
+                    });
+                    return;
+                  }
+
+                  dispatch({ type: "AI_MOVED", gameState: result, move });
+
+                  // After last move, end turn
+                  if (i === moves.length - 1) {
+                    const tEnd = setTimeout(() => {
+                      if (cancelled) return;
+                      // If turn hasn't auto-ended (currentPlayer already flipped), manually end
+                      const latest = stateRef.current.gameState;
+                      if (latest.currentPlayer !== stateRef.current.myColor && !latest.gameOver) {
+                        playTurnEnd();
+                        const ended = coreEndTurn(latest);
+                        aiThinkingRef.current = false;
+                        dispatch({ type: "AI_TURN_ENDED", gameState: ended });
+                      } else {
+                        // Turn already flipped via makeMove auto-end
+                        aiThinkingRef.current = false;
+                        dispatch({ type: "AI_TURN_ENDED", gameState: latest });
+                      }
+                    }, 300);
+                    timers.push(tEnd);
+                  }
+                }, delay);
+                timers.push(t);
+              });
+            } catch (err) {
+              console.error("[AI] Move selection failed:", err);
+              const ended = coreEndTurn(gs);
+              aiThinkingRef.current = false;
+              dispatch({ type: "AI_TURN_ENDED", gameState: ended });
             }
-          }, delay);
-          timers.push(t);
-        });
-        } catch (err) {
-          console.error("[AI] Move selection failed:", err);
-          const ended = coreEndTurn(gs);
-          aiThinkingRef.current = false;
-          dispatch({ type: "AI_TURN_ENDED", gameState: ended });
-        }
-      })();
-    }, thinkDelay);
-    timers.push(t1);
+          })();
+        }, thinkDelay);
+        timers.push(t1);
       } catch (err) {
         console.error("[AI] Turn failed:", err);
         aiThinkingRef.current = false;
