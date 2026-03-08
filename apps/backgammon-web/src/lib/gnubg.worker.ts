@@ -54,8 +54,10 @@ let ready = false;
 
 async function init() {
   try {
-    // Load the Go WASM runtime bridge
-    importScripts("/gnubg/wasm_exec.js");
+    // Load the Go WASM runtime bridge via fetch+eval
+    // (importScripts fails in blob-URL workers created by webpack)
+    const jsText = await (await fetch("/gnubg/wasm_exec.js")).text();
+    (0, eval)(jsText);
 
     const go = new Go();
     const result = await WebAssembly.instantiateStreaming(
