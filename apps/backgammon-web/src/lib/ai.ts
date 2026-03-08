@@ -134,48 +134,41 @@ export async function selectAIMove(
  *   - Accept when opponent's equity ≤ ~0.76 (your equity ≥ -0.74)
  */
 
-/** Representative dice rolls for position probing (covers all pip values) */
-const PROBE_DICE: [number, number][] = [
-  [3, 1], // low roll
-  [6, 4], // high roll
-  [5, 2], // mid roll
-];
+/** Single representative dice roll for fast position probing.
+ *  Using one average-pip roll keeps cube decisions fast (~1 GNUBG call). */
+const PROBE_DICE: [number, number] = [4, 2];
 
 /**
  * Estimate position equity by probing with a few dice rolls.
  * Returns average equity from GNUBG's perspective of the given player,
  * with noise applied to model skill-dependent evaluation errors.
  * Positive = player is ahead, negative = behind.
+ *
+ * Always uses 0-ply for speed — cube decisions don't need deep search.
  */
 async function probeEquity(
   board: BoardState,
   player: Player,
-  settings: DifficultySettings,
+  noise: number,
 ): Promise<number | null> {
   const ready = await waitForGnubg(5_000);
   if (!ready) return null;
 
-  let totalEq = 0;
-  let count = 0;
-
-  for (const dice of PROBE_DICE) {
-    try {
-      const results = await getGnubgMoves(board, player, dice, {
-        maxMoves: 1,
-        scoreMoves: true,
-        plies: settings.plies,
-        cubeful: settings.cubeful,
-      });
-      if (results.length > 0 && results[0].evaluation) {
-        totalEq += applyNoise(results[0].evaluation.eq, settings.noise);
-        count++;
-      }
-    } catch {
-      // Skip failed probes
+  try {
+    const results = await getGnubgMoves(board, player, PROBE_DICE, {
+      maxMoves: 1,
+      scoreMoves: true,
+      plies: 0,
+      cubeful: true,
+    });
+    if (results.length > 0 && results[0].evaluation) {
+      return applyNoise(results[0].evaluation.eq, noise);
     }
+  } catch {
+    // Probe failed
   }
 
-  return count > 0 ? totalEq / count : null;
+  return null;
 }
 
 /**
@@ -190,9 +183,10 @@ export async function shouldAIDouble(
   difficulty: AIDifficulty,
 ): Promise<boolean> {
   if (cubeValue >= 64) return false;
+  if (difficulty === "beginner") return false; // beginners don't double
 
-  const settings = DIFFICULTY_SETTINGS[difficulty];
-  const equity = await probeEquity(board, aiColor, settings);
+  const { noise } = DIFFICULTY_SETTINGS[difficulty];
+  const equity = await probeEquity(board, aiColor, noise);
   if (equity === null) return false;
 
   // Optimal doubling point: equity ≥ 0.66
@@ -210,8 +204,8 @@ export async function shouldAIAcceptDouble(
   cubeValue: number,
   difficulty: AIDifficulty,
 ): Promise<boolean> {
-  const settings = DIFFICULTY_SETTINGS[difficulty];
-  const equity = await probeEquity(board, aiColor, settings);
+  const { noise } = DIFFICULTY_SETTINGS[difficulty];
+  const equity = await probeEquity(board, aiColor, noise);
   if (equity === null) return true; // accept if we can't evaluate
 
   // Optimal take point: equity ≥ -0.74
