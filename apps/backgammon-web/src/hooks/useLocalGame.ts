@@ -522,12 +522,15 @@ export function useLocalGame(difficulty: AIDifficulty) {
   useEffect(() => {
     if (state.winner && !gameRecordedRef.current) {
       gameRecordedRef.current = true;
-      recordAIGameResult(state.myColor, state.winner, state.resultType ?? "normal", difficultyRef.current);
+      recordAIGameResult(
+        state.myColor, state.winner, state.resultType ?? "normal",
+        difficultyRef.current, state.turnHistory,
+      );
     }
     if (!state.winner) {
       gameRecordedRef.current = false;
     }
-  }, [state.winner, state.myColor, state.resultType]);
+  }, [state.winner, state.myColor, state.resultType, state.turnHistory]);
 
   // ── Human actions ───────────────────────────────────────────
 

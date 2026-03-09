@@ -8,6 +8,7 @@ import { formatMove } from "@xion-beginner/backgammon-core";
 import type { MoveRecord, Player } from "@xion-beginner/backgammon-core";
 import { API_BASE } from "@/lib/api";
 import type { MatchResult } from "@/lib/api";
+import { getLocalMatches, type AIMatchRecord } from "@/lib/local-stats";
 
 // ─── Icons ─────────────────────────────────────────────────────────
 
@@ -269,6 +270,59 @@ function MatchRow({ match }: { match: MatchResult }) {
   );
 }
 
+// ─── AI Match Row (local, no server fetch) ──────────────────────────
+
+function AIMatchRow({ match }: { match: AIMatchRecord }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const date = new Date(match.timestamp);
+  const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const diffLabel = match.difficulty.charAt(0).toUpperCase() + match.difficulty.slice(1);
+
+  return (
+    <div style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 4px",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <Avatar name={`AI ${diffLabel}`} size="xs" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--color-text-primary)" }}>
+            vs AI ({diffLabel})
+          </div>
+          <div style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)" }}>{dateStr}</div>
+        </div>
+        <Badge variant={match.result === "W" ? "win" : "loss"}>
+          {match.result === "W" ? "Win" : "Loss"}
+        </Badge>
+        <ChevronIcon open={expanded} />
+      </button>
+
+      {expanded && (
+        <div style={{ padding: "0 4px 14px" }}>
+          {match.moveHistory && match.moveHistory.length > 0 ? (
+            <RollLog moveHistory={match.moveHistory} />
+          ) : (
+            <p style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", textAlign: "center", padding: "12px 0" }}>
+              No roll history available for this game.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // VERIFY ROLLS PAGE
 // ═══════════════════════════════════════════════════════════════════
@@ -276,9 +330,13 @@ function MatchRow({ match }: { match: MatchResult }) {
 export default function VerifyRollsPage() {
   const { address } = useAuth();
   const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [aiMatches, setAiMatches] = useState<AIMatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load local AI matches immediately
+    setAiMatches(getLocalMatches(50));
+
     if (!address) {
       setLoading(false);
       return;
@@ -299,6 +357,14 @@ export default function VerifyRollsPage() {
     })();
     return () => { cancelled = true; };
   }, [address]);
+
+  // Merge and sort all matches by timestamp (newest first)
+  const allMatches = [
+    ...matches.map(m => ({ type: "online" as const, data: m, timestamp: m.timestamp })),
+    ...aiMatches.map(m => ({ type: "ai" as const, data: m, timestamp: m.timestamp })),
+  ].sort((a, b) => b.timestamp - a.timestamp);
+
+  const hasAnyMatches = allMatches.length > 0;
 
   return (
     <div style={{ width: "100%", minHeight: "100dvh" }}>
@@ -331,7 +397,7 @@ export default function VerifyRollsPage() {
             The server commits to a seed hash before each roll, then combines it with a client seed
             to derive the dice deterministically. You can verify any roll by checking that the commit hash
             matches the server seed and that the dice values were correctly derived.
-            Expand any match below to inspect the full roll history, dice distribution, and cryptographic proofs.
+            Expand any match below to inspect the full roll history and dice distribution.
           </p>
         </Card>
 
@@ -339,22 +405,22 @@ export default function VerifyRollsPage() {
         <Card>
           <SectionLabel>Past Matches</SectionLabel>
 
-          {loading ? (
+          {loading && aiMatches.length === 0 ? (
             <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
               Loading matches...
             </p>
-          ) : !address ? (
-            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
-              Connect your wallet to view past matches.
-            </p>
-          ) : matches.length === 0 ? (
+          ) : !hasAnyMatches ? (
             <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "24px 0" }}>
               No matches found. Play a game to see your roll history here.
             </p>
           ) : (
-            matches.map((match) => (
-              <MatchRow key={match.gameId} match={match} />
-            ))
+            allMatches.map((entry) =>
+              entry.type === "online" ? (
+                <MatchRow key={(entry.data as MatchResult).gameId} match={entry.data as MatchResult} />
+              ) : (
+                <AIMatchRow key={(entry.data as AIMatchRecord).id} match={entry.data as AIMatchRecord} />
+              )
+            )
           )}
         </Card>
       </div>

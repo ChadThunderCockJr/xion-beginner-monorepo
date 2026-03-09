@@ -1,4 +1,4 @@
-import type { Player } from "@xion-beginner/backgammon-core";
+import type { Player, MoveRecord } from "@xion-beginner/backgammon-core";
 import type { AIDifficulty } from "./ai";
 
 /* ── Types ── */
@@ -10,6 +10,7 @@ export interface AIMatchRecord {
   resultType: string;
   myColor: Player;
   timestamp: number;
+  moveHistory?: MoveRecord[];
 }
 
 export interface LocalStats {
@@ -59,9 +60,18 @@ export function recordAIGameResult(
   winner: Player,
   resultType: string,
   difficulty: AIDifficulty,
+  turnHistory?: { player: Player; dice: [number, number]; moves: { from: number; to: number; die: number }[] }[],
 ): void {
   const stats = load();
   const result: "W" | "L" = winner === myColor ? "W" : "L";
+
+  // Convert turn history to MoveRecord format
+  const moveHistory: MoveRecord[] | undefined = turnHistory?.map((t, i) => ({
+    turnNumber: i + 1,
+    player: t.player,
+    dice: t.dice,
+    moves: t.moves,
+  }));
 
   const record: AIMatchRecord = {
     id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -70,6 +80,7 @@ export function recordAIGameResult(
     resultType,
     myColor,
     timestamp: Date.now(),
+    moveHistory,
   };
 
   if (result === "W") {
@@ -93,9 +104,9 @@ export function recordAIGameResult(
   stats.totalGames++;
   stats.matches.unshift(record);
 
-  // Keep last 100 matches
-  if (stats.matches.length > 100) {
-    stats.matches = stats.matches.slice(0, 100);
+  // Keep last 50 matches (with move history they're larger)
+  if (stats.matches.length > 50) {
+    stats.matches = stats.matches.slice(0, 50);
   }
 
   save(stats);
