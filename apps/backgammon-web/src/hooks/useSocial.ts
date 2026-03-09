@@ -55,7 +55,7 @@ export interface SocialState {
 }
 
 type SocialAction =
-  | { type: "FRIENDS_LIST"; friends: FriendEntry[]; incoming_requests: FriendRequestEntry[]; outgoing_requests: string[] }
+  | { type: "FRIENDS_LIST"; friends: FriendEntry[]; incoming_requests: FriendRequestEntry[]; outgoing_requests: string[]; pending_challenges?: { challenge_id: string; from_address: string; from_name: string }[] }
   | { type: "ACTIVITY_FEED"; items: ActivityItem[] }
   | { type: "PROFILE_UPDATED"; display_name: string }
   | { type: "FRIEND_ONLINE"; address: string }
@@ -97,6 +97,12 @@ function socialReducer(state: SocialState, action: SocialAction): SocialState {
         friends: action.friends,
         incomingRequests: action.incoming_requests,
         outgoingRequests: action.outgoing_requests,
+        pendingChallenges: (action.pending_challenges || []).map((c) => ({
+          challengeId: c.challenge_id,
+          fromAddress: c.from_address,
+          fromName: c.from_name,
+          receivedAt: Date.now(),
+        })),
       };
     case "ACTIVITY_FEED":
       return { ...state, activity: action.items };
@@ -236,6 +242,7 @@ export function useSocial(wsUrl: string, address: string | null) {
           friends: (msg.friends || []) as FriendEntry[],
           incoming_requests: (msg.incoming_requests || []) as FriendRequestEntry[],
           outgoing_requests: (msg.outgoing_requests || []) as string[],
+          pending_challenges: (msg.pending_challenges || []) as { challenge_id: string; from_address: string; from_name: string }[],
         }),
       ),
       on("activity_feed", (msg) =>

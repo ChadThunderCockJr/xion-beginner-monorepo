@@ -132,7 +132,7 @@ export type ServerMessage =
   | { type: "stalling_warning"; game_id: string; message: string }
   // Social messages
   | { type: "profile_updated"; address: string; display_name: string }
-  | { type: "friends_list"; friends: FriendEntry[]; incoming_requests: FriendRequestEntry[]; outgoing_requests: string[] }
+  | { type: "friends_list"; friends: FriendEntry[]; incoming_requests: FriendRequestEntry[]; outgoing_requests: string[]; pending_challenges?: { challenge_id: string; from_address: string; from_name: string }[] }
   | { type: "friend_request_received"; from_address: string; from_name: string }
   | { type: "friend_request_accepted"; address: string; display_name: string }
   | { type: "friend_removed"; address: string }

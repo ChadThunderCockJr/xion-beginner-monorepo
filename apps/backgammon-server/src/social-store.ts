@@ -392,6 +392,9 @@ export async function createChallenge(challenge: Challenge): Promise<boolean> {
     if (!r) return false;
     // 60 second TTL
     await r.setex(`challenge:${challenge.id}`, CHALLENGE_EXPIRY_SEC, JSON.stringify(challenge));
+    // Index by recipient so we can fetch on reconnect
+    await r.sadd(`challenges:to:${challenge.to}`, challenge.id);
+    await r.expire(`challenges:to:${challenge.to}`, CHALLENGE_EXPIRY_SEC);
     return true;
   } catch { return false; }
 }
@@ -410,8 +413,32 @@ export async function deleteChallenge(id: string): Promise<void> {
   try {
     const r = getRedis();
     if (!r) return;
+    const challenge = await getChallenge(id);
     await r.del(`challenge:${id}`);
+    if (challenge) {
+      await r.srem(`challenges:to:${challenge.to}`, id);
+    }
   } catch { /* ignore */ }
+}
+
+export async function getPendingChallengesFor(address: string): Promise<Challenge[]> {
+  try {
+    const r = getRedis();
+    if (!r) return [];
+    const ids = await r.smembers(`challenges:to:${address}`);
+    if (!ids.length) return [];
+    const results: Challenge[] = [];
+    for (const id of ids) {
+      const data = await r.get(`challenge:${id}`);
+      if (data) {
+        results.push(JSON.parse(data) as Challenge);
+      } else {
+        // Expired — clean up the set
+        await r.srem(`challenges:to:${address}`, id);
+      }
+    }
+    return results;
+  } catch { return []; }
 }
 
 // ── Ratings ───────────────────────────────────────────────────

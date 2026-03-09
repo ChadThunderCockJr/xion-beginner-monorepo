@@ -126,11 +126,19 @@ export class SocialManager {
 
     const outgoingRequests = await store.getOutgoingRequests(address);
 
+    const rawChallenges = await store.getPendingChallengesFor(address);
+    const pendingChallenges = rawChallenges.map((c) => ({
+      challenge_id: c.id,
+      from_address: c.from,
+      from_name: c.fromName,
+    }));
+
     this.send(ws, {
       type: "friends_list",
       friends,
       incoming_requests: incomingRequests,
       outgoing_requests: outgoingRequests,
+      pending_challenges: pendingChallenges,
     });
   }
 
