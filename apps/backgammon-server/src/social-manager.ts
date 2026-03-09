@@ -3,6 +3,7 @@ import type { WebSocket } from "ws";
 import type { ClientMessage, ServerMessage, ServerGame } from "./types.js";
 import type { GameManager } from "./game-manager.js";
 import * as store from "./social-store.js";
+import { logger } from "./logger.js";
 
 export class SocialManager {
   constructor(
@@ -244,14 +245,18 @@ export class SocialManager {
   }
 
   private async handleChallengeFriend(ws: WebSocket, address: string, toAddress: string): Promise<void> {
+    logger.info("Challenge requested", { from: address, to: toAddress });
+
     const areFriends = await store.areFriends(address, toAddress);
     if (!areFriends) {
+      logger.warn("Challenge rejected: not friends", { from: address, to: toAddress });
       this.send(ws, { type: "error", message: "Not friends with this player" });
       return;
     }
 
     const online = await store.isOnline(toAddress);
     if (!online) {
+      logger.warn("Challenge rejected: target offline", { from: address, to: toAddress });
       this.send(ws, { type: "error", message: "Player is offline" });
       return;
     }
@@ -267,6 +272,7 @@ export class SocialManager {
     };
 
     await store.createChallenge(challenge);
+    logger.info("Challenge created", { challengeId, from: address, to: toAddress });
 
     const targetWs = this.findWsByAddress(toAddress);
     if (targetWs) {
@@ -276,6 +282,9 @@ export class SocialManager {
         from_address: address,
         from_name: profile?.displayName || "",
       });
+      logger.info("Challenge delivered to target WebSocket", { challengeId, to: toAddress });
+    } else {
+      logger.warn("Challenge created but target WebSocket not found", { challengeId, to: toAddress });
     }
   }
 
