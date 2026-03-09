@@ -275,7 +275,8 @@ export default function DashboardPage() {
   const { address, logout } = useAuth();
   const { balance, isLoading: balanceLoading } = useBalance();
   const social = useSocialContext();
-  const { displayName, username } = social;
+  const { displayName, username, incomingRequests } = social;
+  const incomingRequestCount = incomingRequests?.length ?? 0;
   const playerName = displayName || username || "Player";
   const [rated, setRated] = useState(true);
 
@@ -610,9 +611,10 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Bell */}
+          {/* Bell → Social page (friend requests / notifications) */}
           <button
             aria-label="Notifications"
+            onClick={() => router.push("/social")}
             style={{
               width: 44,
               height: 44,
@@ -627,17 +629,28 @@ export default function DashboardPage() {
             }}
           >
             {Icons.bell("var(--color-text-muted)")}
-            <div
-              style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "var(--color-gold-primary)",
-              }}
-            />
+            {incomingRequestCount > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  background: "var(--color-gold-primary)",
+                  color: "var(--color-gold-text, #000)",
+                  fontSize: "0.625rem",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                }}
+              >
+                {incomingRequestCount}
+              </div>
+            )}
           </button>
 
           {/* Wallet */}
