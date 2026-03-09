@@ -32,7 +32,7 @@ export const MATCHMAKING_RATING_RANGE = parseInt(process.env.MATCHMAKING_RATING_
 // Social/Redis
 export const ONLINE_HEARTBEAT_TTL_SEC = parseInt(process.env.ONLINE_HEARTBEAT_TTL_SEC || "300", 10);
 export const ONLINE_CLEANUP_INTERVAL_MS = parseInt(process.env.ONLINE_CLEANUP_INTERVAL_MS || "60000", 10);
-export const CHALLENGE_EXPIRY_SEC = parseInt(process.env.CHALLENGE_EXPIRY_SEC || "60", 10);
+export const CHALLENGE_EXPIRY_SEC = parseInt(process.env.CHALLENGE_EXPIRY_SEC || "300", 10);
 export const MAX_ACTIVITY_ITEMS = parseInt(process.env.MAX_ACTIVITY_ITEMS || "50", 10);
 export const MAX_MATCH_HISTORY = parseInt(process.env.MAX_MATCH_HISTORY || "100", 10);
 export const GAME_HISTORY_TTL_SEC = parseInt(process.env.GAME_HISTORY_TTL_SEC || String(365 * 24 * 60 * 60), 10);

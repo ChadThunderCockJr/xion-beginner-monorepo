@@ -59,9 +59,19 @@ export default function MainLayout({
 }
 
 function UsernameGate({ children }: { children: React.ReactNode }) {
-  const { username, usernameError, connected, setUsername } = useSocialContext();
+  const gameRouter = useRouter();
+  const social = useSocialContext();
+  const { username, usernameError, connected, setUsername, acceptedGameId, clearAcceptedGame } = social;
   const [input, setInput] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // Navigate to game when a challenge is accepted
+  useEffect(() => {
+    if (acceptedGameId) {
+      clearAcceptedGame();
+      gameRouter.push(`/match/${acceptedGameId}`);
+    }
+  }, [acceptedGameId, clearAcceptedGame, gameRouter]);
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();

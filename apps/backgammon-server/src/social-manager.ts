@@ -18,10 +18,25 @@ export class SocialManager {
   }
 
   private findWsByAddress(address: string): WebSocket | null {
+    let found: WebSocket | null = null;
     for (const [ws, conn] of this.connections) {
-      if (conn.address === address) return ws;
+      if (conn.address === address && ws.readyState === 1) {
+        found = ws; // keep iterating to get the latest connection
+      }
     }
-    return null;
+    return found;
+  }
+
+  /** Send a message to ALL open WebSockets for an address (handles multiple tabs/reconnects) */
+  private sendToAll(address: string, msg: ServerMessage): number {
+    let count = 0;
+    for (const [ws, conn] of this.connections) {
+      if (conn.address === address && ws.readyState === 1) {
+        this.send(ws, msg);
+        count++;
+      }
+    }
+    return count;
   }
 
   async handle(ws: WebSocket, address: string, msg: ClientMessage): Promise<void> {
@@ -274,23 +289,24 @@ export class SocialManager {
     await store.createChallenge(challenge);
     logger.info("Challenge created", { challengeId, from: address, to: toAddress });
 
-    const targetWs = this.findWsByAddress(toAddress);
-    if (targetWs) {
-      this.send(targetWs, {
-        type: "challenge_received",
-        challenge_id: challengeId,
-        from_address: address,
-        from_name: profile?.displayName || "",
-      });
-      logger.info("Challenge delivered to target WebSocket", { challengeId, to: toAddress });
+    const deliveredCount = this.sendToAll(toAddress, {
+      type: "challenge_received",
+      challenge_id: challengeId,
+      from_address: address,
+      from_name: profile?.displayName || "",
+    });
+    if (deliveredCount > 0) {
+      logger.info("Challenge delivered", { challengeId, to: toAddress, sockets: deliveredCount });
     } else {
-      logger.warn("Challenge created but target WebSocket not found", { challengeId, to: toAddress });
+      logger.warn("Challenge created but no open WebSocket found for target", { challengeId, to: toAddress });
     }
   }
 
   private async handleAcceptChallenge(ws: WebSocket, address: string, challengeId: string): Promise<void> {
+    logger.info("Accept challenge", { challengeId, address });
     const challenge = await store.getChallenge(challengeId);
     if (!challenge || challenge.to !== address) {
+      logger.warn("Challenge not found or expired", { challengeId, address, found: !!challenge });
       this.send(ws, { type: "error", message: "Challenge not found or expired" });
       return;
     }
@@ -301,42 +317,23 @@ export class SocialManager {
     const game = this.gameManager.createGame(0);
     const challengerWs = this.findWsByAddress(challenge.from);
     const conn = this.connections.get(ws);
+    logger.info("Creating game for challenge", { gameId: game.id, challengerFound: !!challengerWs, acceptorFound: !!conn });
 
-    // Challenger joins first (white)
-    if (challengerWs) {
-      const challengerConn = this.connections.get(challengerWs);
-      if (challengerConn) {
-        this.gameManager.joinGame(game.id, {
-          ws: challengerWs,
-          address: challenge.from,
-          rating: challengerConn.rating,
-          connectedAt: Date.now(),
-        });
-      }
-    }
+    // Don't join players to the game yet — they need to connect via the game
+    // WebSocket first (useGame hook). Just notify both sides to navigate.
+    const acceptMsg: ServerMessage = {
+      type: "challenge_accepted",
+      challenge_id: challengeId,
+      game_id: game.id,
+    };
 
-    // Acceptor joins second (black)
-    if (conn) {
-      this.gameManager.joinGame(game.id, {
-        ws,
-        address,
-        rating: conn.rating,
-        connectedAt: Date.now(),
-      });
-    }
+    // Notify the acceptor
+    this.send(ws, acceptMsg);
 
-    // Broadcast game_start to both
-    const fullGame = this.gameManager.getGame(game.id);
-    if (fullGame?.playerWhite && fullGame?.playerBlack) {
-      const startMsg: ServerMessage = {
-        type: "game_start",
-        game_id: game.id,
-        white: fullGame.playerWhite.address,
-        black: fullGame.playerBlack.address,
-        game_state: fullGame.gameState,
-      };
-      this.gameManager.broadcastToGame(fullGame, startMsg);
-    }
+    // Notify the challenger
+    this.sendToAll(challenge.from, acceptMsg);
+
+    logger.info("Challenge accepted, game created", { challengeId, gameId: game.id, from: challenge.from, to: address });
   }
 
   private async handleDeclineChallenge(ws: WebSocket, address: string, challengeId: string): Promise<void> {

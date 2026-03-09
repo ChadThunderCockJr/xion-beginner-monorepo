@@ -140,6 +140,7 @@ export type ServerMessage =
   | { type: "friend_offline"; address: string }
   | { type: "activity_feed"; items: ActivityFeedItem[] }
   | { type: "challenge_received"; challenge_id: string; from_address: string; from_name: string }
+  | { type: "challenge_accepted"; challenge_id: string; game_id: string }
   | { type: "challenge_declined"; challenge_id: string }
   | { type: "username_set"; username: string }
   | { type: "username_error"; message: string }

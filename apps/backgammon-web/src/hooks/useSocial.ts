@@ -52,6 +52,7 @@ export interface SocialState {
   username: string;
   usernameError: string;
   connected: boolean;
+  acceptedGameId: string | null;
 }
 
 type SocialAction =
@@ -64,8 +65,10 @@ type SocialAction =
   | { type: "FRIEND_REQUEST_ACCEPTED"; address: string; display_name: string }
   | { type: "FRIEND_REMOVED"; address: string }
   | { type: "CHALLENGE_RECEIVED"; challenge_id: string; from_address: string; from_name: string }
+  | { type: "CHALLENGE_ACCEPTED"; challenge_id: string; game_id: string }
   | { type: "CHALLENGE_DECLINED"; challenge_id: string }
   | { type: "CHALLENGE_DISMISS"; challenge_id: string }
+  | { type: "CLEAR_ACCEPTED_GAME" }
   | { type: "USERNAME_SET"; username: string }
   | { type: "USERNAME_ERROR"; message: string }
   | { type: "SEARCH_RESULTS"; results: SearchResult[] }
@@ -87,6 +90,7 @@ const initialState: SocialState = {
   username: "",
   usernameError: "",
   connected: false,
+  acceptedGameId: null,
 };
 
 function socialReducer(state: SocialState, action: SocialAction): SocialState {
@@ -158,6 +162,14 @@ function socialReducer(state: SocialState, action: SocialAction): SocialState {
           },
         ],
       };
+    case "CHALLENGE_ACCEPTED":
+      return {
+        ...state,
+        acceptedGameId: action.game_id,
+        pendingChallenges: state.pendingChallenges.filter(
+          (c) => c.challengeId !== action.challenge_id,
+        ),
+      };
     case "CHALLENGE_DECLINED":
     case "CHALLENGE_DISMISS":
       return {
@@ -166,6 +178,8 @@ function socialReducer(state: SocialState, action: SocialAction): SocialState {
           (c) => c.challengeId !== action.challenge_id,
         ),
       };
+    case "CLEAR_ACCEPTED_GAME":
+      return { ...state, acceptedGameId: null };
     case "USERNAME_SET":
       return { ...state, username: action.username, usernameError: "" };
     case "USERNAME_ERROR":
@@ -286,6 +300,13 @@ export function useSocial(wsUrl: string, address: string | null) {
           challenge_id: msg.challenge_id as string,
           from_address: msg.from_address as string,
           from_name: msg.from_name as string,
+        }),
+      ),
+      on("challenge_accepted", (msg) =>
+        dispatch({
+          type: "CHALLENGE_ACCEPTED",
+          challenge_id: msg.challenge_id as string,
+          game_id: msg.game_id as string,
         }),
       ),
       on("challenge_declined", (msg) =>
@@ -447,5 +468,6 @@ export function useSocial(wsUrl: string, address: string | null) {
     reportUser,
     refreshFriends,
     refreshActivity,
+    clearAcceptedGame: useCallback(() => dispatch({ type: "CLEAR_ACCEPTED_GAME" }), []),
   };
 }

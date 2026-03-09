@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useGame } from "@/hooks/useGame";
 import { useSocialContext } from "@/contexts/SocialContext";
 import { GameScreen } from "@/components/GameScreen";
@@ -10,6 +10,8 @@ import { WS_URL } from "@/lib/ws-config";
 
 export default function MatchPage() {
   const router = useRouter();
+  const params = useParams();
+  const matchId = params.matchId as string;
   const { address, isConnected, isConnecting } = useAuth();
 
   useEffect(() => {
@@ -52,9 +54,18 @@ export default function MatchPage() {
     matchState,
     matchOver,
     turnTimeLimit,
+    authenticated,
+    joinGame,
   } = useGame(WS_URL, address);
 
   const { blockUser, reportUser } = useSocialContext();
+
+  // Auto-join game from URL param (for challenge accept flow)
+  useEffect(() => {
+    if (authenticated && matchId && !gameState) {
+      joinGame(matchId);
+    }
+  }, [authenticated, matchId, gameState, joinGame]);
 
   // Loading state: waiting for server to send game state
   if (!gameState || !myColor) {
