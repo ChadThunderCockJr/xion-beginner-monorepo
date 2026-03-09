@@ -280,8 +280,6 @@ export default function DashboardPage() {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const playerName = displayName || username || "Player";
-  const [rated, setRated] = useState(true);
-
   // Live data state
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
@@ -923,126 +921,6 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        {/* Quick Match */}
-        <Card className="hover:shadow-elevated hover:-translate-y-px transition-all">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 16,
-            }}
-          >
-            {Icons.dice("var(--color-gold-light)")}
-            <h3
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "1.625rem",
-                fontWeight: 700,
-                margin: 0,
-                color: "var(--color-text-primary)",
-              }}
-            >
-              Quick Match
-            </h3>
-            <div
-              role="radiogroup"
-              aria-label="Game mode"
-              style={{
-                display: "flex",
-                background: "var(--color-bg-surface)",
-                borderRadius: 20,
-                border: "1px solid var(--color-border-subtle)",
-                padding: 2,
-                cursor: "pointer",
-              }}
-            >
-              <button
-                role="radio"
-                aria-checked={rated}
-                onClick={() => setRated(true)}
-                style={{
-                  padding: "5px 12px",
-                  borderRadius: 18,
-                  fontSize: "0.6875rem",
-                  fontWeight: 600,
-                  fontFamily: "var(--font-body)",
-                  background: rated ? "var(--color-gold-primary)" : "transparent",
-                  color: rated ? "var(--color-accent-fg)" : "var(--color-text-muted)",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                Rated
-              </button>
-              <button
-                role="radio"
-                aria-checked={!rated}
-                onClick={() => setRated(false)}
-                style={{
-                  padding: "5px 12px",
-                  borderRadius: 18,
-                  fontSize: "0.6875rem",
-                  fontWeight: 600,
-                  fontFamily: "var(--font-body)",
-                  background: !rated ? "var(--color-gold-primary)" : "transparent",
-                  color: !rated ? "var(--color-accent-fg)" : "var(--color-text-muted)",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                Casual
-              </button>
-            </div>
-          </div>
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--color-text-muted)",
-              margin: "0 0 20px",
-              lineHeight: 1.5,
-            }}
-          >
-            Find an opponent at your skill level instantly. Provably fair dice.
-          </p>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[1, 3, 5, 7].map((len) => (
-              <button
-                key={len}
-                onClick={() => router.push(`/matchmaking?length=${len}&rated=${rated}`)}
-                aria-label={`Quick match ${len} point${len > 1 ? "s" : ""}`}
-                style={{
-                  flex: 1,
-                  padding: "12px 16px",
-                  borderRadius: 6,
-                  border: "1px solid var(--color-border-subtle)",
-                  background: "transparent",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: "var(--color-text-muted)",
-                  fontFamily: "var(--font-mono)",
-                  textAlign: "center",
-                  cursor: "pointer",
-                  transition: "all 0.12s ease",
-                  minHeight: 44,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-gold-primary)";
-                  e.currentTarget.style.color = "var(--color-gold-primary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-border-subtle)";
-                  e.currentTarget.style.color = "var(--color-text-muted)";
-                }}
-              >
-                {len}pt
-              </button>
-            ))}
-          </div>
-        </Card>
-
         {/* Play vs AI */}
         <Card className="hover:shadow-elevated hover:-translate-y-px transition-all cursor-pointer">
           <div
@@ -1225,7 +1103,7 @@ export default function DashboardPage() {
                   No recent matches yet. Start your first game!
                 </div>
                 <button
-                  onClick={() => router.push("/matchmaking?length=5&rated=true")}
+                  onClick={() => router.push("/ai-match")}
                   style={{
                     padding: "10px 20px",
                     borderRadius: 6,
@@ -1239,7 +1117,7 @@ export default function DashboardPage() {
                     minHeight: 44,
                   }}
                 >
-                  Quick Match
+                  Play vs AI
                 </button>
               </div>
             )}
