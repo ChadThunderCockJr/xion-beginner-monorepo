@@ -606,7 +606,7 @@ function CenterControls({
         <span className="text-xs text-[var(--color-text-muted)]">Waiting...</span>
       ) : null}
 
-      {isMyTurn && dice && (
+      {(isMyTurn && dice || canEndTurn) && (
         <div className="flex" style={{ gap: 5 }}>
           {canUndo && (
             <button
@@ -1039,7 +1039,7 @@ export function GameScreen({
           onEndTurn();
         }
       } else if (e.key === "z" || e.key === "Z") {
-        if (canUndo && isMyTurn && gameState.dice !== null) {
+        if (canUndo && (isMyTurn || pendingConfirmation)) {
           e.preventDefault();
           onUndo();
         }
@@ -1048,7 +1048,7 @@ export function GameScreen({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [needsToRoll, canEndTurn, canUndo, isMyTurn, gameState.dice, gameState.gameOver, showMenu, onRollDice, onEndTurn, onUndo]);
+  }, [needsToRoll, canEndTurn, canUndo, isMyTurn, pendingConfirmation, gameState.dice, gameState.gameOver, showMenu, onRollDice, onEndTurn, onUndo]);
 
   // Reset post-game view when a new game starts
   useEffect(() => {
