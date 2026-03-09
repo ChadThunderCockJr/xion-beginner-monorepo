@@ -356,13 +356,15 @@ export function useSocial(wsUrl: string, address: string | null) {
 
   const challengeFriend = useCallback(
     (toAddress: string, config?: ChallengeConfig) => {
-      sendMessage({
-        type: "challenge_friend",
+      const msg = {
+        type: "challenge_friend" as const,
         to_address: toAddress,
         match_length: config?.matchLength ?? 5,
         wager_amount: config?.wagerAmount ?? 0,
         doubling_cube: config?.doublingCube ?? true,
-      });
+      };
+      console.log("[Social] Sending challenge:", msg);
+      sendMessage(msg);
     },
     [sendMessage],
   );
