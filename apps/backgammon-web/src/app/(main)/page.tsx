@@ -275,8 +275,10 @@ export default function DashboardPage() {
   const { address, logout } = useAuth();
   const { balance, isLoading: balanceLoading } = useBalance();
   const social = useSocialContext();
-  const { displayName, username, incomingRequests } = social;
-  const incomingRequestCount = incomingRequests?.length ?? 0;
+  const { displayName, username, incomingRequests, pendingChallenges, acceptFriendRequest, rejectFriendRequest, acceptChallenge, declineChallenge } = social;
+  const totalNotifications = (incomingRequests?.length ?? 0) + (pendingChallenges?.length ?? 0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
   const playerName = displayName || username || "Player";
   const [rated, setRated] = useState(true);
 
@@ -378,6 +380,17 @@ export default function DashboardPage() {
     const handler = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close notification dropdown on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -611,47 +624,171 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Bell → Social page (friend requests / notifications) */}
-          <button
-            aria-label="Notifications"
-            onClick={() => router.push("/social")}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 6,
-              border: "1px solid var(--color-border-subtle)",
-              background: "var(--color-bg-surface)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
-          >
-            {Icons.bell("var(--color-text-muted)")}
-            {incomingRequestCount > 0 && (
+          {/* Notification Bell + Dropdown */}
+          <div ref={notifRef} style={{ position: "relative" }}>
+            <button
+              aria-label="Notifications"
+              onClick={() => setNotifOpen(!notifOpen)}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 6,
+                border: `1px solid ${notifOpen ? "var(--color-gold-primary)" : "var(--color-border-subtle)"}`,
+                background: notifOpen ? "var(--color-bg-elevated)" : "var(--color-bg-surface)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}
+            >
+              {Icons.bell(notifOpen ? "var(--color-gold-primary)" : "var(--color-text-muted)")}
+              {totalNotifications > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    background: "var(--color-gold-primary)",
+                    color: "var(--color-gold-text, #000)",
+                    fontSize: "0.625rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 4px",
+                  }}
+                >
+                  {totalNotifications}
+                </div>
+              )}
+            </button>
+
+            {notifOpen && (
               <div
                 style={{
                   position: "absolute",
-                  top: 4,
-                  right: 4,
-                  minWidth: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  background: "var(--color-gold-primary)",
-                  color: "var(--color-gold-text, #000)",
-                  fontSize: "0.625rem",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "0 4px",
+                  top: 52,
+                  right: 0,
+                  width: 320,
+                  maxHeight: 400,
+                  overflowY: "auto",
+                  background: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-subtle)",
+                  borderRadius: 10,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                  zIndex: 100,
                 }}
               >
-                {incomingRequestCount}
+                <div style={{ padding: "12px 14px 8px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                  <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-text-primary)" }}>
+                    Notifications
+                  </span>
+                </div>
+
+                {totalNotifications === 0 ? (
+                  <div style={{ padding: "24px 14px", textAlign: "center", fontSize: "0.8125rem", color: "var(--color-text-faint)" }}>
+                    No notifications
+                  </div>
+                ) : (
+                  <div>
+                    {/* Challenge Requests */}
+                    {pendingChallenges?.map((c) => (
+                      <div key={c.challengeId} style={{ padding: "10px 14px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                          <Avatar name={c.fromName || c.fromAddress} size="xs" />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>
+                              {c.fromName || `${c.fromAddress.slice(0, 8)}...`}
+                            </div>
+                            <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>
+                              Wants to play a match
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => { acceptChallenge(c.challengeId); setNotifOpen(false); }}
+                            style={{
+                              flex: 1, padding: "6px 0", borderRadius: 6, border: "none",
+                              background: "var(--color-gold-primary)", color: "var(--color-gold-text, #000)",
+                              fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+                            }}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => declineChallenge(c.challengeId)}
+                            style={{
+                              flex: 1, padding: "6px 0", borderRadius: 6,
+                              border: "1px solid var(--color-border-subtle)", background: "transparent",
+                              color: "var(--color-text-secondary)", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
+                            }}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Friend Requests */}
+                    {incomingRequests?.map((r) => (
+                      <div key={r.address} style={{ padding: "10px 14px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                          <Avatar name={r.displayName || r.address} size="xs" />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text-primary)" }}>
+                              {r.displayName || `${r.address.slice(0, 8)}...`}
+                            </div>
+                            <div style={{ fontSize: "0.6875rem", color: "var(--color-text-muted)" }}>
+                              Friend request
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            onClick={() => acceptFriendRequest(r.address)}
+                            style={{
+                              flex: 1, padding: "6px 0", borderRadius: 6, border: "none",
+                              background: "var(--color-gold-primary)", color: "var(--color-gold-text, #000)",
+                              fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+                            }}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => rejectFriendRequest(r.address)}
+                            style={{
+                              flex: 1, padding: "6px 0", borderRadius: 6,
+                              border: "1px solid var(--color-border-subtle)", background: "transparent",
+                              color: "var(--color-text-secondary)", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer",
+                            }}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Footer link to social page */}
+                <div
+                  onClick={() => { setNotifOpen(false); router.push("/social"); }}
+                  style={{
+                    padding: "10px 14px", textAlign: "center", cursor: "pointer",
+                    fontSize: "0.75rem", fontWeight: 600, color: "var(--color-gold-primary)",
+                    borderTop: "1px solid var(--color-border-subtle)",
+                  }}
+                >
+                  View all friends &amp; activity
+                </div>
               </div>
             )}
-          </button>
+          </div>
 
           {/* Wallet */}
           <div
