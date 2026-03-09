@@ -109,15 +109,29 @@ self.onmessage = (e: MessageEvent<GnubgRequest>) => {
       cubeful: payload.cubeful ?? true,
     });
 
+    console.log("[GNUBG Worker] request:", args);
     const resultJson = wasm_get_moves(args);
     const parsed = JSON.parse(resultJson);
+
+    console.log("[GNUBG Worker] raw response type:", typeof parsed, "isArray:", Array.isArray(parsed),
+      "keys:", parsed && typeof parsed === "object" ? Object.keys(parsed) : "n/a",
+      "length:", Array.isArray(parsed) ? parsed.length : "n/a");
 
     if (parsed.error) {
       self.postMessage({ type: "error", id, error: parsed.error });
       return;
     }
 
-    const moves: GnubgRawMove[] = Array.isArray(parsed) ? parsed : [];
+    // Handle both array and object-with-moves response formats
+    let moves: GnubgRawMove[];
+    if (Array.isArray(parsed)) {
+      moves = parsed;
+    } else if (parsed.moves && Array.isArray(parsed.moves)) {
+      moves = parsed.moves;
+    } else {
+      console.warn("[GNUBG Worker] unexpected response format:", JSON.stringify(parsed).slice(0, 500));
+      moves = [];
+    }
     self.postMessage({ type: "result", id, moves });
   } catch (err) {
     self.postMessage({
