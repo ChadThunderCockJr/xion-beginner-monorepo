@@ -7,6 +7,7 @@ import { Board, Die, DoublingCube } from "./Board";
 import { PostGameAnalysis } from "./PostGameAnalysis";
 import { EmojiReactions } from "./EmojiReactions";
 import { FocusTrap } from "./ui/FocusTrap";
+import { useTheme } from "@/contexts/ThemeContext";
 import type { TurnRecord } from "@/hooks/useLocalGame";
 import { TURN_TIMER_TICK_MS } from "@/lib/constants";
 
@@ -287,25 +288,28 @@ function SlideOutMenu({
   onResign,
   onDouble,
   canDouble,
+  onShowMoveList,
 }: {
   onClose: () => void;
   onResign: () => void;
   onDouble?: () => void;
   canDouble?: boolean;
+  onShowMoveList?: () => void;
 }) {
   const [showResignConfirm, setShowResignConfirm] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const themeLabels = { light: "Light", dark: "Dark", lux: "Lux" } as const;
+  const themes = ["light", "dark", "lux"] as const;
+  const nextTheme = themes[(themes.indexOf(theme) + 1) % themes.length];
 
   const menuItems = [
     { label: "Offer Double", action: () => { if (canDouble && onDouble) { onDouble(); onClose(); } }, disabled: !canDouble },
     { label: "Resign", action: () => setShowResignConfirm(true), danger: true },
-    { label: "Offer Draw", action: () => {} },
     { type: "separator" as const },
-    { label: "Move List", action: () => {} },
-    { label: "Match Info", action: () => {} },
-    { label: "Verify Dice", action: () => { window.open("/verify-rolls", "_blank"); } },
+    { label: "Move List", action: () => { onShowMoveList?.(); onClose(); } },
+    { label: "Verify Dice", action: () => { window.open("/verify-rolls", "_blank"); onClose(); } },
     { type: "separator" as const },
-    { label: "Board Theme", action: () => {} },
-    { label: "Sound", action: () => {} },
+    { label: `Theme: ${themeLabels[theme]}`, action: () => setTheme(nextTheme) },
   ];
 
   return (
@@ -936,6 +940,7 @@ export function GameScreen({
   }, [turnStartedAt, gameState.gameOver]);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [showMoveList, setShowMoveList] = useState(false);
   const [showPostGame, setShowPostGame] = useState(false);
 
   // Point numbers toggle — persisted in localStorage
@@ -1338,7 +1343,75 @@ export function GameScreen({
             onResign={handleResign}
             onDouble={onDouble}
             canDouble={canDouble}
+            onShowMoveList={() => setShowMoveList(true)}
           />
+        )}
+
+        {/* Move List Panel */}
+        {showMoveList && turnHistory && (
+          <>
+            <div className="absolute inset-0 z-40" onClick={() => setShowMoveList(false)} />
+            <FocusTrap>
+              <div
+                className="absolute top-0 right-0 z-50 flex flex-col animate-slide-in-right"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Move list"
+                style={{
+                  width: 240,
+                  height: "100%",
+                  background: "var(--color-bg-surface)",
+                  borderLeft: "1px solid var(--color-border-subtle)",
+                  padding: "16px 14px",
+                  boxShadow: "var(--shadow-elevated)",
+                  overflowY: "auto",
+                }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-[13px] font-bold text-[var(--color-text-primary)]">Move List</span>
+                  <button
+                    onClick={() => setShowMoveList(false)}
+                    aria-label="Close move list"
+                    style={{ background: "none", border: "none", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "0.9375rem" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {turnHistory.length === 0 ? (
+                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", textAlign: "center", padding: "20px 0" }}>
+                    No moves yet
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {turnHistory.map((turn, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          fontSize: "0.6875rem",
+                          fontFamily: "var(--font-mono)",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          background: i % 2 === 0 ? "var(--color-bg-elevated)" : "transparent",
+                          color: "var(--color-text-secondary)",
+                        }}
+                      >
+                        <span style={{ color: turn.player === "white" ? "var(--color-text-primary)" : "var(--color-text-muted)", fontWeight: 600 }}>
+                          {i + 1}. {turn.player === "white" ? "W" : "B"}
+                        </span>{" "}
+                        <span style={{ color: "var(--color-gold-primary)" }}>{turn.dice[0]}-{turn.dice[1]}</span>{" "}
+                        {turn.moves.map((m, j) => (
+                          <span key={j}>
+                            {m.from === 25 || m.from === 0 ? "bar" : m.from}/{m.to === 0 || m.to === 25 ? "off" : m.to}
+                            {j < turn.moves.length - 1 ? " " : ""}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </FocusTrap>
+          </>
         )}
       </main>
     </div>
