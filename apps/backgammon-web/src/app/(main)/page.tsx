@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBalance } from "@/hooks/useBalance";
 import { fetchStats, fetchMatches, fetchOnlineCount, timeAgo } from "@/lib/api";
 import type { PlayerStats, MatchResult } from "@/lib/api";
+import { getLocalStats, getLocalMatches } from "@/lib/local-stats";
 import Tutorial from "@/components/Tutorial";
 import { ONLINE_COUNT_POLL_INTERVAL_MS } from "@/lib/constants";
 import { preloadGnubg } from "@/lib/gnubg";
@@ -287,9 +288,48 @@ export default function DashboardPage() {
   useEffect(() => { preloadGnubg(); }, []);
 
   useEffect(() => {
-    if (!address) return;
-    fetchStats(address).then(setStats).catch(() => {});
-    fetchMatches(address, 4).then(setMatches).catch(() => {});
+    const local = getLocalStats();
+
+    // Merge server stats with local AI stats
+    if (address) {
+      fetchStats(address).then((serverStats) => {
+        setStats({
+          wins: serverStats.wins + local.wins,
+          losses: serverStats.losses + local.losses,
+          totalGames: serverStats.totalGames + local.totalGames,
+          currentStreak: local.totalGames > 0 ? local.currentStreak : serverStats.currentStreak,
+          currentStreakType: local.totalGames > 0 ? local.currentStreakType : serverStats.currentStreakType,
+          rating: serverStats.rating,
+          ratingChange: serverStats.ratingChange,
+        });
+      }).catch(() => {
+        // Server unavailable — show local stats only
+        if (local.totalGames > 0) {
+          setStats({
+            wins: local.wins,
+            losses: local.losses,
+            totalGames: local.totalGames,
+            currentStreak: local.currentStreak,
+            currentStreakType: local.currentStreakType,
+            rating: 0,
+            ratingChange: 0,
+          });
+        }
+      });
+      fetchMatches(address, 4).then(setMatches).catch(() => {});
+    } else if (local.totalGames > 0) {
+      // No address (not logged in) — show local AI stats
+      setStats({
+        wins: local.wins,
+        losses: local.losses,
+        totalGames: local.totalGames,
+        currentStreak: local.currentStreak,
+        currentStreakType: local.currentStreakType,
+        rating: 0,
+        ratingChange: 0,
+      });
+    }
+
     fetchOnlineCount().then(setOnlineCount).catch(() => {});
   }, [address]);
 

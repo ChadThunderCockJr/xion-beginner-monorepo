@@ -20,6 +20,7 @@ import {
 import { selectAIMove, getThinkingDelay, shouldAIDouble, shouldAIAcceptDouble, type AIDifficulty } from "@/lib/ai";
 import { preloadGnubg } from "@/lib/gnubg";
 import { MOVE_ANIMATION_STEP_MS } from "@/lib/constants";
+import { recordAIGameResult } from "@/lib/local-stats";
 
 // ── Persistence ───────────────────────────────────────────────
 
@@ -515,6 +516,18 @@ export function useLocalGame(difficulty: AIDifficulty) {
   stateRef.current = state;
   const aiAbortRef = useRef<(() => void) | null>(null);
   const aiThinkingRef = useRef(false);
+
+  // Record AI game result to local stats when game ends
+  const gameRecordedRef = useRef(false);
+  useEffect(() => {
+    if (state.winner && !gameRecordedRef.current) {
+      gameRecordedRef.current = true;
+      recordAIGameResult(state.myColor, state.winner, state.resultType ?? "normal", difficultyRef.current);
+    }
+    if (!state.winner) {
+      gameRecordedRef.current = false;
+    }
+  }, [state.winner, state.myColor, state.resultType]);
 
   // ── Human actions ───────────────────────────────────────────
 
