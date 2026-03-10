@@ -364,24 +364,6 @@ export class GameManager {
     return { gameState: game.gameState, legalMoves };
   }
 
-  handleResignation(gameId: string, playerAddress: string): { winner: Player; loser: Player } | null {
-    const game = this.games.get(gameId);
-    if (!game || game.status !== "playing") return null;
-
-    const playerColor = this.getPlayerColor(game, playerAddress);
-    if (!playerColor) return null;
-
-    const winner: Player = playerColor === "white" ? "black" : "white";
-    game.status = "finished";
-    game.gameState.gameOver = true;
-    game.gameState.winner = winner;
-    game.gameState.resultType = "normal";
-    this.clearTurnTimer(game);
-    void this.deletePersistedGame(gameId);
-
-    return { winner, loser: playerColor };
-  }
-
   handleDisconnect(address: string): { gameId: string; game: ServerGame } | null {
     const gameId = this.playerGames.get(address);
     if (!gameId) return null;
@@ -588,13 +570,10 @@ export class GameManager {
     game.pendingDoubleDeposit = null;
     game.escrowStatus = "cancelled";
 
-    // End the game as forfeit — non-depositing player loses
-    const pending = game.pendingDoubleDeposit;
-    // If timeout, treat it as game cancelled rather than picking a winner
     this.broadcastToGame(game, {
       type: "double_deposit_timeout" as any,
       game_id: gameId,
-      message: "Double deposit timed out. Game cancelled.",
+      message: "Double deposit timed out. Reverting to pre-double state.",
     });
 
     void this.persistGame(game);

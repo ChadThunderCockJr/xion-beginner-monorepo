@@ -80,11 +80,13 @@ type GameAction =
       myAddress: string;
       matchState?: MatchState | null;
       turnTimeLimit?: number;
+      needsConfirmation?: boolean;
     }
   | {
       type: "GAME_SYNC";
       gameState: GameState;
       legalMoves: Move[];
+      needsConfirmation?: boolean;
     }
   | { type: "DICE_ROLLED"; gameState: GameState; legalMoves: Move[]; player: Player; needsConfirmation?: boolean }
   | { type: "MOVE_MADE"; gameState: GameState; legalMoves: Move[]; player: Player; move: Move; needsConfirmation?: boolean }
@@ -214,6 +216,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         winner: null,
         resultType: null,
         turnTimeLimit: action.turnTimeLimit ?? state.turnTimeLimit,
+        pendingConfirmation: action.needsConfirmation ?? false,
         // Reset matchTurnHistory for a fresh match (not a next_game continuation)
         matchTurnHistory: [],
       };
@@ -227,6 +230,7 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
         legalMoves: action.legalMoves,
         // Preserve turnStartedAt if we already have one; otherwise set if dice active
         turnStartedAt: state.turnStartedAt ?? (hasDice ? Date.now() : null),
+        pendingConfirmation: action.needsConfirmation ?? state.pendingConfirmation,
       };
     }
     case "DICE_ROLLED": {
@@ -379,8 +383,13 @@ function gameReducer(state: GameContext, action: GameAction): GameContext {
     case "DOUBLE_REJECTED":
       return {
         ...state,
+        gameState: state.gameState
+          ? { ...state.gameState, gameOver: true, winner: action.winner, resultType: "normal" }
+          : state.gameState,
         winner: action.winner,
+        resultType: "normal",
         status: "finished",
+        legalMoves: [],
         doubleOffered: false,
         doubleOfferedBy: null,
         doubleDepositRequired: false,
@@ -611,10 +620,12 @@ export function useGame(wsUrl: string, address: string | null) {
         // Register this WebSocket as the game WebSocket for this player
         sendMessage({ type: "rejoin_game", game_id: gameId });
 
+        const needsConfirmation = msg.needs_confirmation as boolean | undefined;
+
         // If already playing the same game, this is a reconnection — sync state
         // without resetting timer/undo/etc.
         if (stateRef.current.status === "playing" && stateRef.current.gameId === gameId) {
-          dispatch({ type: "GAME_SYNC", gameState: gs, legalMoves });
+          dispatch({ type: "GAME_SYNC", gameState: gs, legalMoves, needsConfirmation });
           return;
         }
 
@@ -630,9 +641,12 @@ export function useGame(wsUrl: string, address: string | null) {
           myAddress: addressRef.current || "",
           matchState: msg.match_state as MatchState | undefined,
           turnTimeLimit: msg.turn_time_limit as number | undefined,
+          needsConfirmation,
         });
       }),
       on("dice_rolled", (msg) => {
+        // New turn started — clear flushing flag in case it got stuck
+        flushingRef.current = false;
         playDiceRoll();
         dispatch({
           type: "DICE_ROLLED",
@@ -690,6 +704,7 @@ export function useGame(wsUrl: string, address: string | null) {
         });
       }),
       on("game_over", (msg) => {
+        flushingRef.current = false;
         const winner = msg.winner as Player;
         playGameOver(winner === myColorRef.current);
         dispatch({

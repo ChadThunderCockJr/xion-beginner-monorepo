@@ -349,6 +349,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
               getDisplayName(game.playerBlack?.address || ""),
             ]);
             // Include legal_moves so the client can resume mid-turn
+            const isPendingConfirmation = game.pendingConfirmation === msg.address;
             const isMyTurn = game.gameState.currentPlayer === color;
             const hasDice = game.gameState.dice !== null;
             const legalMoves = (isMyTurn && hasDice && game.gameState.movesRemaining.length > 0)
@@ -364,6 +365,7 @@ async function handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
               game_state: game.gameState,
               legal_moves: legalMoves,
               turn_time_limit: game.turnTimeLimit,
+              needs_confirmation: isPendingConfirmation,
             });
           }
         }
